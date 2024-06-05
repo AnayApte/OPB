@@ -4,7 +4,7 @@ import React from 'react'
 const RootLayout = () => {
   return (
     <View>
-      <Text>RootLayout</Text>
+      <Text>Subash is my daddy</Text>
     </View>
   )
 }
