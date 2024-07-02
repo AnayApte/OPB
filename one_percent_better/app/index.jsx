@@ -1,14 +1,23 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { StatusBar } from 'expo-status-bar';
+import { Link } from 'expo-router';
 
-const RootLayout = () => {
+export default function App() {
   return (
-    <View>
-      <Text>RootLayout</Text>
+    <View style = {styles.container}>
+      <Text>One Percent Better!</Text>
+      <StatusBar style = "auto" />
+      <Link href="/strong" style={{ color: 'blue' }}>Go 
+      to Strong</Link>
     </View>
-  )
+  );
 }
 
-export default RootLayout
-
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
