@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, TouchableOpacity, TextInput, FlatList, AppState } from 'react-native';
-import { styled } from 'nativewind';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, SafeAreaView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const StyledView = styled(View)
-const StyledText = styled(Text)
-const StyledTouchableOpacity = styled(TouchableOpacity)
-const StyledTextInput = styled(TextInput)
 
 const Strong = () => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -17,10 +11,6 @@ const Strong = () => {
 
   useEffect(() => {
     loadWorkoutState();
-    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => {
-      appStateSubscription.remove();
-    };
   }, []);
 
   useEffect(() => {
@@ -36,12 +26,6 @@ const Strong = () => {
     }
     return () => clearInterval(interval);
   }, [isTimerRunning]);
-
-  const handleAppStateChange = (nextAppState) => {
-    if (nextAppState === 'active') {
-      loadWorkoutState();
-    }
-  };
 
   const loadWorkoutState = async () => {
     try {
@@ -101,79 +85,166 @@ const Strong = () => {
   };
 
   return (
-    <StyledView className="flex-1 p-5 bg-gray-100">
-      <StyledText className="text-2xl font-bold mb-5">Strong Workout</StyledText>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Strong Workout</Text>
       
-      <StyledTouchableOpacity
-        className={`p-3 rounded-md items-center mb-3 ${isTimerRunning ? 'bg-yellow-500' : 'bg-green-500'}`}
+      <TouchableOpacity
+        style={[styles.button, isTimerRunning ? styles.yellowButton : styles.greenButton]}
         onPress={toggleTimer}
       >
-        <StyledText className="text-white font-bold">
+        <Text style={styles.buttonText}>
           {isTimerRunning ? 'Pause' : 'Start'} Workout
-        </StyledText>
-      </StyledTouchableOpacity>
+        </Text>
+      </TouchableOpacity>
       
-      <StyledText className="text-2xl font-bold text-center mb-5">{formatTime(time)}</StyledText>
+      <Text style={styles.timerText}>{formatTime(time)}</Text>
       
-      <StyledView className="flex-row mb-5">
-        <StyledTextInput
-          className="flex-1 border border-gray-300 rounded-md p-2 mr-2"
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
           placeholder="Exercise name"
           value={newExercise}
           onChangeText={setNewExercise}
         />
-        <StyledTextInput
-          className="w-20 border border-gray-300 rounded-md p-2 mr-2"
+        <TextInput
+          style={[styles.input, styles.setsInput]}
           placeholder="Sets"
           value={sets}
           onChangeText={setSets}
           keyboardType="numeric"
         />
-        <StyledTouchableOpacity
-          className="bg-blue-500 p-3 rounded-md justify-center"
+        <TouchableOpacity
+          style={[styles.button, styles.addButton]}
           onPress={addExercise}
         >
-          <StyledText className="text-white font-bold">Add</StyledText>
-        </StyledTouchableOpacity>
-      </StyledView>
+          <Text style={styles.buttonText}>Add</Text>
+        </TouchableOpacity>
+      </View>
       
       <FlatList
         data={exercises}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index: exerciseIndex }) => (
-          <StyledView className="bg-white p-3 rounded-md mb-3">
-            <StyledText className="text-lg font-bold mb-2">{item.name}</StyledText>
+          <View style={styles.exerciseContainer}>
+            <Text style={styles.exerciseName}>{item.name}</Text>
             {item.sets.map((set, setIndex) => (
-              <StyledView key={setIndex} className="flex-row items-center mb-2">
-                <StyledText className="w-16">Set {setIndex + 1}:</StyledText>
-                <StyledTextInput
-                  className="border border-gray-300 rounded-md p-1 w-16 mr-2"
+              <View key={setIndex} style={styles.setContainer}>
+                <Text style={styles.setText}>Set {setIndex + 1}:</Text>
+                <TextInput
+                  style={styles.setInput}
                   placeholder="Reps"
                   value={set.reps}
                   onChangeText={(reps) => updateSet(exerciseIndex, setIndex, 'reps', reps)}
                   keyboardType="numeric"
                 />
-                <StyledTextInput
-                  className="border border-gray-300 rounded-md p-1 w-16"
+                <TextInput
+                  style={styles.setInput}
                   placeholder="Weight"
                   value={set.weight}
                   onChangeText={(weight) => updateSet(exerciseIndex, setIndex, 'weight', weight)}
                   keyboardType="numeric"
                 />
-              </StyledView>
+              </View>
             ))}
-          </StyledView>
+          </View>
         )}
       />
       
-      <StyledTouchableOpacity
-        className="bg-red-500 p-3 rounded-md items-center mt-5"
+      <TouchableOpacity
+        style={[styles.button, styles.stopButton]}
         onPress={stopWorkout}
       >
-        <StyledText className="text-white font-bold">Stop Workout</StyledText>
-      </StyledTouchableOpacity>
-    </StyledView>
+        <Text style={styles.buttonText}>Stop Workout</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f0f0f0',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  button: {
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  greenButton: {
+    backgroundColor: '#4CAF50',
+  },
+  yellowButton: {
+    backgroundColor: '#FFC107',
+  },
+  stopButton: {
+    backgroundColor: '#f44336',
+    marginTop: 20,
+  },
+  addButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  timerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginRight: 10,
+  },
+  setsInput: {
+    flex: 0,
+    width: 50,
+  },
+  exerciseContainer: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  exerciseName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  setContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  setText: {
+    width: 50,
+  },
+  setInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 5,
+    width: 50,
+    marginLeft: 10,
+  },
+});
 
 export default Strong;
