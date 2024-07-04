@@ -1,23 +1,38 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { View, Text, SafeAreaView, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Link } from 'expo-router';
 
 export default function App() {
   return (
-    <View style = {styles.container}>
-      <Text>One Percent Better!</Text>
-      <StatusBar style = "auto" />
-      <Link href="/strong" style={{ color: 'blue' }}>Go 
-      to Strong</Link>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="auto" />
+      <View style={styles.content}>
+        <Text style={styles.title}>One Percent Better!</Text>
+        <Link href="/strong" style={styles.link}>
+          Go to Strong
+        </Link>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  link: {
+    color: 'blue',
+    fontSize: 18,
   },
 });

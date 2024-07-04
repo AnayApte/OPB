@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, FlatList, SafeAreaView } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { supabase } from '../../utils/supabaseClient';
+import { formatTime, calculateOneRepMax, formatExerciseName } from '../../utils/helpers';
 
-const Strong = () => {
+const WorkoutScreen = () => {
+  const router = useRouter();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [time, setTime] = useState(0);
   const [exercises, setExercises] = useState([]);
@@ -10,69 +13,62 @@ const Strong = () => {
   const [sets, setSets] = useState('');
 
   useEffect(() => {
-    loadWorkoutState();
-  }, []);
-
-  useEffect(() => {
     let interval;
     if (isTimerRunning) {
       interval = setInterval(() => {
-        setTime((prevTime) => {
-          const newTime = prevTime + 1;
-          saveWorkoutState(newTime);
-          return newTime;
-        });
+        setTime((prevTime) => prevTime + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  const loadWorkoutState = async () => {
-    try {
-      const savedTime = await AsyncStorage.getItem('workoutTime');
-      const savedIsRunning = await AsyncStorage.getItem('isTimerRunning');
-      if (savedTime !== null) {
-        setTime(parseInt(savedTime, 10));
-      }
-      if (savedIsRunning !== null) {
-        setIsTimerRunning(JSON.parse(savedIsRunning));
-      }
-    } catch (error) {
-      console.error('Error loading workout state:', error);
-    }
-  };
-
-  const saveWorkoutState = async (currentTime) => {
-    try {
-      await AsyncStorage.setItem('workoutTime', currentTime.toString());
-      await AsyncStorage.setItem('isTimerRunning', JSON.stringify(isTimerRunning));
-    } catch (error) {
-      console.error('Error saving workout state:', error);
-    }
-  };
-
   const toggleTimer = () => {
     setIsTimerRunning(!isTimerRunning);
   };
 
-  const stopWorkout = async () => {
-    setIsTimerRunning(false);
-    alert(`Good job! You worked out for ${formatTime(time)}`);
-    setTime(0);
-    await AsyncStorage.removeItem('workoutTime');
-    await AsyncStorage.removeItem('isTimerRunning');
-  };
+  const endWorkout = async () => {
+    // Save workout data to Supabase
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: 'user_id_here', // Replace with actual user ID
+        date: new Date().toISOString(),
+        duration: time,
+        exercises: exercises,
+      });
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    if (error) console.error('Error saving workout:', error);
+    else {
+      // Update PRs
+      exercises.forEach(async (exercise) => {
+        const maxSet = exercise.sets.reduce((max, set) => {
+          const oneRepMax = calculateOneRepMax(set.weight, set.reps);
+          return oneRepMax > max ? oneRepMax : max;
+        }, 0);
+
+        const { data: prData, error: prError } = await supabase
+          .from('personal_records')
+          .upsert({
+            user_id: 'user_id_here', // Replace with actual user ID
+            exercise_id: exercise.id,
+            one_rep_max: maxSet,
+            date: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id, exercise_id',
+          });
+
+        if (prError) console.error('Error updating PR:', prError);
+      });
+    }
+
+    router.push('/strong');
   };
 
   const addExercise = () => {
     if (newExercise && sets) {
+      const formattedName = formatExerciseName(newExercise);
       const setsArray = Array.from({ length: parseInt(sets) }, () => ({ reps: '', weight: '' }));
-      setExercises([...exercises, { name: newExercise, sets: setsArray }]);
+      setExercises([...exercises, { name: formattedName, sets: setsArray }]);
       setNewExercise('');
       setSets('');
     }
@@ -85,9 +81,7 @@ const Strong = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Strong Workout</Text>
-      
+    <View style={styles.container}>
       <TouchableOpacity
         style={[styles.button, isTimerRunning ? styles.yellowButton : styles.greenButton]}
         onPress={toggleTimer}
@@ -152,11 +146,11 @@ const Strong = () => {
       
       <TouchableOpacity
         style={[styles.button, styles.stopButton]}
-        onPress={stopWorkout}
+        onPress={endWorkout}
       >
-        <Text style={styles.buttonText}>Stop Workout</Text>
+        <Text style={styles.buttonText}>End Workout</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -166,13 +160,8 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f0f0f0',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
   button: {
-    padding: 10,
+    padding: 15,
     borderRadius: 5,
     alignItems: 'center',
     marginBottom: 10,
@@ -247,4 +236,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Strong;
+export default WorkoutScreen;
