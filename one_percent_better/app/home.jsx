@@ -1,4 +1,4 @@
-// THIS IS JUST TO TEST THE ABILITY TO GO TO STRONG.
+// home.jsx
 // STRONG IS V. BROKEN RN, WE CAN FIX THIS AFTER CREATING AUTH AND LOGIN.
 
 import { View, Text, SafeAreaView, StyleSheet } from 'react-native';
