@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
+import { hashPassword } from '../../utils/passwordGenerator';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -11,7 +12,8 @@ export default function Signup() {
   const router = useRouter();
 
   const handleSignup = async () => {
-    const{error} = await supabase.from('users').insert([{ username: username, email: email, hashedPassword: password,}]).select();
+    const hashedPassword = hashPassword(password);
+    const{error} = await supabase.from('users').insert([{ username: username, email: email, hashedPassword: hashedPassword,}]).select();
     if (error) {
         console.error('Error signing up:', error.message); // FIGURE OUT THE ERROR HERE LATER
     } 

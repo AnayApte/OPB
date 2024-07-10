@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
+import { comparePassword } from '../../utils/passwordGenerator';
 
 export default function Login() {
   const [userOrEmail, setUserOrEmail] = useState('');
@@ -26,7 +27,7 @@ export default function Login() {
       }
 
       // Verify password (replace this with proper password hashing)
-      if (userByEmail.hashedPassword === password) {
+      if (comparePassword(password,userByEmail.hashedPassword)) {
         console.log('Login successful');
         router.replace('/home');
       } else {
