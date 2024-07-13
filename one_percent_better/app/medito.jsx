@@ -148,6 +148,7 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
+    <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
       <Text style={styles.title}>Medito</Text>
       <Image
         source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
@@ -268,6 +269,12 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'purple',
     fontWeight: 'bold',
+  },
+  Challenge: {
+    color: 'yellow',
+    fontWeight: 'bold',
+    marginBottom: 50,
+    fontSize: 20,
   },
 });
 
