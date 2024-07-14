@@ -88,6 +88,7 @@ export default function App() {
       </View>
       <StatusBar style="auto" />
       <Link href = "/medito" style = {{color : 'blue'}}> Go to Medito</Link> 
+      <Link href = "/caloriecounter" style = {{color : 'blue'}}> Go to Calorie Counter</Link> 
     </View>
   );
 }
