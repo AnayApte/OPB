@@ -5,17 +5,17 @@ export default function StrongLayout() {
   return (
     <Tabs screenOptions={{ tabBarStyle: styles.tabBar }}>
       <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Strong',
-          tabBarLabel: 'Home',
-        }}
-      />
-      <Tabs.Screen
         name="workout-history"
         options={{
           title: 'Workout History',
           tabBarLabel: 'Workouts',
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Strong',
+          tabBarLabel: 'Home',
         }}
       />
       <Tabs.Screen

@@ -4,11 +4,14 @@ import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } fro
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import { comparePassword } from '../../utils/passwordGenerator';
+import { useAuth } from '../../utils/AuthContext';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const [userOrEmail, setUserOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { setUserId } = useAuth();
 
   const handleLogin = async () => {
     try {
@@ -26,9 +29,12 @@ export default function Login() {
         return;
       }
 
-      // Verify password (replace this with proper password hashing)
-      if (comparePassword(password,userByEmail.hashedPassword)) {
+      // Verify password
+      if (comparePassword(password, userByEmail.hashedPassword)) {
         console.log('Login successful');
+        // Store the user ID in secure storage and update context
+        await SecureStore.setItemAsync('userId', userByEmail.userId);
+        setUserId(userByEmail.userId);
         router.replace('/home');
       } else {
         console.log('Incorrect password');
@@ -65,7 +71,7 @@ export default function Login() {
             </TouchableOpacity>
           </Link>
         </View>
-        <View style = {styles.forgotPassword}>
+        <View style={styles.forgotPassword}>
           <Link href="/(auth)/forgotPassword" asChild>
             <TouchableOpacity>
               <Text style={styles.linkText}>Forgot password?</Text>

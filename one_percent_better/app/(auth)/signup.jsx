@@ -4,21 +4,28 @@ import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } fro
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import { hashPassword } from '../../utils/passwordGenerator';
+import { useAuth } from '../../utils/AuthContext';
+import *  as SecureStore from 'expo-secure-store';
+
 
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { setUserId } = useAuth();
 
   const handleSignup = async () => {
     const hashedPassword = hashPassword(password);
-    const{error} = await supabase.from('users').insert([{ username: username, email: email, hashedPassword: hashedPassword,}]).select();
+    const{ data, error } = await supabase.from('users').insert([{ username: username, email: email, hashedPassword: hashedPassword,}]).select();
     if (error) {
         console.error('Error signing up:', error.message); // FIGURE OUT THE ERROR HERE LATER
     } 
     else {
         console.log('Signup successful');
+        // Store the user ID in secure storage
+        await SecureStore.setItemAsync('userId', data[0].id);
+        setUserId(data[0].id);
         router.replace('/home');
     }
   };
