@@ -1,14 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+// index.jsx
+import { Redirect } from 'expo-router';
 
-const RootLayout = () => {
-  return (
-    <View>
-      <Text>RootLayout</Text>
-    </View>
-  )
+export default function Index() {
+  return <Redirect href="/(auth)/login" />;
 }
-
-export default RootLayout
-
-const styles = StyleSheet.create({})
