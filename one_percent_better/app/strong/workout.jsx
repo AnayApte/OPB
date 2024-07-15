@@ -38,7 +38,7 @@ const WorkoutScreen = () => {
       console.error('No user logged in');
       return;
     }
-
+  
     try {
       // Insert workout
       const { data: workoutData, error: workoutError } = await supabase
@@ -50,10 +50,10 @@ const WorkoutScreen = () => {
         })
         .select('workoutId')
         .single();
-
+  
       if (workoutError) throw workoutError;
       const workoutId = workoutData.workoutId;
-
+  
       // Process each exercise
       for (const exercise of exercises) {
         // Check if exercise exists, if not, create it
@@ -62,11 +62,11 @@ const WorkoutScreen = () => {
           .select('exerciseId')
           .eq('name', exercise.name)
           .single();
-
+  
         if (exerciseError && exerciseError.code !== 'PGRST116') {
           throw exerciseError;
         }
-
+  
         let exerciseId;
         if (!existingExercise) {
           const { data: newExercise, error: newExerciseError } = await supabase
@@ -80,25 +80,25 @@ const WorkoutScreen = () => {
         } else {
           exerciseId = existingExercise.exerciseId;
         }
-
+  
         // Insert workout exercise
         const { data: workoutExerciseData, error: workoutExerciseError } = await supabase
           .from('workoutExercises')
           .insert({ workoutId: workoutId, exerciseId: exerciseId })
           .select('workoutExerciseId')
           .single();
-
+  
         if (workoutExerciseError) throw workoutExerciseError;
         const workoutExerciseId = workoutExerciseData.workoutExerciseId;
-
+  
         let bestSetId = null;
         let bestOneRepMax = 0;
-
+  
         // Process each set
         for (let i = 0; i < exercise.sets.length; i++) {
           const set = exercise.sets[i];
           const oneRepMax = calculateOneRepMax(parseFloat(set.weight), parseInt(set.reps));
-
+  
           const { data: setData, error: setError } = await supabase
             .from('sets')
             .insert({
@@ -109,58 +109,51 @@ const WorkoutScreen = () => {
             })
             .select('setId')
             .single();
-
+  
           if (setError) throw setError;
-
+  
           if (oneRepMax > bestOneRepMax) {
             bestOneRepMax = oneRepMax;
             bestSetId = setData.setId;
           }
         }
-
-        // Update workoutExercise with bestSetId
-        const { error: updateWorkoutExerciseError } = await supabase
-          .from('workoutExercises')
-          .update({ bestSetId: bestSetId })
-          .eq('workoutExerciseId', workoutExerciseId);
-
-        if (updateWorkoutExerciseError) throw updateWorkoutExerciseError;
-
+  
         // Check and update PR
         const { data: existingPR, error: prError } = await supabase
           .from('personalRecords')
           .select('*')
           .eq('userId', userId)
           .eq('exerciseId', exerciseId)
+          .eq('isCurrent', true)
           .single();
-
+  
         if (prError && prError.code !== 'PGRST116') throw prError;
-
-        if (!existingPR) {
+  
+        if (!existingPR || bestOneRepMax > existingPR.oneRepMax) {
+          // Set all previous records for this exercise to not current
+          const { error: updatePreviousError } = await supabase
+            .from('personalRecords')
+            .update({ isCurrent: false })
+            .eq('userId', userId)
+            .eq('exerciseId', exerciseId);
+  
+          if (updatePreviousError) throw updatePreviousError;
+  
           // Insert new record
           const { error: insertError } = await supabase
             .from('personalRecords')
             .insert({
               userId: userId,
               exerciseId: exerciseId,
+              setId: bestSetId,
               oneRepMax: bestOneRepMax,
               date: new Date().toISOString(),
+              isCurrent: true
             });
           if (insertError) throw insertError;
-        } else if (bestOneRepMax > existingPR.oneRepMax) {
-          // Update existing record
-          const { error: updateError } = await supabase
-            .from('personalRecords')
-            .update({
-              oneRepMax: bestOneRepMax,
-              date: new Date().toISOString(),
-            })
-            .eq('userId', userId)
-            .eq('exerciseId', exerciseId);
-          if (updateError) throw updateError;
         }
       }
-
+  
       console.log('Workout saved successfully');
       router.push('/strong');
     } catch (error) {

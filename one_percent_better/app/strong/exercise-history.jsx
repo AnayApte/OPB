@@ -1,68 +1,213 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import { calculateOneRepMax } from '../../utils/helpers';
+import { useAuth } from '../../utils/AuthContext';
 
 const ExerciseHistory = () => {
   const [exercises, setExercises] = useState([]);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState('Records');
+  const { userId } = useAuth();
 
   useEffect(() => {
-    fetchExercises();
-  }, []);
+    if (userId) {
+      fetchExercises();
+    }
+  }, [userId]);
 
   const fetchExercises = async () => {
     const { data, error } = await supabase
       .from('exercises')
       .select(`
         *,
-        personal_records (one_rep_max, date),
-        workouts (
-          date,
-          exercises
+        personalRecords!inner(userId, oneRepMax, date, setId, isCurrent),
+        workoutExercises!inner(
+          workoutId,
+          workouts!inner(date),
+          sets(*)
         )
       `)
-      .order('name');
+      .eq('personalRecords.userId', userId)
+      .order('name', { ascending: true });
 
-    if (error) console.error('Error fetching exercises:', error);
-    else setExercises(data);
+    if (error) {
+      console.error('Error fetching exercises:', error);
+    } else {
+      setExercises(data);
+    }
   };
 
-  return (
-    <View className="flex-1 p-4">
+  const openModal = (exercise) => {
+    setSelectedExercise(exercise);
+    setModalVisible(true);
+  };
+
+  const renderExerciseItem = ({ item }) => {
+    const currentRecord = item.personalRecords.find(record => record.isCurrent);
+    const bestSet = item.workoutExercises
+      .flatMap(we => we.sets)
+      .find(set => set.setId === currentRecord.setId);
+
+    return (
+      <TouchableOpacity onPress={() => openModal(item)} style={styles.exerciseBox}>
+        <Text style={styles.exerciseName}>{item.name}</Text>
+        <Text>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
+        <Text>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderRecordsTab = () => {
+    if (!selectedExercise) return null;
+
+    const currentRecord = selectedExercise.personalRecords.find(record => record.isCurrent);
+    const bestSet = selectedExercise.workoutExercises
+      .flatMap(we => we.sets)
+      .find(set => set.setId === currentRecord.setId);
+
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>Current One Rep Max:</Text>
+        <Text>{currentRecord.oneRepMax} lbs</Text>
+
+        <Text style={styles.sectionTitle}>Best Set:</Text>
+        <Text>{bestSet.weight} lbs x {bestSet.reps} reps</Text>
+
+        <Text style={styles.sectionTitle}>PR History:</Text>
+        <FlatList
+          data={selectedExercise.personalRecords.sort((a, b) => new Date(b.date) - new Date(a.date))}
+          keyExtractor={(item) => item.setId.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.prHistoryItem}>
+              <Text>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Text>
+            </View>
+          )}
+        />
+      </View>
+    );
+  };
+
+  const renderHistoryTab = () => {
+    if (!selectedExercise) return null;
+
+    return (
       <FlatList
-        data={exercises}
-        keyExtractor={(item) => item.id.toString()}
+        data={selectedExercise.workoutExercises.sort((a, b) => new Date(b.workouts.date) - new Date(a.workouts.date))}
+        keyExtractor={(item) => item.workoutId.toString()}
         renderItem={({ item }) => (
-          <View className="bg-white p-4 rounded mb-4">
-            <Text className="text-lg font-bold">{item.name}</Text>
-            <Text className="font-bold mt-2">Personal Record:</Text>
-            <Text>
-              {item.personal_records[0]?.one_rep_max} lbs (
-              {new Date(item.personal_records[0]?.date).toLocaleDateString()})
-            </Text>
-            <Text className="font-bold mt-2">History:</Text>
-            {item.workouts.map((workout, index) => (
-              <View key={index} className="ml-4">
-                <Text>{new Date(workout.date).toLocaleDateString()}</Text>
-                {workout.exercises
-                  .filter((e) => e.name === item.name)
-                  .map((exercise, exerciseIndex) => (
-                    <View key={exerciseIndex} className="ml-4">
-                      {exercise.sets.map((set, setIndex) => (
-                        <Text key={setIndex}>
-                          Set {setIndex + 1}: {set.reps} reps @ {set.weight} lbs
-                          (1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs)
-                        </Text>
-                      ))}
-                    </View>
-                  ))}
-              </View>
+          <View style={styles.workoutHistoryItem}>
+            <Text style={styles.sectionTitle}>{new Date(item.workouts.date).toLocaleDateString()}</Text>
+            <Text style={styles.sectionSubtitle}>Sets Performed:</Text>
+            {item.sets.map((set, index) => (
+              <Text key={set.setId}>
+                Set {index + 1}: {set.reps} reps @ {set.weight} lbs (1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs)
+              </Text>
             ))}
           </View>
         )}
       />
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={exercises}
+        keyExtractor={(item) => item.exerciseId.toString()}
+        renderItem={renderExerciseItem}
+      />
+
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContent}>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity onPress={() => setActiveTab('Records')}>
+              <Text style={[styles.tabText, activeTab === 'Records' && styles.activeTabText]}>Records</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveTab('History')}>
+              <Text style={[styles.tabText, activeTab === 'History' && styles.activeTabText]}>History</Text>
+            </TouchableOpacity>
+          </View>
+
+          {activeTab === 'Records' ? renderRecordsTab() : renderHistoryTab()}
+
+          <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+  },
+  exerciseBox: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  exerciseName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  sectionSubtitle: {
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  prHistoryItem: {
+    marginLeft: 16,
+  },
+  workoutHistoryItem: {
+    marginBottom: 16,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+    paddingTop: 50, // Ensures content starts below the status bar
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  activeTabText: {
+    color: '#1E90FF',
+  },
+  closeButton: {
+    marginTop: 16,
+    backgroundColor: '#1E90FF',
+    padding: 12,
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+});
 
 export default ExerciseHistory;
