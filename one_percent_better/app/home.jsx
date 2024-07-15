@@ -86,7 +86,7 @@ export default function Home() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
       <View style={styles.content}>
-        <Text style={styles.title}>One Percent Better!</Text>
+        
         <Text style={[styles.quote, styles.lessBold]}>Quote of the Day:</Text>
         <Text style={[styles.quote1, styles.lessBold]}>{currentQuote}</Text>
         <Text style={styles.timer}>Next quote in: {timeLeft}</Text>
@@ -96,6 +96,7 @@ export default function Home() {
             source={{ uri: 'https://static.thenounproject.com/png/716860-200.png' }} 
             style={styles.image} 
           />
+          <Text style={styles.title}>One Percent Better!</Text>
           <Link href="/medito" style={{ color: 'blue' }}>Go to Medito</Link>
           <Link href="/strong" style={{ color: 'blue' }}>Go to Strong</Link>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
