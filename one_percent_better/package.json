@@ -9,11 +9,12 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-navigation/bottom-tabs": "^6.6.0",
     "@supabase/supabase-js": "^2.44.2",
     "bcryptjs": "^2.4.3",
     "expo": "^51.0.20",
+    "expo-av": "^14.0.6",
     "expo-constants": "~16.0.2",
     "expo-crypto": "~13.0.2",
     "expo-linking": "~6.3.1",
