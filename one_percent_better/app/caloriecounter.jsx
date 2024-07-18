@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
@@ -9,26 +9,27 @@ export default function App() {
   const [caloriesEaten, setCaloriesEaten] = useState(0);
   const [inputCalories, setInputCalories] = useState('');
   const [isAddingCalories, setIsAddingCalories] = useState(false);
-
+  const [waterDrunk, setWaterDrunk] = useState(0);
+  const [inputWater, setInputWater] = useState('');
+  const [isAddingWater, setisAddingWater] = useState(false);
   useEffect(() => {
-    loadCalorieGoal();
-    loadCaloriesEaten();
+    loadInitialData();
+    const intervalId = setInterval(() => {
+      resetDataAtMidnight();
+    }, 60000); // Check every minute
+
+    return () => clearInterval(intervalId); // Cleanup interval on unmount
   }, []);
 
-  const loadCalorieGoal = async () => {
+  const loadInitialData = async () => {
     try {
       const storedCalorieGoal = await AsyncStorage.getItem('calorieGoal');
       if (storedCalorieGoal !== null) {
         setCalorieGoal(storedCalorieGoal);
       }
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
-  const loadCaloriesEaten = async () => {
-    try {
       const storedCaloriesEaten = await AsyncStorage.getItem('caloriesEaten');
+      const storedWaterDrunk = await AsyncStorage.getItem('waterDrunk');
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
       const currentDate = new Date().toISOString().split('T')[0];
 
@@ -36,6 +37,13 @@ export default function App() {
         setCaloriesEaten(parseInt(storedCaloriesEaten));
       } else {
         setCaloriesEaten(0);
+        await AsyncStorage.setItem('lastResetDate', currentDate);
+      }
+
+      if (storedWaterDrunk !== null && lastResetDate === currentDate) {
+        setWaterDrunk(parseInt(storedWaterDrunk));
+      } else {
+        setWaterDrunk(0);
         await AsyncStorage.setItem('lastResetDate', currentDate);
       }
     } catch (error) {
@@ -66,12 +74,54 @@ export default function App() {
     }
   };
 
+  const addWater = async () => {
+    if (!isNaN(parseInt(inputWater))) {
+      const newWaterDrunk = waterDrunk + parseInt(inputWater);
+      setWaterDrunk(newWaterDrunk);
+      setInputWater('');
+      try {
+        await AsyncStorage.setItem('waterDrunk', newWaterDrunk.toString());
+        setisAddingWater(false);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  };
+
+  const resetWaterDrunk = async () => {
+    setWaterDrunk(0);
+    try {
+      await AsyncStorage.setItem('waterDrunk', '0');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const resetDataAtMidnight = async () => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const lastResetDate = await AsyncStorage.getItem('lastResetDate');
+
+    if (currentDate !== lastResetDate) {
+      setCaloriesEaten(0);
+      setWaterDrunk(0);
+      await AsyncStorage.setItem('caloriesEaten', '0');
+      await AsyncStorage.setItem('waterDrunk', '0');
+      await AsyncStorage.setItem('lastResetDate', currentDate);
+    }
+  };
+
   const isWithinGoal = () => {
     const goal = parseInt(calorieGoal);
     if (isNaN(goal)) return false;
     const lowerBound = goal * 0.9;
     const upperBound = goal * 1.1;
     return caloriesEaten >= lowerBound && caloriesEaten <= upperBound;
+  };
+  const isWithinGoal1 = () => {
+    const goal = 100;
+    if (isNaN(goal)) return false;
+    const lowerBound = goal * 0.9;
+    return waterDrunk >= lowerBound;
   };
 
   return (
@@ -120,13 +170,51 @@ export default function App() {
           <TouchableOpacity onPress={() => setIsAddingCalories(true)} style={styles.button}>
             <Text style={styles.buttonText}>Add Cals</Text>
           </TouchableOpacity>
+          
         )}
       </View>
-      <StatusBar style="auto" />
       <Text style={[styles.quote1, styles.lessBold]}>Calories Burned: input from strong </Text>
       <Text style={[styles.quote1, styles.lessBold, isWithinGoal() ? styles.greenText : styles.redText]}>
         Total Calories for the day: {caloriesEaten}
       </Text>
+      <View style={styles.waterTrackContainer1}>
+      <View style={styles.waterTrackContainer}>
+        <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText]}>Water Drunk: {waterDrunk} oz </Text>
+        {isAddingWater ? (
+          <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Add Water (oz)"
+          keyboardType="numeric"
+          value={inputWater}
+          onChangeText={setInputWater}
+        />
+        <TouchableOpacity onPress={addWater} style={styles.button}>
+              <Text style={styles.buttonText}>Add</Text>
+            </TouchableOpacity>
+            </View>
+        ) : (
+        <TouchableOpacity onPress={() => setisAddingWater(true)} style={styles.button}>
+          <Text style={styles.buttonText}>Add Water</Text>
+        </TouchableOpacity>
+        )}
+        
+        </View>
+        <View style={styles.waterBottle}>
+          <Image
+            source={require('./assets/water-bottle.png')} // Update this path to your water bottle image
+            style={styles.waterBottleImage}
+          />
+          <View
+            style={[
+              styles.waterFill,
+              { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` }, // Calculate height percentage
+            ]}
+          />
+        </View>
+        </View>
+      <StatusBar style="auto" />
+      
     </View>
   );
 }
@@ -156,6 +244,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
   },
+  waterTrackContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 0,
+    flexDirection: 'row',
+  },
+  waterTrackContainer1: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+  },
   quote: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -168,6 +267,12 @@ const styles = StyleSheet.create({
     color: 'yellow',
     textAlign: 'center',
     marginTop: 20,
+  },
+  quote2: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'yellow',
+    textAlign: 'center',
   },
   greenText: {
     color: 'green',
@@ -212,5 +317,23 @@ const styles = StyleSheet.create({
     color: 'yellow',
     marginRight: 10,
   },
+  waterBottle: {
+    position: 'relative',
+    width: 100,
+    height: 300,
+    marginTop: 20,
+    overflow: 'hidden',
+  },
+  waterBottleImage: {
+    position: 'absolute',
+    width: '90%',
+    height: '100%',
+  },
+  waterFill: {
+    position: 'absolute',
+    bottom: 80,
+    width: '80%',
+    backgroundColor: 'blue',
+    opacity: 0.4,
+  },
 });
-
