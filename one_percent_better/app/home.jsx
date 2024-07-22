@@ -99,6 +99,7 @@ export default function Home() {
           <Text style={styles.title}>One Percent Better!</Text>
           <Link href="/medito" style={{ color: 'blue' }}>Go to Medito</Link>
           <Link href="/strong" style={{ color: 'blue' }}>Go to Strong</Link>
+          <Link href="/journal" style={{ color: 'blue' }}>Go to Journal</Link>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
