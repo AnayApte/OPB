@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.24.0",
+    "@react-native-community/datetimepicker": "^8.2.0",
     "@react-navigation/bottom-tabs": "^6.6.0",
     "@supabase/supabase-js": "^2.44.2",
     "bcryptjs": "^2.4.3",
