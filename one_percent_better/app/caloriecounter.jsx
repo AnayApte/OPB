@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Link } from 'expo-router';
 
 export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
@@ -11,15 +12,27 @@ export default function App() {
   const [isAddingCalories, setIsAddingCalories] = useState(false);
   const [waterDrunk, setWaterDrunk] = useState(0);
   const [inputWater, setInputWater] = useState('');
-  const [isAddingWater, setisAddingWater] = useState(false);
+  const [isAddingWater, setIsAddingWater] = useState(false);
+
   useEffect(() => {
     loadInitialData();
     const intervalId = setInterval(() => {
       resetDataAtMidnight();
     }, 60000); // Check every minute
 
-    return () => clearInterval(intervalId); // Cleanup interval on unmount
+    const appStateListener = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      clearInterval(intervalId); // Cleanup interval on unmount
+      appStateListener.remove(); // Cleanup app state listener on unmount
+    };
   }, []);
+
+  const handleAppStateChange = async (nextAppState) => {
+    if (nextAppState === 'active') {
+      await loadInitialData();
+    }
+  };
 
   const loadInitialData = async () => {
     try {
@@ -33,18 +46,20 @@ export default function App() {
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
       const currentDate = new Date().toISOString().split('T')[0];
 
-      if (storedCaloriesEaten !== null && lastResetDate === currentDate) {
-        setCaloriesEaten(parseInt(storedCaloriesEaten));
-      } else {
+      if (lastResetDate !== currentDate) {
+        // Reset data if the date has changed
+        await AsyncStorage.setItem('lastResetDate', currentDate);
+        await AsyncStorage.setItem('caloriesEaten', '0');
+        await AsyncStorage.setItem('waterDrunk', '0');
         setCaloriesEaten(0);
-        await AsyncStorage.setItem('lastResetDate', currentDate);
-      }
-
-      if (storedWaterDrunk !== null && lastResetDate === currentDate) {
-        setWaterDrunk(parseInt(storedWaterDrunk));
-      } else {
         setWaterDrunk(0);
-        await AsyncStorage.setItem('lastResetDate', currentDate);
+      } else {
+        if (storedCaloriesEaten !== null) {
+          setCaloriesEaten(parseInt(storedCaloriesEaten));
+        }
+        if (storedWaterDrunk !== null) {
+          setWaterDrunk(parseInt(storedWaterDrunk));
+        }
       }
     } catch (error) {
       console.error(error);
@@ -81,7 +96,7 @@ export default function App() {
       setInputWater('');
       try {
         await AsyncStorage.setItem('waterDrunk', newWaterDrunk.toString());
-        setisAddingWater(false);
+        setIsAddingWater(false);
       } catch (error) {
         console.error(error);
       }
@@ -117,6 +132,7 @@ export default function App() {
     const upperBound = goal * 1.1;
     return caloriesEaten >= lowerBound && caloriesEaten <= upperBound;
   };
+
   const isWithinGoal1 = () => {
     const goal = 100;
     if (isNaN(goal)) return false;
@@ -170,7 +186,6 @@ export default function App() {
           <TouchableOpacity onPress={() => setIsAddingCalories(true)} style={styles.button}>
             <Text style={styles.buttonText}>Add Cals</Text>
           </TouchableOpacity>
-          
         )}
       </View>
       <Text style={[styles.quote1, styles.lessBold]}>Calories Burned: input from strong </Text>
@@ -178,27 +193,28 @@ export default function App() {
         Total Calories for the day: {caloriesEaten}
       </Text>
       <View style={styles.waterTrackContainer1}>
-      <View style={styles.waterTrackContainer}>
-        <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText]}>Water Drunk: {waterDrunk} oz </Text>
-        {isAddingWater ? (
-          <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Add Water (oz)"
-          keyboardType="numeric"
-          value={inputWater}
-          onChangeText={setInputWater}
-        />
-        <TouchableOpacity onPress={addWater} style={styles.button}>
-              <Text style={styles.buttonText}>Add</Text>
-            </TouchableOpacity>
+        <View style={styles.waterTrackContainer}>
+          <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText]}>
+            Water Drunk: {waterDrunk} oz  
+          </Text>
+          {isAddingWater ? (
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Add Water (oz)"
+                keyboardType="numeric"
+                value={inputWater}
+                onChangeText={setInputWater}
+              />
+              <TouchableOpacity onPress={addWater} style={styles.button}>
+                <Text style={styles.buttonText}>Add</Text>
+              </TouchableOpacity>
             </View>
-        ) : (
-        <TouchableOpacity onPress={() => setisAddingWater(true)} style={styles.button}>
-          <Text style={styles.buttonText}>Add Water</Text>
-        </TouchableOpacity>
-        )}
-        
+          ) : (
+            <TouchableOpacity onPress={() => setIsAddingWater(true)} style={styles.button1}>
+              <Text style={styles.buttonText}>Add Water</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.waterBottle}>
           <Image
@@ -212,9 +228,11 @@ export default function App() {
             ]}
           />
         </View>
-        </View>
+        <Link href="/caloriebot" style={{ color: 'blue' }}>
+          Go to CalorieBot
+        </Link>
+      </View>
       <StatusBar style="auto" />
-      
     </View>
   );
 }
@@ -298,6 +316,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   button: {
+    backgroundColor: 'yellow',
+    padding: 5,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  button1: {
+    marginLeft: 8,
     backgroundColor: 'yellow',
     padding: 5,
     borderRadius: 10,
