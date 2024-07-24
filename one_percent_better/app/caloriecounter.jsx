@@ -8,6 +8,7 @@ export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [caloriesEaten, setCaloriesEaten] = useState(0);
+  const [caloriesBurned, setCaloriesBurned] = useState(0);
   const [inputCalories, setInputCalories] = useState('');
   const [isAddingCalories, setIsAddingCalories] = useState(false);
   const [waterDrunk, setWaterDrunk] = useState(0);
@@ -16,21 +17,16 @@ export default function App() {
 
   useEffect(() => {
     loadInitialData();
-    const intervalId = setInterval(() => {
-      resetDataAtMidnight();
-    }, 60000); // Check every minute
-
     const appStateListener = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
-      clearInterval(intervalId); // Cleanup interval on unmount
       appStateListener.remove(); // Cleanup app state listener on unmount
     };
   }, []);
 
-  const handleAppStateChange = async (nextAppState) => {
+  const handleAppStateChange = (nextAppState) => {
     if (nextAppState === 'active') {
-      await loadInitialData();
+      loadInitialData();
     }
   };
 
@@ -46,21 +42,22 @@ export default function App() {
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
       const currentDate = new Date().toISOString().split('T')[0];
 
-      if (lastResetDate !== currentDate) {
-        // Reset data if the date has changed
-        await AsyncStorage.setItem('lastResetDate', currentDate);
-        await AsyncStorage.setItem('caloriesEaten', '0');
-        await AsyncStorage.setItem('waterDrunk', '0');
-        setCaloriesEaten(0);
-        setWaterDrunk(0);
+      if (storedCaloriesEaten !== null && lastResetDate === currentDate) {
+        setCaloriesEaten(parseInt(storedCaloriesEaten));
       } else {
-        if (storedCaloriesEaten !== null) {
-          setCaloriesEaten(parseInt(storedCaloriesEaten));
-        }
-        if (storedWaterDrunk !== null) {
-          setWaterDrunk(parseInt(storedWaterDrunk));
-        }
+        setCaloriesEaten(0);
+        await AsyncStorage.setItem('caloriesEaten', '0');
+        
       }
+
+      if (storedWaterDrunk !== null && lastResetDate === currentDate) {
+        setWaterDrunk(parseInt(storedWaterDrunk));
+      } else {
+        setWaterDrunk(0);
+        await AsyncStorage.setItem('waterDrunk', '0');
+      }
+
+      await AsyncStorage.setItem('lastResetDate', currentDate);
     } catch (error) {
       console.error(error);
     }
@@ -109,19 +106,6 @@ export default function App() {
       await AsyncStorage.setItem('waterDrunk', '0');
     } catch (error) {
       console.error(error);
-    }
-  };
-
-  const resetDataAtMidnight = async () => {
-    const currentDate = new Date().toISOString().split('T')[0];
-    const lastResetDate = await AsyncStorage.getItem('lastResetDate');
-
-    if (currentDate !== lastResetDate) {
-      setCaloriesEaten(0);
-      setWaterDrunk(0);
-      await AsyncStorage.setItem('caloriesEaten', '0');
-      await AsyncStorage.setItem('waterDrunk', '0');
-      await AsyncStorage.setItem('lastResetDate', currentDate);
     }
   };
 
@@ -195,7 +179,7 @@ export default function App() {
       <View style={styles.waterTrackContainer1}>
         <View style={styles.waterTrackContainer}>
           <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText]}>
-            Water Drunk: {waterDrunk} oz  
+            Water Drunk: {waterDrunk} oz
           </Text>
           {isAddingWater ? (
             <View style={styles.inputContainer}>
@@ -322,11 +306,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button1: {
-    marginLeft: 8,
     backgroundColor: 'yellow',
     padding: 5,
     borderRadius: 10,
     alignItems: 'center',
+    marginLeft: 8,
   },
   buttonText: {
     color: 'purple',
