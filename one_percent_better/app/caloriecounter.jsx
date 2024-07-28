@@ -212,6 +212,9 @@ export default function App() {
             ]}
           />
         </View>
+        <Link href="/RecipesPage" style={{ color: 'blue' }}>
+        Go to Recipes
+      </Link>
         <Link href="/caloriebot" style={{ color: 'blue' }}>
           Go to CalorieBot
         </Link>
