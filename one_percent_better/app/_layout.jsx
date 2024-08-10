@@ -1,6 +1,6 @@
-//_layout.jsx
+// _layout.jsx
 import { Stack } from 'expo-router';
-import { AuthProvider } from '../utils/AuthContext'
+import { AuthProvider } from '../utils/AuthContext';
 
 const RootLayout = () => {
   return (
