@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
-const Home = () => {
+const Medito = () => {
   const [inputMinutes, setInputMinutes] = useState('');
   const [inputSeconds, setInputSeconds] = useState('');
   const [seconds, setSeconds] = useState(0);
@@ -11,6 +12,7 @@ const Home = () => {
   const [isInputVisible, setIsInputVisible] = useState(true);
   const [sound, setSound] = useState();
   const [streak, setStreak] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     loadStreak();
@@ -55,10 +57,6 @@ const Home = () => {
         const lastUsedTime = parseInt(lastUsed);
         const timeDiff = (currentTime - lastUsedTime) / (1000 * 60 * 60 * 24); // Convert time difference to days
 
-        console.log('storedStreak:', storedStreak);
-        console.log('lastUsed:', new Date(lastUsedTime).toISOString());
-        console.log('timeDiff:', timeDiff);
-
         if (timeDiff < 1) {
           setStreak(parseInt(storedStreak));
         } else if (timeDiff < 2) {
@@ -88,14 +86,12 @@ const Home = () => {
             const newStreak = prevStreak + 1;
             AsyncStorage.setItem('streak', newStreak.toString());
             AsyncStorage.setItem('lastUsed', currentTime.toString());
-            console.log('Updated streak to:', newStreak);
             return newStreak;
           });
         } else if (timeDiff >= 2) {
           setStreak(1);
           AsyncStorage.setItem('streak', '1');
           AsyncStorage.setItem('lastUsed', currentTime.toString());
-          console.log('Streak reset to 1 due to timeDiff:', timeDiff);
         } else {
           AsyncStorage.setItem('lastUsed', currentTime.toString());
         }
@@ -103,7 +99,6 @@ const Home = () => {
         setStreak(1);
         AsyncStorage.setItem('streak', '1');
         AsyncStorage.setItem('lastUsed', currentTime.toString());
-        console.log('Initialized streak to 1');
       }
     } catch (error) {
       console.error(error);
@@ -147,8 +142,14 @@ const Home = () => {
   const remainingSeconds = seconds % 60;
 
   return (
-    <View style={styles.container}>
-    <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+        <Text style={styles.backText}>{'<'}</Text>
+      </TouchableOpacity>
+      <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
       <Text style={styles.title}>Medito</Text>
       <Image
         source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
@@ -201,7 +202,7 @@ const Home = () => {
         </View>
       )}
       <Text style={styles.streak}>Streak: {streak} days 🔥</Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -232,52 +233,54 @@ const styles = StyleSheet.create({
     color: 'yellow',
     borderRadius: 10,
   },
-  timerContainer: {
-    alignItems: 'center',
-    color: 'yellow',
-  },
-  timer: {
-    fontSize: 48,
-    marginTop: 20,
-    color: 'yellow',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '60%',
-    marginTop: 20,
-  },
-  image: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
-    marginTop: 20,
-  },
-  streak: {
-    fontSize: 18,
-    marginTop: 40,
-    color: 'yellow',
-    fontWeight: 'bold'
-  },
   button: {
-    borderRadius: 20,
     backgroundColor: 'yellow',
     padding: 10,
-    alignItems: 'center',
-    marginBottom: 10,
+    marginTop: 10,
+    borderRadius: 10,
   },
   buttonText: {
     color: 'purple',
     fontWeight: 'bold',
   },
+  timerContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  timer: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: 'yellow',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  streak: {
+    marginTop: 40,
+    fontSize: 20,
+    color: 'yellow',
+  },
+  image: {
+    width: 150,
+    height: 150,
+    marginTop: 20,
+  },
+  backArrow: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
+  },
+  backText: {
+    color: 'yellow',
+    fontSize: 24,
+  },
   Challenge: {
     color: 'yellow',
-    fontWeight: 'bold',
-    marginBottom: 50,
-    fontSize: 20,
-  },
+    fontSize: 12,
+    textAlign: 'center',
+  }
 });
 
-
-
-export default Home;
+export default Medito;
