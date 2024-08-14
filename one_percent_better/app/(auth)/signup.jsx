@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
-import { hashPassword } from '../../utils/passwordGenerator';
-import { useAuth } from '../../utils/AuthContext';
 import *  as SecureStore from 'expo-secure-store';
 
 
@@ -13,20 +11,39 @@ export default function Signup() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-  const { setUserId } = useAuth();
 
   const handleSignup = async () => {
-    const hashedPassword = hashPassword(password);
-    const{ data, error } = await supabase.from('users').insert([{ username: username, email: email, hashedPassword: hashedPassword,}]).select();
-    if (error) {
-        console.error('Error signing up:', error.message); // FIGURE OUT THE ERROR HERE LATER
-    } 
-    else {
-        console.log('Signup successful');
-        // Store the user ID in secure storage
-        await SecureStore.setItemAsync('userId', data[0].id);
-        setUserId(data[0].id);
-        router.replace('/home');
+    try {
+      // Step 1: Sign up the user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Error during signup:', error.message);
+        return;
+      }
+
+      const userId = data.user.id;  // This is the Supabase Auth user ID
+
+      // Step 2: Insert the user data into your `users` table
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .insert([{ userId: userId, email: email, username: username }]);
+
+      if (userError) {
+        console.error('Error inserting user into custom table:', userError.message);
+        return;
+      }
+
+      // Step 3: Store the user ID securely and navigate to the home page
+      await SecureStore.setItemAsync('userId', userId);
+      router.replace('/home');
+      
+      console.log('Signup and user creation successful');
+    } catch (error) {
+      console.error('Unexpected error during signup:', error);
     }
   };
 

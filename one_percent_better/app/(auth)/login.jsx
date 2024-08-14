@@ -3,46 +3,56 @@ import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
-import { comparePassword } from '../../utils/passwordGenerator';
-import { useAuth } from '../../utils/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
 export default function Login() {
   const [userOrEmail, setUserOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
-  const { setUserId } = useAuth();
 
   const handleLogin = async () => {
     try {
-      // Query by email/username
-      const { data: userByEmail, error: emailError } = await supabase
-        .from('users')
-        .select('userId, hashedPassword')
-        .or(`email.eq.${userOrEmail},username.eq.${userOrEmail}`)
-        .single();
+      let loginEmail = userOrEmail;
 
-      if (emailError) throw emailError;
+      // Check if the input is a username and fetch the corresponding email
+      if (!userOrEmail.includes('@')) {
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('username', userOrEmail)
+          .single();
 
-      if (!userByEmail) {
-        console.log('User not found');
+        if (userError || !userRecord) {
+          console.error('Error fetching email for username:', userError?.message || 'User not found');
+          return;
+        }
+        loginEmail = userRecord.email;
+      }
+
+      // Authenticate the user with Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+      });
+
+      if (error) {
+        console.error('Error during login:', error.message);
         return;
       }
 
-      // Verify password
-      if (comparePassword(password, userByEmail.hashedPassword)) {
-        console.log('Login successful');
-        // Store the user ID in secure storage and update context
-        await SecureStore.setItemAsync('userId', userByEmail.userId);
-        setUserId(userByEmail.userId);
-        router.replace('/home');
-      } else {
-        console.log('Incorrect password');
-      }
+      const userId = data.user.id;
+
+      // Store the user ID securely and navigate to the home page
+      await SecureStore.setItemAsync('userId', userId);
+      router.replace('/home');
+
+      console.log('Login successful');
     } catch (error) {
-      console.error('Error during login:', error.message);
+      console.error('Unexpected error during login:', error);
     }
   };
+
+  
 
   return (
     <SafeAreaView style={styles.container}>
