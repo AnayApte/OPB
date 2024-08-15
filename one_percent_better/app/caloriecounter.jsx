@@ -6,6 +6,7 @@ import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../utils/BackButton';
 import { useAuth } from '../utils/AuthContext';
+import { supabase } from '../utils/supabaseClient';
 
 export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
