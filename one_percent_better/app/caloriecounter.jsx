@@ -3,7 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
-import { createClient } from '@supabase/supabase-js';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BackButton from '../utils/BackButton';
 import { useAuth } from '../utils/AuthContext';
 
 export default function App() {
@@ -17,9 +18,6 @@ export default function App() {
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
 
-const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'
-const supabase = createClient(supabaseUrl, supabaseKey)
 const { userId } = useAuth();
 
   useEffect(() => {
@@ -153,7 +151,8 @@ const { userId } = useAuth();
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton destination="/home"/>
       <Text style={styles.title}>Calorie Counter</Text>
       <View style={styles.contentContainer}>
         <Text style={[styles.quote, styles.lessBold]}>Your Calorie Goal: </Text>
@@ -240,15 +239,15 @@ const { userId } = useAuth();
             ]}
           />
         </View>
-        <Link href="/RecipesPage" style={{ color: 'blue' }}>
+        <Link href="/recipesPage" style={{ color: 'blue' }}>
         Go to Recipes
       </Link>
-        <Link href="/caloriebot" style={{ color: 'blue' }}>
+        <Link href="/calorieBot" style={{ color: 'blue' }}>
           Go to CalorieBot
         </Link>
       </View>
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
 

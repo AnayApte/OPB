@@ -3,6 +3,8 @@ import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react
 import { supabase } from '../../utils/supabaseClient';
 import { calculateOneRepMax } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
+import BackButton from '../../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ExerciseHistory = () => {
   const [exercises, setExercises] = useState([]);
@@ -112,7 +114,8 @@ const ExerciseHistory = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton destination="/home"/>
       <FlatList
         data={exercises}
         keyExtractor={(item) => item.exerciseId.toString()}
@@ -142,7 +145,7 @@ const ExerciseHistory = () => {
           </TouchableOpacity>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
