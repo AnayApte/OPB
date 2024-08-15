@@ -3,10 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import BackButton from '../utils/BackButton';
+import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
-import { supabase } from '../utils/supabaseClient';
 
 export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
@@ -19,6 +17,9 @@ export default function App() {
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
 
+const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'
+const supabase = createClient(supabaseUrl, supabaseKey)
 const { userId } = useAuth();
 
   useEffect(() => {
@@ -44,11 +45,9 @@ const { userId } = useAuth();
       }
   
       const currentDate = new Date().toISOString().split('T')[0];
-      const startOfToday = `${currentDate}T00:00:00.000Z`;
-      const endOfToday = `${currentDate}T23:59:59.999Z`;
-  
-      // Check and update calories and water if it's a new day
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
+  
+      // If it's a new day, reset the data
       if (lastResetDate !== currentDate) {
         await AsyncStorage.setItem('lastResetDate', currentDate);
         await AsyncStorage.setItem('caloriesEaten', '0');
@@ -58,11 +57,14 @@ const { userId } = useAuth();
       } else {
         const storedCaloriesEaten = await AsyncStorage.getItem('caloriesEaten');
         const storedWaterDrunk = await AsyncStorage.getItem('waterDrunk');
-        setCaloriesEaten(parseInt(storedCaloriesEaten));
-        setWaterDrunk(parseInt(storedWaterDrunk));
+        setCaloriesEaten(parseInt(storedCaloriesEaten) || 0);
+        setWaterDrunk(parseInt(storedWaterDrunk) || 0);
       }
   
       // Fetch today's workout durations
+      const startOfToday = `${currentDate}T00:00:00.000Z`;
+      const endOfToday = `${currentDate}T23:59:59.999Z`;
+  
       const { data: workouts, error } = await supabase
         .from('workouts')
         .select('duration')
@@ -88,6 +90,7 @@ const { userId } = useAuth();
       console.error('Failed to load initial data:', error);
     }
   };
+  
   
 
   const saveCalorieGoal = async () => {
@@ -152,8 +155,7 @@ const { userId } = useAuth();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <BackButton destination="/home"/>
+    <View style={styles.container}>
       <Text style={styles.title}>Calorie Counter</Text>
       <View style={styles.contentContainer}>
         <Text style={[styles.quote, styles.lessBold]}>Your Calorie Goal: </Text>
@@ -240,15 +242,15 @@ const { userId } = useAuth();
             ]}
           />
         </View>
-        <Link href="/recipesPage" style={{ color: 'blue' }}>
+        <Link href="/RecipesPage" style={{ color: 'blue' }}>
         Go to Recipes
       </Link>
-        <Link href="/calorieBot" style={{ color: 'blue' }}>
+        <Link href="/caloriebot" style={{ color: 'blue' }}>
           Go to CalorieBot
         </Link>
       </View>
       <StatusBar style="auto" />
-    </SafeAreaView>
+    </View>
   );
 }
 
