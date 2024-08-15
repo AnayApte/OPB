@@ -3,9 +3,14 @@ import { StyleSheet } from 'react-native';
 
 export default function StrongLayout() {
   return (
-    <Tabs screenOptions={{ tabBarStyle: styles.tabBar }}>
+    <Tabs
+      screenOptions={{
+        tabBarStyle: styles.tabBar,
+        headerShown: false, // Hides the top header bar
+      }}
+    >
       <Tabs.Screen
-        name="workout-history"
+        name="workoutHistory"
         options={{
           title: 'Workout History',
           tabBarLabel: 'Workouts',
@@ -19,7 +24,7 @@ export default function StrongLayout() {
         }}
       />
       <Tabs.Screen
-        name="exercise-history"
+        name="exerciseHistory"
         options={{
           title: 'Exercise History',
           tabBarLabel: 'Exercises',

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvo
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import BackButton from '../utils/BackButton';
 
 const Medito = () => {
   const [inputMinutes, setInputMinutes] = useState('');
@@ -146,9 +147,7 @@ const Medito = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
-        <Text style={styles.backText}>{'<'}</Text>
-      </TouchableOpacity>
+      <BackButton destination="/home"/>
       <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
       <Text style={styles.title}>Medito</Text>
       <Image
@@ -265,16 +264,6 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     marginTop: 20,
-  },
-  backArrow: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 10,
-  },
-  backText: {
-    color: 'yellow',
-    fontSize: 24,
   },
   Challenge: {
     color: 'yellow',

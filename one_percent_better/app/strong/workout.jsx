@@ -1,7 +1,3 @@
-// THIS WORKS.
-// NEW THINGS THOUGH:
-// 1) I need to fix the error on signup that doesn't redirect me to strong.
-// 2) I need to create a dev database that can reset n stuff
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,6 +5,8 @@ import { supabase } from '../../utils/supabaseClient';
 import { formatTime, calculateOneRepMax, formatExerciseName } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import 'react-native-get-random-values';
+import BackButton from '../../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const WorkoutScreen = () => {
   const router = useRouter();
@@ -178,7 +176,8 @@ const WorkoutScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton destination="/home"/>
       <TouchableOpacity
         style={[styles.button, isTimerRunning ? styles.yellowButton : styles.greenButton]}
         onPress={toggleTimer}
@@ -247,7 +246,7 @@ const WorkoutScreen = () => {
       >
         <Text style={styles.buttonText}>End Workout</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

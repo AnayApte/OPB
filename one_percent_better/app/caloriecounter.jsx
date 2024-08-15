@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BackButton from '../utils/BackButton';
 
 export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
@@ -125,7 +127,8 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton destination="/home"/>
       <Text style={styles.title}>Calorie Counter</Text>
       <View style={styles.contentContainer}>
         <Text style={[styles.quote, styles.lessBold]}>Your Calorie Goal: </Text>
@@ -212,15 +215,15 @@ export default function App() {
             ]}
           />
         </View>
-        <Link href="/RecipesPage" style={{ color: 'blue' }}>
+        <Link href="/recipesPage" style={{ color: 'blue' }}>
         Go to Recipes
       </Link>
-        <Link href="/caloriebot" style={{ color: 'blue' }}>
+        <Link href="/calorieBot" style={{ color: 'blue' }}>
           Go to CalorieBot
         </Link>
       </View>
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
 

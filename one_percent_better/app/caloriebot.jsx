@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import axios from 'axios';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BackButton from '../utils/BackButton';
 
 const ChatGPTPage = () => {
   const [input, setInput] = useState('');
@@ -51,7 +53,8 @@ const ChatGPTPage = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <BackButton destination="/calorieCounter"/>
       <Text style={styles.title}>Calorie Bot</Text>
       <FlatList
         data={messages}
@@ -74,7 +77,7 @@ const ChatGPTPage = () => {
           <Text style={styles.buttonText}>Send</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
