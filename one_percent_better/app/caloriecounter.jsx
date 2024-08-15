@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
+import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../utils/AuthContext';
 
 export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
@@ -14,6 +16,11 @@ export default function App() {
   const [waterDrunk, setWaterDrunk] = useState(0);
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
+
+const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'
+const supabase = createClient(supabaseUrl, supabaseKey)
+const { userId } = useAuth();
 
   useEffect(() => {
     loadInitialData();
@@ -36,32 +43,53 @@ export default function App() {
       if (storedCalorieGoal !== null) {
         setCalorieGoal(storedCalorieGoal);
       }
-
-      const storedCaloriesEaten = await AsyncStorage.getItem('caloriesEaten');
-      const storedWaterDrunk = await AsyncStorage.getItem('waterDrunk');
-      const lastResetDate = await AsyncStorage.getItem('lastResetDate');
+  
       const currentDate = new Date().toISOString().split('T')[0];
-
-      if (storedCaloriesEaten !== null && lastResetDate === currentDate) {
-        setCaloriesEaten(parseInt(storedCaloriesEaten));
-      } else {
-        setCaloriesEaten(0);
+      const startOfToday = `${currentDate}T00:00:00.000Z`;
+      const endOfToday = `${currentDate}T23:59:59.999Z`;
+  
+      // Check and update calories and water if it's a new day
+      const lastResetDate = await AsyncStorage.getItem('lastResetDate');
+      if (lastResetDate !== currentDate) {
+        await AsyncStorage.setItem('lastResetDate', currentDate);
         await AsyncStorage.setItem('caloriesEaten', '0');
-        
-      }
-
-      if (storedWaterDrunk !== null && lastResetDate === currentDate) {
-        setWaterDrunk(parseInt(storedWaterDrunk));
-      } else {
-        setWaterDrunk(0);
         await AsyncStorage.setItem('waterDrunk', '0');
+        setCaloriesEaten(0);
+        setWaterDrunk(0);
+      } else {
+        const storedCaloriesEaten = await AsyncStorage.getItem('caloriesEaten');
+        const storedWaterDrunk = await AsyncStorage.getItem('waterDrunk');
+        setCaloriesEaten(parseInt(storedCaloriesEaten));
+        setWaterDrunk(parseInt(storedWaterDrunk));
       }
-
-      await AsyncStorage.setItem('lastResetDate', currentDate);
+  
+      // Fetch today's workout durations
+      const { data: workouts, error } = await supabase
+        .from('workouts')
+        .select('duration')
+        .eq('userId', userId)  // Ensure you have the userId from context or state
+        .gte('date', startOfToday)
+        .lte('date', endOfToday);
+  
+      if (error) {
+        console.error('Error fetching workouts:', error);
+        return;
+      }
+  
+      // Calculate total duration and calories burned
+      const totalDurationInHours = workouts.reduce((total, workout) => {
+        const [hours, minutes, seconds] = workout.duration.split(':').map(Number);
+        return total + hours + minutes / 60 + seconds / 3600;
+      }, 0);
+  
+      const caloriesBurned = Math.round(totalDurationInHours * 400); // Assumes 400 calories burned per hour
+      setCaloriesBurned(caloriesBurned);
+  
     } catch (error) {
-      console.error(error);
+      console.error('Failed to load initial data:', error);
     }
   };
+  
 
   const saveCalorieGoal = async () => {
     try {
@@ -172,9 +200,9 @@ export default function App() {
           </TouchableOpacity>
         )}
       </View>
-      <Text style={[styles.quote1, styles.lessBold]}>Calories Burned: input from strong </Text>
+      <Text style={[styles.quote1, styles.lessBold]}>Calories Burned: {caloriesBurned} </Text>
       <Text style={[styles.quote1, styles.lessBold, isWithinGoal() ? styles.greenText : styles.redText]}>
-        Total Calories for the day: {caloriesEaten}
+        Total Calories for the day: {caloriesEaten-caloriesBurned}
       </Text>
       <View style={styles.waterTrackContainer1}>
         <View style={styles.waterTrackContainer}>
