@@ -45,11 +45,9 @@ const { userId } = useAuth();
       }
   
       const currentDate = new Date().toISOString().split('T')[0];
-      const startOfToday = `${currentDate}T00:00:00.000Z`;
-      const endOfToday = `${currentDate}T23:59:59.999Z`;
-  
-      // Check and update calories and water if it's a new day
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
+  
+      // If it's a new day, reset the data
       if (lastResetDate !== currentDate) {
         await AsyncStorage.setItem('lastResetDate', currentDate);
         await AsyncStorage.setItem('caloriesEaten', '0');
@@ -59,11 +57,14 @@ const { userId } = useAuth();
       } else {
         const storedCaloriesEaten = await AsyncStorage.getItem('caloriesEaten');
         const storedWaterDrunk = await AsyncStorage.getItem('waterDrunk');
-        setCaloriesEaten(parseInt(storedCaloriesEaten));
-        setWaterDrunk(parseInt(storedWaterDrunk));
+        setCaloriesEaten(parseInt(storedCaloriesEaten) || 0);
+        setWaterDrunk(parseInt(storedWaterDrunk) || 0);
       }
   
       // Fetch today's workout durations
+      const startOfToday = `${currentDate}T00:00:00.000Z`;
+      const endOfToday = `${currentDate}T23:59:59.999Z`;
+  
       const { data: workouts, error } = await supabase
         .from('workouts')
         .select('duration')
@@ -89,6 +90,7 @@ const { userId } = useAuth();
       console.error('Failed to load initial data:', error);
     }
   };
+  
   
 
   const saveCalorieGoal = async () => {
