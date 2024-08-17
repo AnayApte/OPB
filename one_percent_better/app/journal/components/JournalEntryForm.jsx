@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, TouchableWithoutFeedback, Keyboard } from 'react-native';
 
 const JournalEntryForm = ({ entry, onSave, onCancel }) => {
   const [title, setTitle] = useState('');
@@ -24,31 +24,35 @@ const JournalEntryForm = ({ entry, onSave, onCancel }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={[styles.input, styles.titleInput]}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="Entry Title"
-      />
-      <TextInput
-        style={[styles.input, styles.entryInput]}
-        value={entryText}
-        onChangeText={setEntryText}
-        placeholder="Jot your thoughts here!"
-        multiline
-        numberOfLines={10}
-        textAlignVertical="top"
-      />
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
-          <Text style={styles.buttonText}>Save Entry</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
-          <Text style={styles.buttonText}>Cancel</Text>
-        </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <TextInput
+          style={[styles.input, styles.titleInput]}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Entry Title"
+          placeholderTextColor="#A9A9A9"
+        />
+        <TextInput
+          style={[styles.input, styles.entryInput]}
+          value={entryText}
+          onChangeText={setEntryText}
+          placeholder="Jot your thoughts here!"
+          placeholderTextColor="#A9A9A9"
+          multiline
+          numberOfLines={10}
+          textAlignVertical="top"
+        />
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
+            <Text style={styles.buttonText}>Save Entry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 

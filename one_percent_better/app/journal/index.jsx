@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, FlatList, Text, StyleSheet, Button, Modal, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import JournalEntryForm from './components/JournalEntryForm';
 import JournalEntryCard from './components/JournalEntryCard';
 
@@ -51,22 +51,26 @@ const App = () => {
         >
           <Text style={styles.newEntryButtonText}>New Entry</Text>
         </TouchableOpacity>
+
         <Modal
           animationType="slide"
           transparent={true}
           visible={isModalVisible}
           onRequestClose={handleCancel}
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalView}>
-              <JournalEntryForm
-                entry={currentEntry}
-                onSave={handleSaveEntry}
-                onCancel={handleCancel}
-              />
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalView}>
+                <JournalEntryForm
+                  entry={currentEntry}
+                  onSave={handleSaveEntry}
+                  onCancel={handleCancel}
+                />
+              </View>
             </View>
-          </View>
+          </TouchableWithoutFeedback>
         </Modal>
+
         <Text style={styles.entriesTitle}>Here are your old entries</Text>
         <FlatList
           data={entries}

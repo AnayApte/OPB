@@ -9,7 +9,7 @@ const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
       "Are you sure you want to delete this entry?",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", onPress: () => onDelete(entry.id) },
+        { text: "Delete", style: "destructive",onPress: () => onDelete(entry.id) },
       ],
       { cancelable: true }
     );
