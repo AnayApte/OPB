@@ -11,6 +11,7 @@ const RootLayout = () => {
         <Stack.Screen name="strong" />
         <Stack.Screen name="medito" />
         <Stack.Screen name="journal" />
+        <Stack.Screen name="todolist2" />
         <Stack.Screen name="calorieCounter" />
         <Stack.Screen name="calorieBot" />
         <Stack.Screen name="recipesPage" />

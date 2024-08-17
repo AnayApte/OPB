@@ -100,6 +100,7 @@ export default function Home() {
           <Link href="/medito" style={{ color: 'blue' }}>Go to Medito</Link>
           <Link href="/strong" style={{ color: 'blue' }}>Go to Strong</Link>
           <Link href="/caloriecounter" style={{ color: 'blue' }}>Go to CalorieCounter</Link>
+          <Link href="/todolist2" style={{ color: 'blue' }}>Go to TodoList</Link>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
