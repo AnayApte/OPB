@@ -1,16 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../utils/AuthContext'; // Ensure this path is correct
+
+const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'; // Ensure this key is correct
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TodoList = () => {
+  const { userId } = useAuth(); // Get userId from useAuth hook
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [currentTodo, setCurrentTodo] = useState(null);
 
-  const addTodo = () => {
+  useEffect(() => {
+    if (userId) {
+      loadTodos();
+    }
+  }, [userId]);
+
+  const loadTodos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('todos')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Failed to load todos:', error);
+      } else {
+        setTodos(data);
+      }
+    } catch (error) {
+      console.error('Failed to load todos:', error);
+    }
+  };
+
+  const saveTodos = async (updatedTodos) => {
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .upsert(updatedTodos);
+
+      if (error) {
+        console.error('Failed to save todos:', error);
+      }
+    } catch (error) {
+      console.error('Failed to save todos:', error);
+    }
+  };
+
+  const addTodo = async () => {
     if (newTodo.trim()) {
-      setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]);
-      setNewTodo('');
+      const newTask = {
+        details: newTodo,
+        completed: false,
+        user_id: userId,
+      };
+      try {
+        const { data, error } = await supabase
+          .from('todos')
+          .insert([newTask])
+          .select(); // Ensure the inserted data is returned
+  
+        if (error) {
+          console.error('Failed to add todo:', error);
+        } else {
+          // Add the new todo to the local state
+          setTodos([...todos, ...data]);
+          setNewTodo('');
+        }
+      } catch (error) {
+        console.error('Failed to add todo:', error);
+      }
     }
   };
 
@@ -19,24 +82,44 @@ const TodoList = () => {
     setCurrentTodo(todo);
   };
 
-  const applyEdit = () => {
+  const applyEdit = async () => {
     if (currentTodo) {
-      updateTodo(currentTodo.id, currentTodo.text);
+      await updateTodo(currentTodo.id, currentTodo.details);
     }
   };
 
-  const updateTodo = (id, text) => {
-    setTodos(todos.map(todo => (todo.id === id ? { ...todo, text } : todo)));
+  const updateTodo = async (id, details) => {
+    const updatedTodos = todos.map(todo => (todo.id === id ? { ...todo, details, modified_at: new Date().toISOString() } : todo));
+    setTodos(updatedTodos);
     setIsEditing(false);
     setCurrentTodo(null);
+    await saveTodos(updatedTodos);
   };
 
-  const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id));
+  const deleteTodo = async (id) => {
+    try {
+      // Delete the todo from the database
+      const { error } = await supabase
+        .from('todos')
+        .delete()
+        .eq('id', id);
+  
+      if (error) {
+        console.error('Failed to delete todo:', error);
+      } else {
+        // Update the local state to remove the deleted todo
+        const updatedTodos = todos.filter(todo => todo.id !== id);
+        setTodos(updatedTodos);
+      }
+    } catch (error) {
+      console.error('Failed to delete todo:', error);
+    }
   };
 
-  const toggleComplete = (id) => {
-    setTodos(todos.map(todo => (todo.id === id ? { ...todo, completed: !todo.completed } : todo)));
+  const toggleComplete = async (id) => {
+    const updatedTodos = todos.map(todo => (todo.id === id ? { ...todo, completed: !todo.completed } : todo));
+    setTodos(updatedTodos);
+    await saveTodos(updatedTodos);
   };
 
   const renderTodoItem = ({ item }) => (
@@ -47,16 +130,16 @@ const TodoList = () => {
       {isEditing && currentTodo?.id === item.id ? (
         <TextInput
           style={styles.todoTextInput}
-          value={currentTodo.text}
-          onChangeText={(text) => setCurrentTodo({ ...currentTodo, text })}
+          value={currentTodo.details}
+          onChangeText={(text) => setCurrentTodo({ ...currentTodo, details: text })}
           onBlur={applyEdit}
-          autoFocus // This will make the keyboard pop up
-          selectTextOnFocus // This will select the text when focused
-          multiline // This will allow the text to flow to the next line
-          numberOfLines={4} // This sets the initial number of lines
+          autoFocus
+          selectTextOnFocus
+          multiline
+          numberOfLines={4}
         />
       ) : (
-        <Text style={[styles.todoText, item.completed && styles.completedText]}>{item.text}</Text>
+        <Text style={[styles.todoText, item.completed && styles.completedText]}>{item.details}</Text>
       )}
       {isEditing && currentTodo?.id === item.id ? (
         <TouchableOpacity onPress={applyEdit} style={styles.applyButton}>
@@ -158,7 +241,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#ccc',
     padding: 5,
-    textAlignVertical: 'top', // Ensures text starts at the top of the input
+    textAlignVertical: 'top',
   },
   completedText: {
     textDecorationLine: 'line-through',
@@ -185,7 +268,7 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   applyButton: {
-    backgroundColor: '#4CAF50', // Green color for the apply button
+    backgroundColor: '#4CAF50',
     padding: 10,
     borderRadius: 5,
     marginRight: 5,
