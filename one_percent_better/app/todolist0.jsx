@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext'; // Ensure this path is correct
 import { SUPABASEURL, SUPABASEKEY } from '@env';
+import { Ionicons } from '@expo/vector-icons';
+
+import BackButton from '../utils/BackButton'; // Adjust the import path as needed
 
 const supabaseUrl = SUPABASEURL;
 const supabaseKey = SUPABASEKEY; // Ensure this key is correct
@@ -16,6 +19,8 @@ const TodoList = () => {
   const [newPriority, setNewPriority] = useState('low');
   const [isEditing, setIsEditing] = useState(false);
   const [currentTodo, setCurrentTodo] = useState(null);
+  
+
 
   useEffect(() => {
     if (userId) {
@@ -201,6 +206,11 @@ const TodoList = () => {
 
   return (
     <View style={styles.container}>
+      
+      <BackButton destination="/home"/>
+      
+      
+          
       <Text style={styles.title}>Todo List</Text>
       <TextInput
         style={styles.input}
@@ -260,6 +270,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginTop: 50,
     textAlign: 'center',
     color: '#333',
   },
