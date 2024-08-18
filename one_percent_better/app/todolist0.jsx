@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext'; // Ensure this path is correct
 import { SUPABASEURL, SUPABASEKEY } from '@env';
@@ -9,9 +10,10 @@ const supabaseKey = SUPABASEKEY; // Ensure this key is correct
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TodoList = () => {
-  const { userId } = useAuth(); // Get userId from useAuth hook
+  const { userId } = useAuth();
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
+  const [newPriority, setNewPriority] = useState('low');
   const [isEditing, setIsEditing] = useState(false);
   const [currentTodo, setCurrentTodo] = useState(null);
 
@@ -38,43 +40,56 @@ const TodoList = () => {
     }
   };
 
-  const saveTodos = async (updatedTodos) => {
-    try {
-      const { error } = await supabase
-        .from('todos')
-        .upsert(updatedTodos);
-
-      if (error) {
-        console.error('Failed to save todos:', error);
-      }
-    } catch (error) {
-      console.error('Failed to save todos:', error);
-    }
-  };
-
   const addTodo = async () => {
     if (newTodo.trim()) {
       const newTask = {
         details: newTodo,
         completed: false,
         user_id: userId,
+        task_priority: newPriority,
       };
       try {
         const { data, error } = await supabase
           .from('todos')
           .insert([newTask])
-          .select(); // Ensure the inserted data is returned
-  
+          .select();
+
         if (error) {
           console.error('Failed to add todo:', error);
         } else {
-          // Add the new todo to the local state
           setTodos([...todos, ...data]);
           setNewTodo('');
+          setNewPriority('low');
         }
       } catch (error) {
         console.error('Failed to add todo:', error);
       }
+    }
+  };
+
+  const updateTodo = async (id, details) => {
+    const { data, error } = await supabase
+      .from('todos')
+      .update({ details })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating todo:', error);
+    } else {
+      console.log('Todo updated:', data);
+    }
+  };
+
+  const deleteTodo = async (id) => {
+    const { error } = await supabase
+      .from('todos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting todo:', error);
+    } else {
+      setTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
     }
   };
 
@@ -85,46 +100,70 @@ const TodoList = () => {
 
   const applyEdit = async () => {
     if (currentTodo) {
+      console.log('Applying edit for todo:', currentTodo);
       await updateTodo(currentTodo.id, currentTodo.details);
-    }
-  };
-
-  const updateTodo = async (id, details) => {
-    const updatedTodos = todos.map(todo => (todo.id === id ? { ...todo, details, modified_at: new Date().toISOString() } : todo));
-    setTodos(updatedTodos);
-    setIsEditing(false);
-    setCurrentTodo(null);
-    await saveTodos(updatedTodos);
-  };
-
-  const deleteTodo = async (id) => {
-    try {
-      // Delete the todo from the database
-      const { error } = await supabase
-        .from('todos')
-        .delete()
-        .eq('id', id);
-  
-      if (error) {
-        console.error('Failed to delete todo:', error);
-      } else {
-        // Update the local state to remove the deleted todo
-        const updatedTodos = todos.filter(todo => todo.id !== id);
-        setTodos(updatedTodos);
-      }
-    } catch (error) {
-      console.error('Failed to delete todo:', error);
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) =>
+          todo.id === currentTodo.id ? { ...todo, details: currentTodo.details } : todo
+        )
+      );
+      setIsEditing(false);
+      setCurrentTodo(null);
     }
   };
 
   const toggleComplete = async (id) => {
-    const updatedTodos = todos.map(todo => (todo.id === id ? { ...todo, completed: !todo.completed } : todo));
-    setTodos(updatedTodos);
-    await saveTodos(updatedTodos);
+    const todo = todos.find((todo) => todo.id === id);
+    const newCompletedStatus = !todo.completed;
+
+    try {
+      const { error } = await supabase
+        .from('todos')
+        .update({ completed: newCompletedStatus })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating todo:', error);
+      } else {
+        setTodos((prevTodos) =>
+          prevTodos.map((todo) =>
+            todo.id === id ? { ...todo, completed: newCompletedStatus } : todo
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling complete status:', error);
+    }
+  };
+
+  const getPriorityValue = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 1;
+      case 'medium':
+        return 2;
+      case 'low':
+        return 3;
+      default:
+        return 4;
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return '#FF6347'; // Bright red
+      case 'medium':
+        return '#FFA500'; // Orange
+      case 'low':
+        return '#1E90FF'; // Blue
+      default:
+        return '#000'; // Default to black
+    }
   };
 
   const renderTodoItem = ({ item }) => (
-    <View style={styles.todoItem}>
+    <View style={[styles.todoItem, { borderLeftColor: getPriorityColor(item.task_priority), borderLeftWidth: 5 }]}>
       <TouchableOpacity onPress={() => toggleComplete(item.id)} style={styles.checkmark}>
         <Text style={styles.checkmarkText}>{item.completed ? '✓' : ''}</Text>
       </TouchableOpacity>
@@ -157,161 +196,205 @@ const TodoList = () => {
     </View>
   );
 
+  const completedTodos = todos.filter(todo => todo.completed);
+  const incompleteTodos = todos.filter(todo => !todo.completed);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Todo List</Text>
       <TextInput
         style={styles.input}
-        placeholder="Add a new todo"
+        placeholder="Add new todo"
         value={newTodo}
         onChangeText={setNewTodo}
       />
-      <TouchableOpacity onPress={addTodo} style={styles.button}>
+      <Text style={styles.priorityTitle}>Priority:</Text>
+      <View style={styles.priorityButtonsContainer}>
+        <TouchableOpacity
+          style={[styles.priorityButton, { backgroundColor: newPriority === 'low' ? getPriorityColor('low') : '#ccc' }]}
+          onPress={() => setNewPriority('low')}
+        >
+          <Text style={styles.buttonText}>Low</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.priorityButton, { backgroundColor: newPriority === 'medium' ? getPriorityColor('medium') : '#ccc' }]}
+          onPress={() => setNewPriority('medium')}
+        >
+          <Text style={styles.buttonText}>Medium</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.priorityButton, { backgroundColor: newPriority === 'high' ? getPriorityColor('high') : '#ccc' }]}
+          onPress={() => setNewPriority('high')}
+        >
+          <Text style={styles.buttonText}>High</Text>
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity style={styles.button} onPress={addTodo}>
         <Text style={styles.buttonText}>Add Todo</Text>
       </TouchableOpacity>
-      <Text style={styles.sectionTitle}>Incomplete Items</Text>
+
+      <Text style={styles.sectionTitle}>Incomplete Todos</Text>
       <FlatList
-        data={todos.filter(todo => !todo.completed)}
-        keyExtractor={(item) => item.id.toString()}
+        data={incompleteTodos.sort((a, b) => getPriorityValue(a.task_priority) - getPriorityValue(b.task_priority))}
         renderItem={renderTodoItem}
+        keyExtractor={(item) => item.id.toString()}
       />
-      <Text style={styles.sectionTitle}>Completed Items</Text>
+
+      <Text style={styles.sectionTitle}>Completed Todos</Text>
       <FlatList
-        data={todos.filter(todo => todo.completed)}
-        keyExtractor={(item) => item.id.toString()}
+        data={completedTodos.sort((a, b) => getPriorityValue(a.task_priority) - getPriorityValue(b.task_priority))}
         renderItem={renderTodoItem}
+        keyExtractor={(item) => item.id.toString()}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      backgroundColor: '#f0f0f0',
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      marginBottom: 20,
-      textAlign: 'center',
-      marginTop: 100,
-      color: '#333',
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 25,
-      padding: 15,
-      marginBottom: 10,
-      backgroundColor: '#fff',
-      fontSize: 16,
-    },
-    button: {
-      backgroundColor: '#4CAF50',
-      padding: 15,
-      borderRadius: 25,
-      alignItems: 'center',
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.8,
-      shadowRadius: 2,
-      elevation: 5,
-    },
-    buttonText: {
-      color: 'white',
-      fontSize: 18,
-      fontWeight: 'bold',
-    },
-    sectionTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
-      marginTop: 20,
-      marginBottom: 10,
-      color: '#333',
-    },
-    todoItem: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 15,
-      backgroundColor: 'white',
-      borderRadius: 15,
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.8,
-      shadowRadius: 2,
-      elevation: 5,
-    },
-    todoText: {
-      fontSize: 16,
-      flex: 1,
-      color: '#333',
-    },
-    todoTextInput: {
-      fontSize: 16,
-      flex: 1,
-      borderBottomWidth: 1,
-      borderColor: '#ccc',
-      padding: 5,
-      textAlignVertical: 'top',
-      backgroundColor: '#fff',
-      borderRadius: 5,
-    },
-    completedText: {
-      textDecorationLine: 'line-through',
-      color: '#888',
-    },
-    checkmark: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#4CAF50',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 10,
-      backgroundColor: '#fff',
-    },
-    checkmarkText: {
-      fontSize: 16,
-      color: '#4CAF50',
-    },
-    editButton: {
-      backgroundColor: '#FFC107',
-      padding: 10,
-      borderRadius: 25,
-      marginRight: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.8,
-      shadowRadius: 2,
-      elevation: 5,
-    },
-    applyButton: {
-      backgroundColor: '#4CAF50',
-      padding: 10,
-      borderRadius: 25,
-      marginRight: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.8,
-      shadowRadius: 2,
-      elevation: 5,
-    },
-    deleteButton: {
-      backgroundColor: '#f44336',
-      padding: 10,
-      borderRadius: 25,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.8,
-      shadowRadius: 2,
-      elevation: 5,
-    },
-  });
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f0f0f0',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 25,
+    padding: 15,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    fontSize: 16,
+  },
+  priorityButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  priorityButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  applyButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 25,
+    marginRight: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
+    padding: 10,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  todoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 5,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    marginBottom: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+  },
+  checkmark: {
+    marginRight: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmarkText: {
+    fontSize: 18,
+    color: '#333'
+  },
+  todoTextInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    backgroundColor: '#fff',
+  },
+  todoText: {
+    flex: 1,
+    fontSize: 16,
+  },
+  completedText: {
+    textDecorationLine: 'line-through',
+    color: '#aaa',
+  },
+  editButton: {
+    backgroundColor: '#FFA500',
+    padding: 10,
+    borderRadius: 25,
+    marginRight: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+    color: '#333',
+  },
+  priorityTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+    color: '#333',
+  },
+});
 
 export default TodoList;
