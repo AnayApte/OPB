@@ -4,8 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 import BackButton from '../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'
+import { SUPABASEURL, SUPABASEKEY } from '@env';
+
+const supabaseUrl = SUPABASEURL;
+const supabaseKey = SUPABASEKEY;
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 const RecipesPage = () => {

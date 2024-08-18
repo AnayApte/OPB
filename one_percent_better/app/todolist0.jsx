@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext'; // Ensure this path is correct
+import { SUPABASEURL, SUPABASEKEY } from '@env';
 
-const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'; // Ensure this key is correct
+const supabaseUrl = SUPABASEURL;
+const supabaseKey = SUPABASEKEY; // Ensure this key is correct
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TodoList = () => {
