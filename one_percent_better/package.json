@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "db:destroy": "node utils/destroyDatabase.js",
+    "db:reseed": "node utils/reseedDatabase.js",
+    "db:dev:destroy": "npm run db:destroy && npm run db:reseed"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.24.0",
@@ -36,7 +39,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "supabase": "^1.183.5"
+    "supabase": "^1.190.0"
   },
   "private": true
 }
