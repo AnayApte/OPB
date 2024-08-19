@@ -4,7 +4,6 @@ import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'r
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext'; // Ensure this path is correct
 import { SUPABASEURL, SUPABASEKEY } from '@env';
-import { Ionicons } from '@expo/vector-icons';
 
 import BackButton from '../utils/BackButton'; // Adjust the import path as needed
 
