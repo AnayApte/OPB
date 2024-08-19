@@ -10,7 +10,7 @@ const BackButton = ({ destination }) => {
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity style={styles.button} onPress={() => router.push(destination)}>
-        <Ionicons name="arrow-back" size={24} color="black" />
+        <Ionicons name="arrow-back" size={36} color="black" />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -21,6 +21,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 10,
+    position: 'absolute',
+    left: -10,
+    top: -30,
   },
   button: {
     padding: 10,

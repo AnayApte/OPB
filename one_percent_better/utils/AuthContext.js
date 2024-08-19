@@ -43,7 +43,9 @@ export const AuthProvider = ({ children }) => {
 
     // Cleanup the listener on unmount
     return () => {
-      authListener.unsubscribe();
+      if (authListener && typeof authListener.unsubscribe === 'function') {
+        authListener.unsubscribe();
+      }
     };
   }, []);
 
