@@ -1,51 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, Keyboard } from 'react-native';
+
+import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../../utils/AuthContext'; // Ensure this path is correct
+import { SUPABASEURL, SUPABASEKEY } from '@env';
+
 import JournalEntryForm from './components/JournalEntryForm';
 import JournalEntryCard from './components/JournalEntryCard';
+import BackButton from '../../utils/BackButton'; // Adjust the import path as needed
+
+const supabaseUrl = SUPABASEURL;
+const supabaseKey = SUPABASEKEY; // Ensure this key is correct
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const App = () => {
+  const { userId } = useAuth();
   const [entries, setEntries] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState(null);
+  const [currentEntry, setCurrentEntry] = useState({ title: '', body: '' }); // Ensure initialized
 
-  const handleSaveEntry = (entry) => {
-    if (currentEntry) {
-      const date = new Date();
-      setEntries((prevEntries) =>
-        prevEntries.map((item) =>
-          item.id === currentEntry.id
-            ? { ...item, ...entry, editedAt: `${date.toDateString()} at ${date.toLocaleTimeString()}` }
-            : item
-        )
-      );
-    } else {
-      setEntries((prevEntries) => [{ id: Date.now().toString(), ...entry }, ...prevEntries]);
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('journals')
+          .select('*')
+          .eq('user_id', userId)
+          .order('date', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching entries:', error);
+        } else {
+          setEntries(data || []); // Ensure `data` is not null
+        }
+      } catch (error) {
+        console.error('Fetch entries failed:', error);
+      }
+    };
+
+    if (userId) {
+      fetchEntries();
     }
-    setModalVisible(false);
-    setCurrentEntry(null);
+  }, [userId]);
+
+  const handleSaveEntry = async (entry) => {
+    try {
+      console.log('Saving entry:', entry);
+      if (!entry || !entry.title || !entry.text) {
+        console.error('Entry is missing required fields:', entry);
+        return;
+      }
+
+      if (currentEntry && currentEntry.id) {
+        // Updating an existing entry
+        const { data, error } = await supabase
+          .from('journals')
+          .update({
+            title: entry.title,
+            body: entry.text,
+            edited: new Date().toISOString(),
+          })
+          .eq('id', currentEntry.id)
+          .eq('user_id', userId);
+
+        if (error) {
+          console.error('Error updating entry:', error);
+        } else {
+          setEntries((prevEntries) =>
+            prevEntries.map((item) => (item.id === currentEntry.id ? data[0] : item))
+          );
+        }
+      } else {
+        // Inserting a new entry
+        const { data, error } = await supabase
+          .from('journals')
+          .insert([{
+            title: entry.title,
+            body: entry.text,
+            date: new Date().toISOString(),
+            user_id: userId,
+          }]);
+
+        if (error) {
+          console.error('Error inserting entry:', error);
+        } else {
+          setEntries((prevEntries) => [data[0], ...prevEntries]);
+        }
+      }
+    } catch (error) {
+      console.error('Save entry failed:', error);
+    } finally {
+      setModalVisible(false);
+      setCurrentEntry({ title: '', body: '' });
+    }
   };
 
   const handleEditEntry = (entry) => {
-    setCurrentEntry(entry);
+    console.log('Editing entry:', entry);
+    setCurrentEntry(entry || { title: '', body: '' });
     setModalVisible(true);
   };
 
-  const handleDeleteEntry = (id) => {
-    setEntries((prevEntries) => prevEntries.filter((entry) => entry.id !== id));
+  const handleDeleteEntry = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('journals')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error deleting entry:', error);
+      } else {
+        setEntries((prevEntries) => prevEntries.filter((entry) => entry.id !== id));
+      }
+    } catch (error) {
+      console.error('Delete entry failed:', error);
+    }
   };
 
   const handleCancel = () => {
     setModalVisible(false);
-    setCurrentEntry(null);
+    setCurrentEntry({ title: '', body: '' });
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+        <BackButton destination="/home" />
+
         <TouchableOpacity
           style={styles.newEntryButton}
           onPress={() => {
-            setCurrentEntry(null);
+            setCurrentEntry({ title: '', body: '' }); // Ensure initialized
             setModalVisible(true);
           }}
         >
@@ -62,7 +149,7 @@ const App = () => {
             <View style={styles.modalContainer}>
               <View style={styles.modalView}>
                 <JournalEntryForm
-                  entry={currentEntry}
+                  entry={currentEntry || { title: '', body: '' }} // Ensure entry is not null
                   onSave={handleSaveEntry}
                   onCancel={handleCancel}
                 />
@@ -74,7 +161,7 @@ const App = () => {
         <Text style={styles.entriesTitle}>Here are your old entries</Text>
         <FlatList
           data={entries}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <JournalEntryCard
               entry={item}
@@ -140,4 +227,3 @@ const styles = StyleSheet.create({
 });
 
 export default App;
- 
