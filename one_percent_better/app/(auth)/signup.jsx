@@ -19,33 +19,34 @@ export default function Signup() {
         email,
         password,
       });
-
+  
       if (error) {
         console.error('Error during signup:', error.message);
         return;
       }
-
+  
       const userId = data.user.id;  // This is the Supabase Auth user ID
-
+  
       // Step 2: Insert the user data into your `users` table
       const { data: userRecord, error: userError } = await supabase
         .from('users')
         .insert([{ userId: userId, email: email, username: username }]);
-
+  
       if (userError) {
         console.error('Error inserting user into custom table:', userError.message);
         return;
       }
-
-      // Step 3: Store the user ID securely and navigate to the home page
+  
+      // Step 3: Store the user ID securely and navigate to the profile completion page
       await SecureStore.setItemAsync('userId', userId);
-      router.replace('/home');
+      router.replace('/profile');  // Redirect to the profile completion page
       
       console.log('Signup and user creation successful');
     } catch (error) {
       console.error('Unexpected error during signup:', error);
     }
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>
