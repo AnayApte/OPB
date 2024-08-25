@@ -273,7 +273,7 @@ const TodoList = () => {
         <TouchableOpacity
           style={[styles.priorityButton, { backgroundColor: newPriority === 'high' ? getPriorityColor('high') : '#ccc' }]}
           onPress={() => setNewPriority('high')}
-        >
+        > 
           <Text>High</Text>
         </TouchableOpacity>
       </View>
