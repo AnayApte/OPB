@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "date-fns": "^3.6.0",
     "expo": "^51.0.20"
   }
 }
