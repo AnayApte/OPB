@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link } from 'expo-router';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
+
+const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
   const [calorieGoal, setCalorieGoal] = useState('');
@@ -16,18 +20,18 @@ export default function App() {
   const [waterDrunk, setWaterDrunk] = useState(0);
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
+  const [weight, setWeight] = useState(null);
+  const [age, setAge] = useState(null);
+  const [gender, setGender] = useState(null);
 
-const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhoYWtuaHN5Z2RhamhhYmJhbnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjAwMjQ3MjEsImV4cCI6MjAzNTYwMDcyMX0.kK8viaMqxFPqylFTr0RvC0V6BL6CtB2jLgZdn-AhGc4'
-const supabase = createClient(supabaseUrl, supabaseKey)
-const { userId } = useAuth();
+  const { userId } = useAuth();
 
   useEffect(() => {
     loadInitialData();
     const appStateListener = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
-      appStateListener.remove(); // Cleanup app state listener on unmount
+      appStateListener.remove();
     };
   }, []);
 
@@ -43,11 +47,10 @@ const { userId } = useAuth();
       if (storedCalorieGoal !== null) {
         setCalorieGoal(storedCalorieGoal);
       }
-  
+
       const currentDate = new Date().toISOString().split('T')[0];
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
-  
-      // If it's a new day, reset the data
+
       if (lastResetDate !== currentDate) {
         await AsyncStorage.setItem('lastResetDate', currentDate);
         await AsyncStorage.setItem('caloriesEaten', '0');
@@ -60,38 +63,59 @@ const { userId } = useAuth();
         setCaloriesEaten(parseInt(storedCaloriesEaten) || 0);
         setWaterDrunk(parseInt(storedWaterDrunk) || 0);
       }
-  
-      // Fetch today's workout durations
-      const startOfToday = `${currentDate}T00:00:00.000Z`;
-      const endOfToday = `${currentDate}T23:59:59.999Z`;
-  
-      const { data: workouts, error } = await supabase
-        .from('workouts')
-        .select('duration')
-        .eq('userId', userId)  // Ensure you have the userId from context or state
-        .gte('date', startOfToday)
-        .lte('date', endOfToday);
-  
-      if (error) {
-        console.error('Error fetching workouts:', error);
+
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('weight, age, gender')
+        .eq('userId', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
         return;
       }
-  
-      // Calculate total duration and calories burned
+
+      setWeight(userProfile.weight);
+      setAge(userProfile.age);
+      setGender(userProfile.gender);
+
+      const startOfToday = `${currentDate}T00:00:00.000Z`;
+      const endOfToday = `${currentDate}T23:59:59.999Z`;
+
+      const { data: workouts, error: workoutError } = await supabase
+        .from('workouts')
+        .select('duration')
+        .eq('userId', userId)
+        .gte('date', startOfToday)
+        .lte('date', endOfToday);
+
+      if (workoutError) {
+        console.error('Error fetching workouts:', workoutError);
+        return;
+      }
+
       const totalDurationInHours = workouts.reduce((total, workout) => {
         const [hours, minutes, seconds] = workout.duration.split(':').map(Number);
         return total + hours + minutes / 60 + seconds / 3600;
       }, 0);
-  
-      const caloriesBurned = Math.round(totalDurationInHours * 400); // Assumes 400 calories burned per hour
-      setCaloriesBurned(caloriesBurned);
-  
+
+      let factor = userProfile.gender === true ? 1.1 : 0.9;
+
+      if (userProfile.weight && userProfile.age) {
+        const calculatedCaloriesBurned = Math.round(totalDurationInHours * 400 * (userProfile.weight/154) * factor * (30/userProfile.age)); 
+        setCaloriesBurned(calculatedCaloriesBurned);
+      } else {
+        console.log('Weight or age data is missing');
+        setCaloriesBurned(0);
+      }
+
+      // Debug alert
+      
+
     } catch (error) {
       console.error('Failed to load initial data:', error);
     }
   };
-  
-  
 
   const saveCalorieGoal = async () => {
     try {
@@ -130,15 +154,6 @@ const { userId } = useAuth();
     }
   };
 
-  const resetWaterDrunk = async () => {
-    setWaterDrunk(0);
-    try {
-      await AsyncStorage.setItem('waterDrunk', '0');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const isWithinGoal = () => {
     const goal = parseInt(calorieGoal);
     if (isNaN(goal)) return false;
@@ -148,7 +163,7 @@ const { userId } = useAuth();
   };
 
   const isWithinGoal1 = () => {
-    const goal = 100;
+    let goal = gender ? 125 : 91;
     if (isNaN(goal)) return false;
     const lowerBound = goal * 0.9;
     return waterDrunk >= lowerBound;
@@ -232,19 +247,19 @@ const { userId } = useAuth();
         </View>
         <View style={styles.waterBottle}>
           <Image
-            source={require('./water-bottle.png')} // Update this path to your water bottle image
+            source={require('./water-bottle.png')}
             style={styles.waterBottleImage}
           />
           <View
             style={[
               styles.waterFill,
-              { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` }, // Calculate height percentage
+              { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` },
             ]}
           />
         </View>
         <Link href="/RecipesPage" style={{ color: 'blue' }}>
-        Go to Recipes
-      </Link>
+          Go to Recipes
+        </Link>
         <Link href="/caloriebot" style={{ color: 'blue' }}>
           Go to CalorieBot
         </Link>
