@@ -1,15 +1,15 @@
-// auth/signup.jsx
 import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import *  as SecureStore from 'expo-secure-store';
 
-
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
   const router = useRouter();
 
   const handleSignup = async () => {
@@ -30,7 +30,13 @@ export default function Signup() {
       // Step 2: Insert the user data into your `users` table
       const { data: userRecord, error: userError } = await supabase
         .from('users')
-        .insert([{ userId: userId, email: email, username: username }]);
+        .insert([{ 
+          userId: userId, 
+          email: email, 
+          username: username,
+          securityQuestion: securityQuestion,
+          securityAnswer: securityAnswer
+        }]);
   
       if (userError) {
         console.error('Error inserting user into custom table:', userError.message);
@@ -46,31 +52,42 @@ export default function Signup() {
       console.error('Unexpected error during signup:', error);
     }
   };
-  
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Sign Up</Text>
-        <TextInput           
-        style={styles.input}           
-        placeholder="Email"           
-        value={email}           
-        onChangeText={setEmail}         
-        />         
-        <TextInput           
-        style={styles.input}           
-        placeholder="Username"           
-        value={username}           
-        onChangeText={setUsername}         
-        />         
-        <TextInput           
-        style={styles.input}           
-        placeholder="Password"           
-        secureTextEntry           
-        value={password}           
-        onChangeText={setPassword}         
-        />         
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          value={username}
+          onChangeText={setUsername}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Security Question"
+          value={securityQuestion}
+          onChangeText={setSecurityQuestion}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Security Answer"
+          value={securityAnswer}
+          onChangeText={setSecurityAnswer}
+        />
         <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
@@ -132,3 +149,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+

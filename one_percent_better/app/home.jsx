@@ -1,4 +1,3 @@
-// home.jsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -20,7 +19,7 @@ const quotesArray = [
 ];
 
 export default function Home() {
-  const { userId, setUserId } = useAuth();
+  const { user, signOut } = useAuth(); // Update this line
   const router = useRouter();
 
   const [currentQuote, setCurrentQuote] = useState('');
@@ -76,17 +75,22 @@ export default function Home() {
     };
   }, []);
 
+
+
   const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('userId');
-    setUserId(null);
-    router.replace('/(auth)/login');
+    try {
+      await signOut(); // Use the signOut function from useAuth
+      await SecureStore.deleteItemAsync('userId');
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
       <View style={styles.content}>
-        
         <Text style={[styles.quote, styles.lessBold]}>Quote of the Day:</Text>
         <Text style={[styles.quote1, styles.lessBold]}>{currentQuote}</Text>
         <Text style={styles.timer}>Next quote in: {timeLeft}</Text>

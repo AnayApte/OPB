@@ -82,7 +82,7 @@ export default function Login() {
           </Link>
         </View>
         <View style={styles.forgotPassword}>
-          <Link href="/(auth)/forgotPassword" asChild>
+          <Link href="/(auth)/forgot-password" asChild>
             <TouchableOpacity>
               <Text style={styles.linkText}>Forgot password?</Text>
             </TouchableOpacity>
