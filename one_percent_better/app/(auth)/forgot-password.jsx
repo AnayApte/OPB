@@ -5,92 +5,36 @@ import { supabase } from '../../utils/supabaseClient';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [securityAnswer, setSecurityAnswer] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [step, setStep] = useState(1);
-  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleEmailSubmit = async () => {
+  const handleResetPassword = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address.');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('securityQuestion')
-        .eq('email', email)
-        .single();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://yourdomain.com/reset-password',
+      });
 
       if (error) {
-        Alert.alert('Error', 'Error fetching security question: ' + error.message);
-        return;
-      }
-
-      if (data) {
-        setSecurityQuestion(data.securityQuestion);
-        setStep(2);
+        Alert.alert('Error', error.message);
       } else {
-        Alert.alert('Error', 'No user found with this email');
+        Alert.alert(
+          'Success',
+          'Password reset email sent. Please check your inbox.',
+          [{ text: 'OK', onPress: () => router.replace('/login') }]
+        );
       }
     } catch (error) {
-      Alert.alert('Error', 'Unexpected error: ' + error.message);
-    }
-  };
-
-  const handleSecurityAnswerSubmit = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('securityAnswer')
-        .eq('email', email)
-        .single();
-
-      if (error) {
-        Alert.alert('Error', 'Error verifying security answer: ' + error.message);
-        return;
-      }
-
-      if (data && data.securityAnswer === securityAnswer) {
-        setStep(3);
-      } else {
-        Alert.alert('Error', 'Incorrect security answer');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Unexpected error: ' + error.message);
-    }
-  };
-
-  
-  const handlePasswordReset = async () => {
-    try {
-      // Step 1: Sign in with OTP (this creates an auth session)
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: email,
-      });
-  
-      if (signInError) {
-        Alert.alert('Error', 'Error creating auth session: ' + signInError.message);
-        return;
-      }
-  
-      // Step 2: Wait for a short time to ensure the session is established
-      await new Promise(resolve => setTimeout(resolve, 1000));
-  
-      // Step 3: Update the user's password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-  
-      if (updateError) {
-        Alert.alert('Error', 'Error resetting password: ' + updateError.message);
-        return;
-      }
-  
-      Alert.alert(
-        'Success', 
-        'Password has been reset successfully.',
-        [{ text: 'OK', onPress: () => router.replace('/login') }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Unexpected error: ' + error.message);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Password reset error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,49 +42,33 @@ export default function ForgotPassword() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Forgot Password</Text>
-        {step === 1 && (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <TouchableOpacity style={styles.button} onPress={handleEmailSubmit}>
-              <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        {step === 2 && (
-          <>
-            <Text style={styles.question}>{securityQuestion}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Security Answer"
-              value={securityAnswer}
-              onChangeText={setSecurityAnswer}
-            />
-            <TouchableOpacity style={styles.button} onPress={handleSecurityAnswerSubmit}>
-              <Text style={styles.buttonText}>Verify</Text>
-            </TouchableOpacity>
-          </>
-        )}
-        {step === 3 && (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="New Password"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-            />
-            <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
-              <Text style={styles.buttonText}>Reset Password</Text>
-            </TouchableOpacity>
-          </>
-        )}
+        <Text style={styles.subtitle}>
+          Enter your email address and we'll send you a link to reset your password.
+        </Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCompleteType="email"
+        />
+        <TouchableOpacity 
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleResetPassword}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Sending...' : 'Send Reset Link'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.linkButton}
+          onPress={() => router.replace('/login')}
+        >
+          <Text style={styles.linkButtonText}>Back to Login</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -149,7 +77,7 @@ export default function ForgotPassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#f5f5f5',
   },
   content: {
     flex: 1,
@@ -160,33 +88,47 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 32,
+    marginBottom: 10,
+    color: '#333',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   input: {
     width: '100%',
-    height: 40,
-    borderColor: 'gray',
+    height: 50,
+    borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 16,
-    paddingHorizontal: 10,
+    marginBottom: 20,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: 'blue',
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 5,
     width: '100%',
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    backgroundColor: '#a5d6a7',
   },
   buttonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  question: {
-    fontSize: 18,
-    marginBottom: 16,
-    textAlign: 'center',
+  linkButton: {
+    marginTop: 20,
+  },
+  linkButtonText: {
+    color: '#2196F3',
+    fontSize: 16,
   },
 });
