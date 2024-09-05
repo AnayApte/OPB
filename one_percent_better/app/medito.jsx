@@ -4,8 +4,10 @@ import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import BackButton from '../utils/BackButton';
+import { useTheme } from './ThemeContext';
 
 const Medito = () => {
+  const { theme } = useTheme();
   const [inputMinutes, setInputMinutes] = useState('');
   const [inputSeconds, setInputSeconds] = useState('');
   const [seconds, setSeconds] = useState(0);
@@ -145,11 +147,11 @@ const Medito = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
       <BackButton destination="/home"/>
-      <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
-      <Text style={styles.title}>Medito</Text>
+      <Text style={[styles.Challenge, {color: theme.primary}]}>Challenge: Meditate for 30 days.</Text>
+      <Text style={[styles.title, {color: theme.primary}]}>Medito</Text>
       <Image
         source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
         style={styles.image}
@@ -158,23 +160,23 @@ const Medito = () => {
       {isInputVisible ? (
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, {color: theme.primary}]}
             placeholder="Enter minutes"
             keyboardType="numeric"
             value={inputMinutes}
             onChangeText={(text) => handleInputChange(text, 'minutes')}
-            placeholderTextColor="yellow"
+            placeholderTextColor="#641f1f"
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, {color: theme.primary}]}
             placeholder="Enter seconds"
             keyboardType="numeric"
             value={inputSeconds}
             onChangeText={(text) => handleInputChange(text, 'seconds')}
-            placeholderTextColor="yellow"
+            placeholderTextColor="#641f1f"
           />
-          <TouchableOpacity onPress={startTimer} style={styles.button}>
-            <Text style={styles.buttonText}>Start Timer</Text>
+          <TouchableOpacity onPress={startTimer} style={[styles.button, {backgroundColor: theme.secondary}]}>
+            <Text style={[styles.buttonText, {color: theme.primary}]}>Start Timer</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -200,7 +202,7 @@ const Medito = () => {
           )}
         </View>
       )}
-      <Text style={styles.streak}>Streak: {streak} days 🔥</Text>
+      <Text style={[styles.streak, {color: theme.primary}]}>Streak: {streak} days 🔥</Text>
     </KeyboardAvoidingView>
   );
 };
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'purple',
+
   },
   title: {
     fontSize: 24,
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#641f1f',
     padding: 10,
     width: 200,
     marginBottom: 10,
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   button: {
-    backgroundColor: 'yellow',
+    
     padding: 10,
     marginTop: 10,
     borderRadius: 10,
