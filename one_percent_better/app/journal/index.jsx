@@ -192,7 +192,7 @@ const App = () => {
             </TouchableWithoutFeedback>
           </Modal>
 
-          <Text style={styles.entriesTitle}>Here are your old entries</Text>
+          <Text style={styles.entriesTitle}>Your previous entries:</Text>
           <FlatList
             data={entries}
             keyExtractor={(item) => item.id.toString()}
