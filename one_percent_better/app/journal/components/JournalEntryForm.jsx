@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 
 const JournalEntryForm = ({ entry, onSave, onCancel }) => {
   const [title, setTitle] = useState('');
@@ -7,20 +7,25 @@ const JournalEntryForm = ({ entry, onSave, onCancel }) => {
 
   useEffect(() => {
     if (entry) {
-      setTitle(entry.title);
-      setEntryText(entry.text);
+      setTitle(entry.title || '');
+      setEntryText(entry.body || ''); // Correctly set body instead of text
     }
   }, [entry]);
 
   const handleSave = () => {
-    if (title.trim() && entryText.trim()) {
-      const date = new Date();
-      onSave({ title, text: entryText, date: date.toDateString(), time: date.toLocaleTimeString() });
-      setTitle('');
-      setEntryText('');
-    } else {
-      alert('Please fill out all fields.');
+    if (title.trim() === '' || entryText.trim() === '') {
+      Alert.alert(
+        'Empty Fields',
+        'Both the title and entry text must be filled out before saving.',
+        [{ text: 'OK' }]
+      );
+      return;
     }
+
+    const date = new Date();
+    onSave({ title, body: entryText, date: date.toDateString() }); // Use body instead of text
+    setTitle('');
+    setEntryText('');
   };
 
   return (
@@ -106,4 +111,3 @@ const styles = StyleSheet.create({
 });
 
 export default JournalEntryForm;
- 
