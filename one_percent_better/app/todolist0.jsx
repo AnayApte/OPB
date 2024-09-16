@@ -29,7 +29,9 @@ const TodoList = () => {
   const handleConfirmDate = async (date) => {
     const selectedDate = moment(date).format('YYYY-MM-DD');
     if (moment(selectedDate).isAfter(moment())) {
-      setNewDueDate(selectedDate);
+      const adjustedDate = moment(selectedDate).startOf('day').toDate();
+
+      setNewDueDate(adjustedDate);
       setDatePickerVisibility(false);
       // Push the due date to the database
       const { data, error } = await supabase
@@ -50,6 +52,15 @@ const TodoList = () => {
       loadTodos();
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      const intervalId = setInterval(loadTodos, 5000); // Fetch todos every 5 seconds
+
+      return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    }
+  }, [userId]);
+
 
   const loadTodos = async () => {
     try {
@@ -198,8 +209,7 @@ const TodoList = () => {
   };
 
   const renderTodoItem = ({ item }) => {
-    const formattedDueDate = item.due_date ? format(new Date(item.due_date), "MMMM do, yyyy") : 'No due date';
-
+    const formattedDueDate = item.due_date ? moment(item.due_date).startOf('day').format("MMMM Do, YYYY") : 'No due date';
     return (
     <View style={[styles.todoItem, { borderLeftColor: getPriorityColor(item.task_priority), borderLeftWidth: 5 }]}>
       <TouchableOpacity onPress={() => toggleComplete(item.id)} style={styles.checkmark}>
