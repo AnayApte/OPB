@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
+import { useTheme } from '../ThemeContext'; // Import useTheme
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { theme } = useTheme(); // Access the theme
 
   const handleResetPassword = async () => {
     if (!email) {
@@ -38,6 +40,66 @@ export default function ForgotPassword() {
     }
   };
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      marginBottom: 10,
+      color: theme.primary,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme.text,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    input: {
+      width: '100%',
+      height: 50,
+      borderColor: theme.border,
+      borderWidth: 1,
+      borderRadius: 5,
+      marginBottom: 20,
+      paddingHorizontal: 15,
+      fontSize: 16,
+      backgroundColor: theme.inputBackground,
+      color: theme.text,
+    },
+    button: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+      borderRadius: 5,
+      width: '100%',
+      alignItems: 'center',
+    },
+    buttonDisabled: {
+      backgroundColor: theme.disabled,
+    },
+    buttonText: {
+      color: theme.buttonText,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    linkButton: {
+      marginTop: 20,
+    },
+    linkButtonText: {
+      color: theme.link,
+      fontSize: 16,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -48,6 +110,7 @@ export default function ForgotPassword() {
         <TextInput
           style={styles.input}
           placeholder="Enter your email"
+          placeholderTextColor={theme.placeholderText}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -73,62 +136,3 @@ export default function ForgotPassword() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 20,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 5,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#a5d6a7',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  linkButton: {
-    marginTop: 20,
-  },
-  linkButtonText: {
-    color: '#2196F3',
-    fontSize: 16,
-  },
-});

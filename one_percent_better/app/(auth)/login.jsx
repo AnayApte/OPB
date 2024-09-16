@@ -4,11 +4,12 @@ import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } fro
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
-
+import { useTheme } from '../ThemeContext'; // Import useTheme
 export default function Login() {
   const [userOrEmail, setUserOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { theme } = useTheme();
 
   const handleLogin = async () => {
     try {
@@ -52,7 +53,62 @@ export default function Login() {
     }
   };
 
-  
+  const styles = StyleSheet.create({
+    container: {       
+      flex: 1,       
+      backgroundColor: theme.background,     
+    },     
+    content: {       
+      flex: 1,       
+      justifyContent: 'center',       
+      alignItems: 'center',       
+      paddingHorizontal: 20,     
+    },     
+    title: {       
+      fontSize: 24,       
+      fontWeight: 'bold',       
+      marginBottom: 32,
+      color: theme.primary,     
+    },     
+    input: {       
+      width: '100%',       
+      height: 40,       
+      borderColor: theme.border,       
+      borderWidth: 1,       
+      borderRadius: 5,       
+      marginBottom: 16,       
+      paddingHorizontal: 10,
+      color: theme.text,
+      backgroundColor: theme.inputBackground,     
+    },     
+    loginButton: {       
+      backgroundColor: theme.primary,       
+      paddingHorizontal: 32,       
+      paddingVertical: 12,       
+      borderRadius: 8,       
+      width: '100%',       
+      alignItems: 'center',     
+    },     
+    buttonText: {       
+      color: theme.buttonText,       
+      fontSize: 18,       
+      fontWeight: 'bold',     
+    },
+    signUp: {
+      flexDirection: 'row',
+      width: '100%',
+      marginTop: 20,
+    },
+    forgotPassword: {
+      flexDirection: 'row',
+      width: '100%',
+      marginTop: 20,
+    },
+    linkText: {
+      color: theme.link,
+      fontSize: 16,
+    },
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -84,7 +140,7 @@ export default function Login() {
         <View style={styles.forgotPassword}>
           <Link href="/(auth)/forgot-password" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Forgot password?</Text>
+              <Text style={styles.linkText}>Forgot password? </Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -93,56 +149,4 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {       
-    flex: 1,       
-    backgroundColor: 'white',     
-  },     
-  content: {       
-    flex: 1,       
-    justifyContent: 'center',       
-    alignItems: 'center',       
-    paddingHorizontal: 20,     
-  },     
-  title: {       
-    fontSize: 24,       
-    fontWeight: 'bold',       
-    marginBottom: 32,     
-  },     
-  input: {       
-    width: '100%',       
-    height: 40,       
-    borderColor: 'gray',       
-    borderWidth: 1,       
-    borderRadius: 5,       
-    marginBottom: 16,       
-    paddingHorizontal: 10,     
-  },     
-  loginButton: {       
-    backgroundColor: 'green',       
-    paddingHorizontal: 32,       
-    paddingVertical: 12,       
-    borderRadius: 8,       
-    width: '100%',       
-    alignItems: 'center',     
-  },     
-  buttonText: {       
-    color: 'white',       
-    fontSize: 18,       
-    fontWeight: 'bold',     
-  },
-  signUp: {
-    flexDirection: 'row',
-    width: '100%',
-    marginTop: 20,
-  },
-  forgotPassword: {
-    flexDirection: 'row',
-    width: '100%',
-    marginTop: 20,
-  },
-  linkText: {
-    color: 'blue',
-    fontSize: 16,
-  },
-});
+

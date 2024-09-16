@@ -182,7 +182,7 @@ const Medito = () => {
       ) : (
         <View style={styles.timerContainer}>
           <TouchableOpacity onPress={handleReset}>
-            <Text style={styles.timer}>
+            <Text style={[styles.timer, {color: theme.primary}]}>
               {minutes}:{remainingSeconds < 10 ? `0${remainingSeconds}` : remainingSeconds}
             </Text>
           </TouchableOpacity>
@@ -193,10 +193,10 @@ const Medito = () => {
           ) : (
             <View style={styles.buttonContainer}>
               <TouchableOpacity onPress={handleStop} style={styles.button}>
-                <Text style={styles.buttonText}>Stop</Text>
+                <Text style={[styles.buttonText, {color: theme.primary}]}>Stop</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleReset} style={styles.button}>
-                <Text style={styles.buttonText}>Reset</Text>
+                <Text style={[styles.buttonText, {color: theme.primary}]}>Reset</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   buttonText: {
-    color: 'purple',
+  
     fontWeight: 'bold',
   },
   timerContainer: {

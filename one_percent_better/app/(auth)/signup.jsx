@@ -3,7 +3,7 @@ import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } fro
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import *  as SecureStore from 'expo-secure-store';
-
+import { useTheme } from '../ThemeContext'; // Import useTheme
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -11,7 +11,7 @@ export default function Signup() {
   const [securityQuestion, setSecurityQuestion] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
   const router = useRouter();
-
+  const { theme } = useTheme(); // Access the theme
   const handleSignup = async () => {
     try {
       // Step 1: Sign up the user with Supabase Auth
@@ -52,6 +52,55 @@ export default function Signup() {
       console.error('Unexpected error during signup:', error);
     }
   };
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      marginBottom: 32,
+      color: theme.primary,
+    },
+    input: {
+      width: '100%',
+      height: 40,
+      borderColor: theme.border,
+      borderWidth: 1,
+      borderRadius: 5,
+      marginBottom: 16,
+      paddingHorizontal: 10,
+      color: theme.text,
+      backgroundColor: theme.inputBackground,
+    },
+    signupButton: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 32,
+      paddingVertical: 12,
+      borderRadius: 8,
+      width: '100%',
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: theme.buttonText,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    bottomLink: {
+      marginTop: 20,
+    },
+    linkText: {
+      color: theme.link,
+      fontSize: 16,
+    },
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -103,51 +152,5 @@ export default function Signup() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 32,
-  },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 16,
-    paddingHorizontal: 10,
-  },
-  signupButton: {
-    backgroundColor: 'blue',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  bottomLink: {
-    marginTop: 20,
-  },
-  linkText: {
-    color: 'blue',
-    fontSize: 16,
-  },
-});
 
 
