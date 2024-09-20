@@ -1,10 +1,10 @@
+// home.jsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Link, useRouter } from 'expo-router';
 import { useAuth } from '../utils/AuthContext';
 import * as SecureStore from 'expo-secure-store';
-import { useTheme } from './ThemeContext'; // Import useTheme
 
 const quotesArray = [
   "'The only limit to our realization of tomorrow is our doubts of today.' - Franklin D. Roosevelt",
@@ -20,9 +20,8 @@ const quotesArray = [
 ];
 
 export default function Home() {
-  const { user, signOut } = useAuth();
+  const { userId, setUserId } = useAuth();
   const router = useRouter();
-  const { theme } = useTheme(); // Access the theme
 
   const [currentQuote, setCurrentQuote] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
@@ -36,9 +35,9 @@ export default function Home() {
     const calculateTimeLeft = () => {
       const now = new Date();
       const nextReset = new Date();
-      nextReset.setHours(24, 0, 0, 0);
+      nextReset.setHours(24, 0, 0, 0); // Next reset time at midnight
       if (now > nextReset) {
-        nextReset.setDate(nextReset.getDate() + 1);
+        nextReset.setDate(nextReset.getDate() + 1); // Move to the next day if current time is past midnight
       }
       const timeDifference = nextReset - now;
       const hours = Math.floor((timeDifference / (1000 * 60 * 60)) % 24);
@@ -47,22 +46,30 @@ export default function Home() {
       return `${hours}h ${minutes}m ${seconds}s`;
     };
 
+    // Update the quote immediately when the component mounts
     updateQuote();
 
+    // Set a timeout to update the quote at the next midnight
     const now = new Date();
     const nextMidnight = new Date();
-    nextMidnight.setHours(24, 0, 0, 0);
+    nextMidnight.setHours(24, 0, 0, 0); // Next reset time at midnight
     const timeUntilMidnight = nextMidnight - now;
     const midnightTimeout = setTimeout(() => {
       updateQuote();
-      const dailyInterval = setInterval(updateQuote, 24 * 60 * 60 * 1000);
+
+      // Set an interval to update the quote every 24 hours after the first midnight update
+      const dailyInterval = setInterval(updateQuote, 24 * 60 * 60 * 1000); // 24 hours
+
+      // Clean up the interval on component unmount
       return () => clearInterval(dailyInterval);
     }, timeUntilMidnight);
 
+    // Set up the interval to update the timer every second
     const timerId = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    }, 1000); // 1000 milliseconds = 1 second
 
+    // Clean up the timeout and interval when the component unmounts
     return () => {
       clearTimeout(midnightTimeout);
       clearInterval(timerId);
@@ -70,86 +77,16 @@ export default function Home() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      await SecureStore.deleteItemAsync('userId');
-      router.replace('/(auth)/login');
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
+    await SecureStore.deleteItemAsync('userId');
+    setUserId(null);
+    router.replace('/(auth)/login');
   };
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.background,
-      padding: 20,
-    },
-    content: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginBottom: 16,
-      color: theme.primary,
-    },
-    quote: {
-      fontSize: 30,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      marginBottom: 20,
-      color: theme.primary,
-    },
-    quote1: {
-      fontSize: 15,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      marginBottom: 20,
-      color: theme.primary,
-    },
-    timer: {
-      fontSize: 20,
-      textAlign: 'center',
-      marginBottom: 20,
-      color: theme.secondary,
-    },
-    image: {
-      width: 200,
-      height: 200,
-      marginBottom: 20,
-    },
-    logoutButton: {
-      marginTop: 20,
-      padding: 10,
-      backgroundColor: theme.secondary,
-      borderRadius: 5,
-    },
-    logoutText: {
-      color: theme.text,
-      fontSize: 16,
-    },
-    lessBold: {
-      fontWeight: '400',
-    },
-    onePercentBetter: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      color: theme.primary,
-    },
-    link: {
-      color: theme.primary,
-      marginVertical: 5,
-    },
-  });
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
       <View style={styles.content}>
+        
         <Text style={[styles.quote, styles.lessBold]}>Quote of the Day:</Text>
         <Text style={[styles.quote1, styles.lessBold]}>{currentQuote}</Text>
         <Text style={styles.timer}>Next quote in: {timeLeft}</Text>
@@ -173,3 +110,66 @@ export default function Home() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'purple', // Change the background color to purple
+    padding: 20,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: 'yellow',
+  },
+  quote: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: 'yellow',
+  },
+  quote1: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: 'yellow',
+  },
+  timer: {
+    fontSize: 20,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: 'yellow',
+  },
+  image: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
+  },
+  logoutButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#f44336',
+    borderRadius: 5,
+  },
+  logoutText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  lessBold: {
+    fontWeight: '400', // Less bold (medium weight)
+  },
+  onePercentBetter: {
+    fontSize: 24, // Change the font size
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: 'yellow', // Optional: change text color for better contrast
+  },
+});

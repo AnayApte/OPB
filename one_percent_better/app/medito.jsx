@@ -4,10 +4,8 @@ import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import BackButton from '../utils/BackButton';
-import { useTheme } from './ThemeContext';
 
 const Medito = () => {
-  const { theme } = useTheme();
   const [inputMinutes, setInputMinutes] = useState('');
   const [inputSeconds, setInputSeconds] = useState('');
   const [seconds, setSeconds] = useState(0);
@@ -147,11 +145,11 @@ const Medito = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={styles.container}
     >
       <BackButton destination="/home"/>
-      <Text style={[styles.Challenge, {color: theme.primary}]}>Challenge: Meditate for 30 days.</Text>
-      <Text style={[styles.title, {color: theme.primary}]}>Medito</Text>
+      <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
+      <Text style={styles.title}>Medito</Text>
       <Image
         source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
         style={styles.image}
@@ -160,29 +158,29 @@ const Medito = () => {
       {isInputVisible ? (
         <View style={styles.inputContainer}>
           <TextInput
-            style={[styles.input, {color: theme.primary}]}
+            style={styles.input}
             placeholder="Enter minutes"
             keyboardType="numeric"
             value={inputMinutes}
             onChangeText={(text) => handleInputChange(text, 'minutes')}
-            placeholderTextColor="#641f1f"
+            placeholderTextColor="yellow"
           />
           <TextInput
-            style={[styles.input, {color: theme.primary}]}
+            style={styles.input}
             placeholder="Enter seconds"
             keyboardType="numeric"
             value={inputSeconds}
             onChangeText={(text) => handleInputChange(text, 'seconds')}
-            placeholderTextColor="#641f1f"
+            placeholderTextColor="yellow"
           />
-          <TouchableOpacity onPress={startTimer} style={[styles.button, {backgroundColor: theme.secondary}]}>
-            <Text style={[styles.buttonText, {color: theme.primary}]}>Start Timer</Text>
+          <TouchableOpacity onPress={startTimer} style={styles.button}>
+            <Text style={styles.buttonText}>Start Timer</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.timerContainer}>
           <TouchableOpacity onPress={handleReset}>
-            <Text style={[styles.timer, {color: theme.primary}]}>
+            <Text style={styles.timer}>
               {minutes}:{remainingSeconds < 10 ? `0${remainingSeconds}` : remainingSeconds}
             </Text>
           </TouchableOpacity>
@@ -193,16 +191,16 @@ const Medito = () => {
           ) : (
             <View style={styles.buttonContainer}>
               <TouchableOpacity onPress={handleStop} style={styles.button}>
-                <Text style={[styles.buttonText, {color: theme.primary}]}>Stop</Text>
+                <Text style={styles.buttonText}>Stop</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleReset} style={styles.button}>
-                <Text style={[styles.buttonText, {color: theme.primary}]}>Reset</Text>
+                <Text style={styles.buttonText}>Reset</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       )}
-      <Text style={[styles.streak, {color: theme.primary}]}>Streak: {streak} days 🔥</Text>
+      <Text style={styles.streak}>Streak: {streak} days 🔥</Text>
     </KeyboardAvoidingView>
   );
 };
@@ -212,7 +210,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-
+    backgroundColor: 'purple',
   },
   title: {
     fontSize: 24,
@@ -226,7 +224,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#641f1f',
+    borderColor: '#ccc',
     padding: 10,
     width: 200,
     marginBottom: 10,
@@ -235,13 +233,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   button: {
-    
+    backgroundColor: 'yellow',
     padding: 10,
     marginTop: 10,
     borderRadius: 10,
   },
   buttonText: {
-  
+    color: 'purple',
     fontWeight: 'bold',
   },
   timerContainer: {
