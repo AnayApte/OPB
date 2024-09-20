@@ -7,8 +7,7 @@ import { useAuth } from '../../utils/AuthContext';
 import 'react-native-get-random-values';
 import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
-import { useTheme } from '../ThemeContext';
+
 const WorkoutScreen = () => {
   const router = useRouter();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -16,8 +15,8 @@ const WorkoutScreen = () => {
   const [exercises, setExercises] = useState([]);
   const [newExercise, setNewExercise] = useState('');
   const [sets, setSets] = useState('');
-  const [userId, setUserId] = useState(null);
-  const { theme } = useTheme();
+  const { userId } = useAuth();
+
   useEffect(() => {
     let interval;
     if (isTimerRunning) {
@@ -33,7 +32,6 @@ const WorkoutScreen = () => {
   };
 
   const endWorkout = async () => {
-    const userId = await SecureStore.getItemAsync('userId');
     if (!userId) {
       console.error('No user logged in');
       return;
@@ -176,94 +174,7 @@ const WorkoutScreen = () => {
     updatedExercises[exerciseIndex].sets[setIndex][field] = value;
     setExercises(updatedExercises);
   };
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 20,
-      backgroundColor: theme.background,
-    },
-    button: {
-      padding: 15,
-      borderRadius: 5,
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    greenButton: {
-      backgroundColor: theme.primary,
-    },
-    yellowButton: {
-      backgroundColor: theme.secondary,
-    },
-    stopButton: {
-      backgroundColor: theme.primary,
-      marginTop: 20,
-    },
-    addButton: {
-      backgroundColor: theme.primary,
-      paddingHorizontal: 20,
-    },
-    buttonText: {
-      color: theme.buttonText,
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    timerText: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      textAlign: 'center',
-      marginBottom: 20,
-      color: theme.text,
-    },
-    inputContainer: {
-      flexDirection: 'row',
-      marginBottom: 20,
-    },
-    input: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 5,
-      padding: 10,
-      marginRight: 10,
-      color: theme.text,
-      backgroundColor: theme.inputBackground,
-    },
-    setsInput: {
-      flex: 0,
-      width: 50,
-    },
-    exerciseContainer: {
-      backgroundColor: theme.cardBackground,
-      padding: 10,
-      borderRadius: 5,
-      marginBottom: 10,
-    },
-    exerciseName: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 5,
-      color: theme.text,
-    },
-    setContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 5,
-    },
-    setText: {
-      width: 50,
-      color: theme.text,
-    },
-    setInput: {
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 5,
-      padding: 5,
-      width: 50,
-      marginLeft: 10,
-      color: theme.text,
-      backgroundColor: theme.inputBackground,
-    },
-  });
+
   return (
     <SafeAreaView style={styles.container}>
       <BackButton destination="/home"/>
@@ -339,6 +250,86 @@ const WorkoutScreen = () => {
   );
 };
 
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f0f0f0',
+  },
+  button: {
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  greenButton: {
+    backgroundColor: '#4CAF50',
+  },
+  yellowButton: {
+    backgroundColor: '#FFC107',
+  },
+  stopButton: {
+    backgroundColor: '#f44336',
+    marginTop: 20,
+  },
+  addButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 20,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  timerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginRight: 10,
+  },
+  setsInput: {
+    flex: 0,
+    width: 50,
+  },
+  exerciseContainer: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  exerciseName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  setContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  setText: {
+    width: 50,
+  },
+  setInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 5,
+    width: 50,
+    marginLeft: 10,
+  },
+});
 
 export default WorkoutScreen;

@@ -1,14 +1,7 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { useTheme } from '../ThemeContext';
+
 export default function StrongLayout() {
-  const { theme } = useTheme();
-  
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: theme.background,
-  },
-});
   return (
     <Tabs
       screenOptions={{
@@ -47,3 +40,8 @@ const styles = StyleSheet.create({
   );
 }
 
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#f0f0f0',
+  },
+});
