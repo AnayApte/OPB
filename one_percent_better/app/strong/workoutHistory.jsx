@@ -5,7 +5,8 @@ import { calculateOneRepMax } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../utils/BackButton';
-
+import * as SecureStore from 'expo-secure-store';
+import { useTheme } from '../ThemeContext'; 
 // Utility function to format interval durations
 const formatTime = (interval) => {
   if (!interval) return 'N/A';
@@ -23,14 +24,20 @@ const WorkoutHistory = () => {
   const [workouts, setWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const { userId } = useAuth();
-
+  const [userId, setUserId] = useState(null);
+  const { theme } = useTheme(); 
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await SecureStore.getItemAsync('userId');
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
   useEffect(() => {
     if (userId) {
       fetchWorkouts();
     }
   }, [userId]);
-
   const fetchWorkouts = async () => {
     const { data, error } = await supabase
       .from('workouts')
@@ -74,7 +81,64 @@ const WorkoutHistory = () => {
     setSelectedWorkout(workout);
     setModalVisible(true);
   };
-
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: theme.background,
+    },
+    workoutBox: {
+      backgroundColor: theme.cardBackground,
+      padding: 16,
+      borderRadius: 8,
+      marginBottom: 16,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    dateText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.text,
+    },
+    sectionTitle: {
+      fontWeight: 'bold',
+      marginTop: 8,
+      color: theme.text,
+    },
+    exerciseRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      color: theme.text,
+    },
+    modalContent: {
+      flex: 1,
+      padding: 16,
+      paddingTop: 50,
+      backgroundColor: theme.background,
+    },
+    exerciseDetails: {
+      marginTop: 16,
+    },
+    setRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      color: theme.text,
+    },
+    closeButton: {
+      marginTop: 16,
+      backgroundColor: theme.primary,
+      padding: 12,
+      borderRadius: 8,
+    },
+    closeButtonText: {
+      color: theme.buttonText,
+      textAlign: 'center',
+      fontWeight: 'bold',
+    },
+  });
   const renderWorkoutItem = ({ item }) => {
     return (
       <TouchableOpacity onPress={() => openModal(item)} style={styles.workoutBox}>
