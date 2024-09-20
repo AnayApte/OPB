@@ -164,7 +164,6 @@ export default function Home() {
           <Link href="/strong" style={styles.link}>Go to Strong</Link>
           <Link href="/caloriecounter" style={styles.link}>Go to CalorieCounter</Link>
           <Link href="/profile" style={styles.link}>Edit Profile</Link>
-          <Link href="/journal" style={styles.link}>Journal</Link>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
