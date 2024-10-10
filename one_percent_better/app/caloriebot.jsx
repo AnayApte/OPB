@@ -8,7 +8,7 @@ const ChatGPTPage = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const OPENAI_API_KEY = 'balls';
+  const OPENAI_API_KEY = 'sk-None-n9q3aEokGPhawjfDwP5LT3BlbkFJcTBHTYIPgO6kx8bPgK5A';
 
   const handleSend = async () => {
     if (input.trim() === '') return;

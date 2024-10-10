@@ -4,8 +4,18 @@ import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import BackButton from '../utils/BackButton';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
-const Medito = () => {
+// Default theme colors in case the theme is not available
+const defaultTheme = {
+  background: '#FFFFFF',
+  text: '#000000',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+};
+
+const MeditoContent = () => {
+  const { theme = defaultTheme } = useTheme() || {};
   const [inputMinutes, setInputMinutes] = useState('');
   const [inputSeconds, setInputSeconds] = useState('');
   const [seconds, setSeconds] = useState(0);
@@ -43,8 +53,8 @@ const Medito = () => {
   useEffect(() => {
     return sound
       ? () => {
-        sound.unloadAsync();
-      }
+          sound.unloadAsync();
+        }
       : undefined;
   }, [sound]);
 
@@ -56,17 +66,17 @@ const Medito = () => {
 
       if (storedStreak !== null && lastUsed !== null) {
         const lastUsedTime = parseInt(lastUsed);
-        const timeDiff = (currentTime - lastUsedTime) / (1000 * 60 * 60 * 24); // Convert time difference to days
+        const timeDiff = (currentTime - lastUsedTime) / (1000 * 60 * 60 * 24);
 
         if (timeDiff < 1) {
           setStreak(parseInt(storedStreak));
         } else if (timeDiff < 2) {
           setStreak(parseInt(storedStreak) + 1);
         } else {
-          setStreak(1); // Reset streak to 1
+          setStreak(1);
         }
       } else {
-        setStreak(1); // Initialize streak to 1
+        setStreak(1);
       }
     } catch (error) {
       console.error(error);
@@ -80,7 +90,7 @@ const Medito = () => {
 
       if (lastUsed) {
         const lastUsedTime = parseInt(lastUsed);
-        const timeDiff = (currentTime - lastUsedTime) / (1000 * 60 * 60 * 24); // Convert time difference to days
+        const timeDiff = (currentTime - lastUsedTime) / (1000 * 60 * 60 * 24);
 
         if (timeDiff >= 1 && timeDiff < 2) {
           setStreak(prevStreak => {
@@ -145,11 +155,11 @@ const Medito = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
       <BackButton destination="/home"/>
-      <Text style={styles.Challenge}>Challenge: Meditate for 30 days.</Text>
-      <Text style={styles.title}>Medito</Text>
+      <Text style={[styles.Challenge, { color: theme.text }]}>Challenge: Meditate for 30 days.</Text>
+      <Text style={[styles.title, { color: theme.primary }]}>Medito</Text>
       <Image
         source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
         style={styles.image}
@@ -158,50 +168,58 @@ const Medito = () => {
       {isInputVisible ? (
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.text, borderColor: theme.primary }]}
             placeholder="Enter minutes"
             keyboardType="numeric"
             value={inputMinutes}
             onChangeText={(text) => handleInputChange(text, 'minutes')}
-            placeholderTextColor="yellow"
+            placeholderTextColor={theme.text}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.text, borderColor: theme.primary }]}
             placeholder="Enter seconds"
             keyboardType="numeric"
             value={inputSeconds}
             onChangeText={(text) => handleInputChange(text, 'seconds')}
-            placeholderTextColor="yellow"
+            placeholderTextColor={theme.text}
           />
-          <TouchableOpacity onPress={startTimer} style={styles.button}>
-            <Text style={styles.buttonText}>Start Timer</Text>
+          <TouchableOpacity onPress={startTimer} style={[styles.button, { backgroundColor: theme.primary }]}>
+            <Text style={[styles.buttonText, { color: theme.secondary }]}>Start Timer</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.timerContainer}>
           <TouchableOpacity onPress={handleReset}>
-            <Text style={styles.timer}>
+            <Text style={[styles.timer, { color: theme.primary }]}>
               {minutes}:{remainingSeconds < 10 ? `0${remainingSeconds}` : remainingSeconds}
             </Text>
           </TouchableOpacity>
           {seconds === 0 && !isRunning ? (
-            <TouchableOpacity onPress={handleReset} style={styles.button}>
-              <Text style={styles.buttonText}>Reset</Text>
+            <TouchableOpacity onPress={handleReset} style={[styles.button, { backgroundColor: theme.primary }]}>
+              <Text style={[styles.buttonText, { color: theme.secondary }]}>Reset</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.buttonContainer}>
-              <TouchableOpacity onPress={handleStop} style={styles.button}>
-                <Text style={styles.buttonText}>Stop</Text>
+              <TouchableOpacity onPress={handleStop} style={[styles.button, { backgroundColor: theme.primary }]}>
+                <Text style={[styles.buttonText, { color: theme.secondary }]}>Stop</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleReset} style={styles.button}>
-                <Text style={styles.buttonText}>Reset</Text>
+              <TouchableOpacity onPress={handleReset} style={[styles.button, { backgroundColor: theme.primary }]}>
+                <Text style={[styles.buttonText, { color: theme.secondary }]}>Reset</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       )}
-      <Text style={styles.streak}>Streak: {streak} days 🔥</Text>
+      <Text style={[styles.streak, { color: theme.text }]}>Streak: {streak} days 🔥</Text>
     </KeyboardAvoidingView>
+  );
+};
+
+const Medito = () => {
+  return (
+    <ThemeProvider>
+      <MeditoContent />
+    </ThemeProvider>
   );
 };
 
@@ -210,36 +228,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'purple',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'yellow',
   },
   inputContainer: {
     marginTop: 20,
     alignItems: 'center',
-    color: 'yellow',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     padding: 10,
     width: 200,
     marginBottom: 10,
     textAlign: 'center',
-    color: 'yellow',
     borderRadius: 10,
   },
   button: {
-    backgroundColor: 'yellow',
     padding: 10,
     marginTop: 10,
     borderRadius: 10,
   },
   buttonText: {
-    color: 'purple',
     fontWeight: 'bold',
   },
   timerContainer: {
@@ -249,7 +260,6 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: 'yellow',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -258,7 +268,6 @@ const styles = StyleSheet.create({
   streak: {
     marginTop: 40,
     fontSize: 20,
-    color: 'yellow',
   },
   image: {
     width: 150,
@@ -266,7 +275,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   Challenge: {
-    color: 'yellow',
     fontSize: 12,
     textAlign: 'center',
   }
