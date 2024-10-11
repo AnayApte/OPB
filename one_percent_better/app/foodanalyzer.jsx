@@ -55,15 +55,17 @@ const FoodNutritionAnalyzer = () => {
     try {
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-      const prompt = `You are an expert on nutrition, you will receive an image and you must analyze the different food/s present in the image and output the following information: Food Name X AMOUNT, Calories, Grams of Protein, Grams of Fat THEN A NEW LINE. IT MUST BE OUTPUTTED IN THIS FORMAT: Food Name X AMOUNT, Calories: X, Protein: Xg, Fat: Xg. \n\nIF THERE ARE MULTIPLE FOODS IN THE IMAGE, OUTPUT EACH FOOD IN A NEW LINE. \n\nIF THERE ARE NO FOODS IN THE IMAGE, OUTPUT THIS MESSAGE: No food was detected in the image. Please try again or take another picture of the food. \n\n
+      const prompt = `You are an expert on nutrition, you will receive an image and you must analyze the different food/s present in the image and output the following information: Food Name X AMOUNT, Calories, Grams of Protein, Grams of Fat THEN A NEW LINE. IT MUST BE OUTPUTTED IN THIS FORMAT: Food Name X AMOUNT, Calories: X, Protein: Xg, Fat: Xg. \n\nIF THERE ARE MULTIPLE FOODS IN THE IMAGE, OUTPUT EACH FOOD IN A NEW LINE. \n\nIF THERE ARE NO FOODS IN THE IMAGE, OUTPUT THIS MESSAGE ONLY AND NOTHING ELSE: No food was detected in the image. Please try again or take another picture of the food. \n\n
 
 DON'T OUTPUT ANYTHING BUT THE SPECIFIED FORMAT. I DON'T WANT AN EXPLANATION OR ANYTHING.
 
 AFTER THIS, OUTPUT A TOTAL AMOUNT OF CALORIES, PROTEIN, & FAT IN THE IMAGE (THE TOTAL AMOUNTS MUST EQUAL THE INDIVIDUAL AMOUNTS ADDED UP).
 
-IN THE CASE THAT NO FOOD WAS DETECTED, PLEASE SAY THIS MESSAGE:
+IF A PICTURE OF A DOG/CAT IS PUT IN, MAKE SURE TO OUPUT IT LIKE IF SOMEONE ATE THE DOG/CAT (AS A JOKE)
 
-No food was detected in the image. Please try again or take another picture of the food.`;
+IF THE TOTAL CALORIES IS OVER 900, CALL THE USER A FATTY WHO NEEDS TO HIT THE GYM (AS A JOKE).
+
+`;
 
       // Read the image file as base64
       const base64ImageData = await FileSystem.readAsStringAsync(image, { encoding: FileSystem.EncodingType.Base64 });
