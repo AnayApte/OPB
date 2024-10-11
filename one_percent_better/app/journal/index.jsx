@@ -158,9 +158,10 @@ const App = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffb5c6' }}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
+        <Text>{'\n'}</Text>
           <BackButton destination="/home" />
 
           <TouchableOpacity
@@ -215,14 +216,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ffb5c6',
   },
   newEntryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#641f1f',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 16,
+    marginTop: 25,
   },
   newEntryButtonText: {
     color: 'white',

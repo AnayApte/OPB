@@ -3,6 +3,19 @@ import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react
 import { supabase } from '../../utils/supabaseClient';
 import { calculateOneRepMax } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
+import BackButton from '../../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../ThemeContext';
+
+const defaultTheme = {
+  background: '#FFFFFF',
+  text: '#000000',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+  cardBackground: '#FFFFFF',
+  buttonBackground: '#1E90FF',
+  buttonText: '#FFFFFF',
+};
 
 const ExerciseHistory = () => {
   const [exercises, setExercises] = useState([]);
@@ -10,6 +23,7 @@ const ExerciseHistory = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('Records');
   const { userId } = useAuth();
+  const { theme = defaultTheme } = useTheme() || {};
 
   useEffect(() => {
     if (userId) {
@@ -51,10 +65,10 @@ const ExerciseHistory = () => {
       .find(set => set.setId === currentRecord.setId);
 
     return (
-      <TouchableOpacity onPress={() => openModal(item)} style={styles.exerciseBox}>
-        <Text style={styles.exerciseName}>{item.name}</Text>
-        <Text>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
-        <Text>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
+      <TouchableOpacity onPress={() => openModal(item)} style={[styles.exerciseBox, { backgroundColor: theme.cardBackground }]}>
+        <Text style={[styles.exerciseName, { color: theme.text }]}>{item.name}</Text>
+        <Text style={{ color: theme.text }}>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
+        <Text style={{ color: theme.text }}>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
       </TouchableOpacity>
     );
   };
@@ -69,19 +83,19 @@ const ExerciseHistory = () => {
 
     return (
       <View>
-        <Text style={styles.sectionTitle}>Current One Rep Max:</Text>
-        <Text>{currentRecord.oneRepMax} lbs</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Current One Rep Max:</Text>
+        <Text style={{ color: theme.text }}>{currentRecord.oneRepMax} lbs</Text>
 
-        <Text style={styles.sectionTitle}>Best Set:</Text>
-        <Text>{bestSet.weight} lbs x {bestSet.reps} reps</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Best Set:</Text>
+        <Text style={{ color: theme.text }}>{bestSet.weight} lbs x {bestSet.reps} reps</Text>
 
-        <Text style={styles.sectionTitle}>PR History:</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>PR History:</Text>
         <FlatList
           data={selectedExercise.personalRecords.sort((a, b) => new Date(b.date) - new Date(a.date))}
           keyExtractor={(item) => item.setId.toString()}
           renderItem={({ item }) => (
             <View style={styles.prHistoryItem}>
-              <Text>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Text>
+              <Text style={{ color: theme.text }}>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Text>
             </View>
           )}
         />
@@ -98,10 +112,10 @@ const ExerciseHistory = () => {
         keyExtractor={(item) => item.workoutId.toString()}
         renderItem={({ item }) => (
           <View style={styles.workoutHistoryItem}>
-            <Text style={styles.sectionTitle}>{new Date(item.workouts.date).toLocaleDateString()}</Text>
-            <Text style={styles.sectionSubtitle}>Sets Performed:</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{new Date(item.workouts.date).toLocaleDateString()}</Text>
+            <Text style={[styles.sectionSubtitle, { color: theme.text }]}>Sets Performed:</Text>
             {item.sets.map((set, index) => (
-              <Text key={set.setId}>
+              <Text key={set.setId} style={{ color: theme.text }}>
                 Set {index + 1}: {set.reps} reps @ {set.weight} lbs (1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs)
               </Text>
             ))}
@@ -112,7 +126,8 @@ const ExerciseHistory = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <BackButton destination="/home"/>
       <FlatList
         data={exercises}
         keyExtractor={(item) => item.exerciseId.toString()}
@@ -125,24 +140,24 @@ const ExerciseHistory = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
           <View style={styles.tabContainer}>
             <TouchableOpacity onPress={() => setActiveTab('Records')}>
-              <Text style={[styles.tabText, activeTab === 'Records' && styles.activeTabText]}>Records</Text>
+              <Text style={[styles.tabText, activeTab === 'Records' && styles.activeTabText, { color: theme.text }]}>Records</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setActiveTab('History')}>
-              <Text style={[styles.tabText, activeTab === 'History' && styles.activeTabText]}>History</Text>
+              <Text style={[styles.tabText, activeTab === 'History' && styles.activeTabText, { color: theme.text }]}>History</Text>
             </TouchableOpacity>
           </View>
 
           {activeTab === 'Records' ? renderRecordsTab() : renderHistoryTab()}
 
-          <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeButton, { backgroundColor: theme.buttonBackground }]}>
+            <Text style={[styles.closeButtonText, { color: theme.buttonText }]}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -152,7 +167,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   exerciseBox: {
-    backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
@@ -183,7 +197,7 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     padding: 16,
-    paddingTop: 50, // Ensures content starts below the status bar
+    paddingTop: 50,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -199,12 +213,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 16,
-    backgroundColor: '#1E90FF',
     padding: 12,
     borderRadius: 8,
   },
   closeButtonText: {
-    color: 'white',
     textAlign: 'center',
     fontWeight: 'bold',
   },

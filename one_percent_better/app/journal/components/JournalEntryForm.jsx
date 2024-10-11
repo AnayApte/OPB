@@ -1,14 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
+import { useTheme } from '../../ThemeContext';  // Adjust the import path as needed
+
+const defaultTheme = {
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+  buttonBackground: '#641f1f',
+  buttonText: '#F2f5ea',
+  inputBackground: '#F2f5ea',
+  inputText: '#641f1f',
+  inputBorder: '#2c363f',
+};
 
 const JournalEntryForm = ({ entry, onSave, onCancel }) => {
+  const { theme = defaultTheme } = useTheme() || {};
   const [title, setTitle] = useState('');
   const [entryText, setEntryText] = useState('');
 
   useEffect(() => {
     if (entry) {
       setTitle(entry.title || '');
-      setEntryText(entry.body || ''); // Correctly set body instead of text
+      setEntryText(entry.body || '');
     }
   }, [entry]);
 
@@ -21,39 +35,38 @@ const JournalEntryForm = ({ entry, onSave, onCancel }) => {
       );
       return;
     }
-
     const date = new Date();
-    onSave({ title, body: entryText, date: date.toDateString() }); // Use body instead of text
+    onSave({ title, body: entryText, date: date.toDateString() });
     setTitle('');
     setEntryText('');
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <TextInput
-          style={[styles.input, styles.titleInput]}
+          style={[styles.input, styles.titleInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
           value={title}
           onChangeText={setTitle}
           placeholder="Entry Title"
-          placeholderTextColor="#A9A9A9"
+          placeholderTextColor={theme.text}
         />
         <TextInput
-          style={[styles.input, styles.entryInput]}
+          style={[styles.input, styles.entryInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
           value={entryText}
           onChangeText={setEntryText}
           placeholder="Jot your thoughts here!"
-          placeholderTextColor="#A9A9A9"
+          placeholderTextColor={theme.text}
           multiline
           numberOfLines={10}
           textAlignVertical="top"
         />
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
-            <Text style={styles.buttonText}>Save Entry</Text>
+          <TouchableOpacity style={[styles.button, styles.saveButton, { backgroundColor: theme.buttonBackground }]} onPress={handleSave}>
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>Save Entry</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
-            <Text style={styles.buttonText}>Cancel</Text>
+          <TouchableOpacity style={[styles.button, styles.cancelButton, { backgroundColor: theme.secondary }]} onPress={onCancel}>
+            <Text style={[styles.buttonText, { color: theme.text }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -64,7 +77,6 @@ const JournalEntryForm = ({ entry, onSave, onCancel }) => {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 20,
     shadowColor: '#000',
@@ -74,12 +86,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   input: {
-    borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: '#f9f9f9',
     marginBottom: 10,
   },
   titleInput: {
@@ -99,13 +109,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   saveButton: {
-    backgroundColor: '#007AFF',
+    // backgroundColor is set dynamically
   },
   cancelButton: {
-    backgroundColor: '#d3d3d3',
+    // backgroundColor is set dynamically
   },
   buttonText: {
-    color: 'white',
     fontSize: 16,
   },
 });

@@ -1,20 +1,32 @@
-// auth/signup.jsx
 import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
-import *  as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-secure-store';
+import { ThemeProvider, useTheme } from '../ThemeContext';
 
+const defaultTheme = {
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+  buttonBackground: '#641f1f',
+  buttonText: '#f2f5ea',
+  inputBackground: 'white',
+  inputText: 'black',
+  inputBorder: '#641f1f',
+  link: '#1e90ff',
+};
 
-export default function Signup() {
+const SignupContent = () => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { theme = defaultTheme } = useTheme() || {};
 
   const handleSignup = async () => {
     try {
-      // Step 1: Sign up the user with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -25,9 +37,8 @@ export default function Signup() {
         return;
       }
 
-      const userId = data.user.id;  // This is the Supabase Auth user ID
+      const userId = data.user.id;
 
-      // Step 2: Insert the user data into your `users` table
       const { data: userRecord, error: userError } = await supabase
         .from('users')
         .insert([{ userId: userId, email: email, username: username }]);
@@ -37,9 +48,8 @@ export default function Signup() {
         return;
       }
 
-      // Step 3: Store the user ID securely and navigate to the home page
       await SecureStore.setItemAsync('userId', userId);
-      router.replace('/home');
+      router.replace('/profile');
       
       console.log('Signup and user creation successful');
     } catch (error) {
@@ -48,47 +58,55 @@ export default function Signup() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Sign Up</Text>
-        <TextInput           
-        style={styles.input}           
-        placeholder="Email"           
-        value={email}           
-        onChangeText={setEmail}         
-        />         
-        <TextInput           
-        style={styles.input}           
-        placeholder="Username"           
-        value={username}           
-        onChangeText={setUsername}         
-        />         
-        <TextInput           
-        style={styles.input}           
-        placeholder="Password"           
-        secureTextEntry           
-        value={password}           
-        onChangeText={setPassword}         
-        />         
-        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Sign Up</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
+          placeholder="Email"
+          placeholderTextColor={theme.text}
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
+          placeholder="Username"
+          placeholderTextColor={theme.text}
+          value={username}
+          onChangeText={setUsername}
+        />
+        <TextInput
+          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
+          placeholder="Password"
+          placeholderTextColor={theme.text}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity style={[styles.signupButton, { backgroundColor: '#641f1f'  }]} onPress={handleSignup}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Sign Up</Text>
         </TouchableOpacity>
         <View style={styles.bottomLink}>
           <Link href="/(auth)/login" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Have an account? Sign in</Text>
+              <Text style={[styles.linkText, { color: theme.link }]}>Have an account? Sign in</Text>
             </TouchableOpacity>
           </Link>
         </View>
       </View>
     </SafeAreaView>
   );
-}
+};
+
+const Signup = () => (
+  <ThemeProvider>
+    <SignupContent />
+  </ThemeProvider>
+);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
   },
   content: {
     flex: 1,
@@ -104,14 +122,12 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 40,
-    borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 16,
     paddingHorizontal: 10,
   },
   signupButton: {
-    backgroundColor: 'blue',
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 8,
@@ -119,7 +135,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -127,7 +142,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   linkText: {
-    color: 'blue',
     fontSize: 16,
   },
 });
+
+export default Signup;

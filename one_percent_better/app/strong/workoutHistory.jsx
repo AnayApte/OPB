@@ -5,18 +5,22 @@ import { calculateOneRepMax } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../utils/BackButton';
+import { useTheme } from '../ThemeContext';
 
-// Utility function to format interval durations
+const defaultTheme = {
+  background: '#FFFFFF',
+  text: '#000000',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+  cardBackground: '#FFFFFF',
+  buttonBackground: '#1E90FF',
+  buttonText: '#FFFFFF',
+};
+
 const formatTime = (interval) => {
   if (!interval) return 'N/A';
-
   const [hours, minutes, seconds] = interval.split(':').map(Number);
-
-  const formattedHours = hours.toString().padStart(2, '0');
-  const formattedMinutes = minutes.toString().padStart(2, '0');
-  const formattedSeconds = seconds.toString().padStart(2, '0');
-
-  return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
 const WorkoutHistory = () => {
@@ -24,6 +28,7 @@ const WorkoutHistory = () => {
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const { userId } = useAuth();
+  const { theme = defaultTheme } = useTheme() || {};
 
   useEffect(() => {
     if (userId) {
@@ -48,8 +53,6 @@ const WorkoutHistory = () => {
     if (error) {
       console.error('Error fetching workouts:', error);
     } else {
-      console.log('Fetched workouts:', data);
-      // Fetch personal records for each exercise
       const workoutsWithPRs = await Promise.all(data.map(async (workout) => {
         const workoutExercisesWithPRs = await Promise.all(workout.workoutExercises.map(async (workoutExercise) => {
           const { data: pr } = await supabase
@@ -75,64 +78,62 @@ const WorkoutHistory = () => {
     setModalVisible(true);
   };
 
-  const renderWorkoutItem = ({ item }) => {
-    return (
-      <TouchableOpacity onPress={() => openModal(item)} style={styles.workoutBox}>
-        <Text style={styles.dateText}>{new Date(item.date).toLocaleDateString()}</Text>
-        <Text>Duration: {formatTime(item.duration)}</Text>
-        <Text style={styles.sectionTitle}>Exercises:</Text>
-        {item.workoutExercises.map((workoutExercise) => {
-          const bestSet = workoutExercise.personalRecord ? 
-            workoutExercise.sets.find(set => set.setId === workoutExercise.personalRecord.setId) :
-            workoutExercise.sets.reduce((best, current) => 
-              calculateOneRepMax(current.weight, current.reps) > calculateOneRepMax(best.weight, best.reps) ? current : best,
-              workoutExercise.sets[0]
-            );
-
-          const bestSetInfo = bestSet ? `${bestSet.weight}x${bestSet.reps}` : 'N/A';
-
-          return (
-            <View key={workoutExercise.exerciseId} style={styles.exerciseRow}>
-              <Text>{workoutExercise.sets.length}x {workoutExercise.exercises.name}</Text>
-              <Text>Best Set: {bestSetInfo}</Text>
-            </View>
+  const renderWorkoutItem = ({ item }) => (
+    <TouchableOpacity onPress={() => openModal(item)} style={[styles.workoutBox, { backgroundColor: theme.cardBackground }]}>
+      <Text style={[styles.dateText, { color: theme.text }]}>{new Date(item.date).toLocaleDateString()}</Text>
+      <Text style={{ color: theme.text }}>Duration: {formatTime(item.duration)}</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Exercises:</Text>
+      {item.workoutExercises.map((workoutExercise) => {
+        const bestSet = workoutExercise.personalRecord ? 
+          workoutExercise.sets.find(set => set.setId === workoutExercise.personalRecord.setId) :
+          workoutExercise.sets.reduce((best, current) => 
+            calculateOneRepMax(current.weight, current.reps) > calculateOneRepMax(best.weight, best.reps) ? current : best,
+            workoutExercise.sets[0]
           );
-        })}
-      </TouchableOpacity>
-    );
-  };
+
+        const bestSetInfo = bestSet ? `${bestSet.weight}x${bestSet.reps}` : 'N/A';
+
+        return (
+          <View key={workoutExercise.exerciseId} style={styles.exerciseRow}>
+            <Text style={{ color: theme.text }}>{workoutExercise.sets.length}x {workoutExercise.exercises.name}</Text>
+            <Text style={{ color: theme.text }}>Best Set: {bestSetInfo}</Text>
+          </View>
+        );
+      })}
+    </TouchableOpacity>
+  );
 
   const renderModalContent = () => {
     if (!selectedWorkout) return null;
 
     return (
-      <View style={styles.modalContent}>
-        <Text style={styles.dateText}>{new Date(selectedWorkout.date).toLocaleDateString()}</Text>
-        <Text>Duration: {formatTime(selectedWorkout.duration)}</Text>
+      <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+        <Text style={[styles.dateText, { color: theme.text }]}>{new Date(selectedWorkout.date).toLocaleDateString()}</Text>
+        <Text style={{ color: theme.text }}>Duration: {formatTime(selectedWorkout.duration)}</Text>
         <FlatList
           data={selectedWorkout.workoutExercises}
           keyExtractor={(item) => item.exerciseId.toString()}
           renderItem={({ item: workoutExercise }) => (
             <View style={styles.exerciseDetails}>
-              <Text style={styles.sectionTitle}>{workoutExercise.exercises.name}</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>{workoutExercise.exercises.name}</Text>
               {workoutExercise.sets.map((set, index) => (
                 <View key={set.setId} style={styles.setRow}>
-                  <Text>Set {index + 1}: {set.weight}x{set.reps}</Text>
-                  <Text>1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs</Text>
+                  <Text style={{ color: theme.text }}>Set {index + 1}: {set.weight}x{set.reps}</Text>
+                  <Text style={{ color: theme.text }}>1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs</Text>
                 </View>
               ))}
             </View>
           )}
         />
-        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-          <Text style={styles.closeButtonText}>Close</Text>
+        <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeButton, { backgroundColor: theme.buttonBackground }]}>
+          <Text style={[styles.closeButtonText, { color: theme.buttonText }]}>Close</Text>
         </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <BackButton destination="/home"/>
       <FlatList
         data={workouts}
@@ -157,7 +158,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   workoutBox: {
-    backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     padding: 16,
-    paddingTop: 50, // Ensures content starts below the status bar
+    paddingTop: 50,
   },
   exerciseDetails: {
     marginTop: 16,
@@ -193,12 +193,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 16,
-    backgroundColor: '#1E90FF',
     padding: 12,
     borderRadius: 8,
   },
   closeButtonText: {
-    color: 'white',
     textAlign: 'center',
     fontWeight: 'bold',
   },

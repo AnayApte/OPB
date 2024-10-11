@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../utils/BackButton';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
-const ChatGPTPage = () => {
+const defaultTheme = {
+  background: '#FFFFFF',
+  text: '#000000',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+};
+
+const ChatGPTContent = () => {
+  const { theme = defaultTheme } = useTheme() || {};
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,15 +56,23 @@ const ChatGPTPage = () => {
   };
 
   const renderItem = ({ item }) => (
-    <View style={[styles.message, item.sender === 'bot' ? styles.botMessage : styles.userMessage]}>
-      <Text>{item.text}</Text>
+    <View style={[
+      styles.message,
+      item.sender === 'bot' 
+        ? [styles.botMessage, { backgroundColor: theme.secondary }]
+        : [styles.userMessage, { backgroundColor: theme.primary }]
+    ]}>
+      <Text style={{ color: item.sender === 'bot' ? theme.text : theme.secondary }}>{item.text}</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
       <BackButton destination="/calorieCounter"/>
-      <Text style={styles.title}>Calorie Bot</Text>
+      <Text style={[styles.title, { color: theme.primary }]}>Calorie Bot</Text>
       <FlatList
         data={messages}
         renderItem={renderItem}
@@ -64,35 +81,41 @@ const ChatGPTPage = () => {
       />
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: theme.text, borderColor: theme.primary }]}
           value={input}
           onChangeText={setInput}
           placeholder="Type your message..."
+          placeholderTextColor={theme.text}
         />
         <TouchableOpacity
           onPress={handleSend}
           disabled={loading}
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.primary }]}
         >
-          <Text style={styles.buttonText}>Send</Text>
+          <Text style={[styles.buttonText, { color: theme.secondary }]}>Send</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </KeyboardAvoidingView>
+  );
+};
+
+const ChatGPTPage = () => {
+  return (
+    <ThemeProvider>
+      <ChatGPTContent />
+    </ThemeProvider>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'purple',
     padding: 20,
-    justifyContent: 'flex-start',
   },
   title: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: 'yellow',
     marginBottom: 20,
   },
   chatContainer: {
@@ -101,38 +124,32 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: 'yellow',
-    padding: 5,
+    marginTop: 10,
   },
   input: {
     flex: 1,
-    padding: 10,
     borderWidth: 1,
-    borderColor: 'yellow',
-    borderRadius: 5,
+    borderRadius: 10,
+    padding: 10,
     marginRight: 10,
   },
   message: {
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
     marginVertical: 5,
+    maxWidth: '80%',
   },
   userMessage: {
-    backgroundColor: 'white',
     alignSelf: 'flex-end',
   },
   botMessage: {
-    backgroundColor: 'yellow',
     alignSelf: 'flex-start',
   },
   button: {
-    backgroundColor: 'yellow',
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
   },
   buttonText: {
-    color: 'purple',
     fontWeight: 'bold',
   },
 });

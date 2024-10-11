@@ -3,19 +3,31 @@ import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'r
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import moment from 'moment';
 import { format } from 'date-fns';
-
-
 import { createClient } from '@supabase/supabase-js';
-import { useAuth } from '../utils/AuthContext'; // Ensure this path is correct
+import { useAuth } from '../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
+import BackButton from '../utils/BackButton';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
-import BackButton from '../utils/BackButton'; // Adjust the import path as needed
+const defaultTheme = {
+  background: 'purple',
+  text: 'yellow',
+  primary: 'yellow',
+  secondary: '#f2f5ea',
+  buttonBackground: '#884513',
+  buttonText: 'purple',
+  inputBackground: 'white',
+  inputText: 'black',
+  inputBorder: 'yellow',
+  todoBackground: '#4B0082',
+};
 
 const supabaseUrl = SUPABASEURL;
-const supabaseKey = SUPABASEKEY; // Ensure this key is correct
+const supabaseKey = SUPABASEKEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TodoList = () => {
+  const { theme = defaultTheme } = useTheme() || {};
   const { userId } = useAuth();
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
@@ -47,6 +59,7 @@ const TodoList = () => {
       alert('Please select a date after today.');
     }
   };
+
   useEffect(() => {
     if (userId) {
       loadTodos();
@@ -211,88 +224,80 @@ const TodoList = () => {
   const renderTodoItem = ({ item }) => {
     const formattedDueDate = item.due_date ? moment(item.due_date).startOf('day').format("MMMM Do, YYYY") : 'No due date';
     return (
-    <View style={[styles.todoItem, { borderLeftColor: getPriorityColor(item.task_priority), borderLeftWidth: 5 }]}>
-      <TouchableOpacity onPress={() => toggleComplete(item.id)} style={styles.checkmark}>
-        <Text style={styles.checkmarkText}>{item.completed ? '✓' : ''}</Text>
-      </TouchableOpacity>
-      {isEditing && currentTodo?.id === item.id ? (
-        <TextInput
-          style={styles.todoTextInput}
-          value={currentTodo.details}
-          onChangeText={(text) => setCurrentTodo({ ...currentTodo, details: text })}
-          onBlur={applyEdit}
-          autoFocus
-          selectTextOnFocus
-          multiline
-          numberOfLines={4}
-        />
-      ) : (
-        <View>
-          <Text style={[styles.todoText, item.completed && styles.completedText]}>{item.details}</Text>
-          <Text style={styles.dueDateText}>Due: {formattedDueDate || 'No due date'}</Text> 
+      <View style={[styles.todoItem, { backgroundColor: theme.todoBackground }]}>
+        <TouchableOpacity onPress={() => toggleComplete(item.id)} style={[styles.checkmark, { borderColor: theme.primary }]}>
+          <Text style={[styles.checkmarkText, { color: theme.primary }]}>{item.completed ? '✓' : ''}</Text>
+        </TouchableOpacity>
+        {isEditing && currentTodo?.id === item.id ? (
+          <TextInput
+            style={[styles.todoTextInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
+            value={currentTodo.details}
+            onChangeText={(text) => setCurrentTodo({ ...currentTodo, details: text })}
+            onBlur={applyEdit}
+            autoFocus
+            selectTextOnFocus
+            multiline
+            numberOfLines={4}
+          />
+        ) : (
+          <View>
+            <Text style={[styles.todoText, item.completed && styles.completedText, { color: theme.text }]}>{item.details}</Text>
+            <Text style={[styles.dueDateText, { color: theme.text }]}>Due: {formattedDueDate}</Text> 
           </View>
-      )}
-      {isEditing && currentTodo?.id === item.id ? (
-        <TouchableOpacity onPress={applyEdit} style={styles.applyButton}>
-          <Text style={styles.buttonText}>Apply</Text>
+        )}
+        {isEditing && currentTodo?.id === item.id ? (
+          <TouchableOpacity onPress={applyEdit} style={[styles.applyButton, { backgroundColor: theme.buttonBackground }]}>
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>Apply</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={() => editTodo(item)} style={[styles.editButton, { backgroundColor: theme.buttonBackground }]}>
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>Edit</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={() => deleteTodo(item.id)} style={[styles.deleteButton, { backgroundColor: theme.buttonBackground }]}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Delete</Text>
         </TouchableOpacity>
-      ) : (
-        <TouchableOpacity onPress={() => editTodo(item)} style={styles.editButton}>
-          <Text style={styles.buttonText}>Edit</Text>
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity onPress={() => deleteTodo(item.id)} style={styles.deleteButton}>
-          <Text style={styles.buttonText}>Delete</Text>
-        </TouchableOpacity>
-    </View>
-  );
-};
-
-  const completedTodos = todos.filter(todo => todo.completed);
-  const incompleteTodos = todos.filter(todo => !todo.completed);
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <BackButton destination="/home" />
-      <Text style={styles.title}>Todo List</Text>
+      <Text style={[styles.title, { color: theme.text }]}>Todo List</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
         placeholder="Add new todo"
+        placeholderTextColor={theme.text}
         value={newTodo}
         onChangeText={setNewTodo}
       />
       {newDueDate && (
-        <Text style={styles.selectedDateText}>
+        <Text style={[styles.selectedDateText, { color: theme.primary }]}>
           Selected Date: {format(new Date(newDueDate), "MMMM do, yyyy")}
         </Text>
       )}
-      <Text style={styles.priorityTitle}>Priority:</Text>
+      <Text style={[styles.priorityTitle, { color: theme.text }]}>Priority:</Text>
       <View style={styles.priorityButtonsContainer}>
-        <TouchableOpacity
-          style={[styles.priorityButton, { backgroundColor: newPriority === 'low' ? getPriorityColor('low') : '#ccc' }]}
-          onPress={() => setNewPriority('low')}
-        >
-          <Text>Low</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.priorityButton, { backgroundColor: newPriority === 'medium' ? getPriorityColor('medium') : '#ccc' }]}
-          onPress={() => setNewPriority('medium')}
-        >
-          <Text>Medium</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.priorityButton, { backgroundColor: newPriority === 'high' ? getPriorityColor('high') : '#ccc' }]}
-          onPress={() => setNewPriority('high')}
-        > 
-          <Text>High</Text>
-        </TouchableOpacity>
+        {['low', 'medium', 'high'].map((priority) => (
+          <TouchableOpacity
+            key={priority}
+            style={[
+              styles.priorityButton,
+              { backgroundColor: newPriority === priority ? theme.primary : theme.buttonBackground }
+            ]}
+            onPress={() => setNewPriority(priority)}
+          >
+            <Text style={{ color: newPriority === priority ? theme.buttonText : theme.text }}>{priority.charAt(0).toUpperCase() + priority.slice(1)}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
       <View style={styles.buttonRow}>
-      <TouchableOpacity style={[styles.button]} onPress={() => setDatePickerVisibility(true)}>
-          <Text style={styles.buttonText}>Select Due Date</Text>
+        <TouchableOpacity style={[styles.button, { backgroundColor: theme.buttonBackground }]} onPress={() => setDatePickerVisibility(true)}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Select Due Date</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.addButton]} onPress={addTodo}>
-          <Text style={styles.buttonText}>Add Todo</Text>
+        <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.buttonBackground }]} onPress={addTodo}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add Todo</Text>
         </TouchableOpacity>
         
         <DateTimePickerModal
@@ -300,23 +305,23 @@ const TodoList = () => {
           mode="date"
           onConfirm={handleConfirmDate}
           onCancel={() => setDatePickerVisibility(false)}
-          textColor="#000" // Ensure text color is set
+          textColor={theme.text}
         />
       </View>
       <FlatList
         data={todos}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderTodoItem}
       />
     </View>
   );
 };
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f0f0f0',
   },
   title: {
     fontSize: 28,
@@ -324,15 +329,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 50,
     textAlign: 'center',
-    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 25,
     padding: 15,
     marginBottom: 10,
-    backgroundColor: '#fff',
     fontSize: 16,
   },
   priorityButtonsContainer: {
@@ -358,14 +360,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 10,
   },
-  button1: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
   button: {
-    backgroundColor: '#C8A2C8',
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 5,
     alignItems: 'center',
     marginBottom: 10,
     shadowColor: '#000',
@@ -375,7 +372,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   applyButton: {
-    backgroundColor: '#4CAF50',
     padding: 10,
     borderRadius: 25,
     marginRight: 5,
@@ -386,7 +382,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   deleteButton: {
-    backgroundColor: '#f44336',
     padding: 10,
     borderRadius: 25,
     shadowColor: '#000',
@@ -399,14 +394,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 5,
-    backgroundColor: 'white',
-    borderRadius: 15,
-    marginBottom: 5,
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.3,
     shadowRadius: 2,
+    elevation: 3,
   },
   checkmark: {
     marginRight: 10,
@@ -414,21 +409,17 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#333',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkmarkText: {
     fontSize: 18,
-    color: '#333'
   },
   todoTextInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
-    backgroundColor: '#fff',
   },
   todoText: {
     flex: 1,
@@ -439,7 +430,6 @@ const styles = StyleSheet.create({
     color: '#aaa',
   },
   editButton: {
-    backgroundColor: '#FFA500',
     padding: 10,
     borderRadius: 25,
     marginRight: 5,
@@ -450,7 +440,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   addButton: {
-    backgroundColor: '#4CAF50',
     padding: 10,
     borderRadius: 25,
     alignItems: 'center',
@@ -460,46 +449,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
     elevation: 5,
-    
   },
   selectedDateText: {
     marginTop: 5,
     fontSize: 11,
-    color: '#6a6a6a',
-  },
-  dateButton: {
-    backgroundColor: '#28A745',
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 5,
-  },
-  datePicker: {
-    flex: 0.5,
-    width: '100%',
   },
   buttonText: {
-    color: '#FFF',
     fontSize: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
-    color: '#333',
   },
   priorityTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 20,
     marginBottom: 10,
-    color: '#333',
   },
   dueDateText: {
     fontSize: 14,
-    color: '#666',
   },
 });
 
-export default TodoList;
+export default () => (
+  <ThemeProvider>
+    <TodoList />
+  </ThemeProvider>
+);

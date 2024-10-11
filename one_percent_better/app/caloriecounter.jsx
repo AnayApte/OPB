@@ -6,8 +6,22 @@ import { Link } from 'expo-router';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
-export default function App() {
+const defaultTheme = {
+  background: 'purple',
+  text: 'yellow',
+  primary: 'yellow',
+  secondary: '#f2f5ea',
+  buttonBackground: 'yellow',
+  buttonText: 'purple',
+  inputBackground: 'white',
+  inputText: 'black',
+  inputBorder: 'yellow',
+};
+
+const CalorieCounterContent = () => {
+  const { theme = defaultTheme } = useTheme() || {};
   const [calorieGoal, setCalorieGoal] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [caloriesEaten, setCaloriesEaten] = useState(0);
@@ -18,17 +32,17 @@ export default function App() {
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
 
-const supabaseUrl = SUPABASEURL;
-const supabaseKey = SUPABASEKEY;
-const supabase = createClient(supabaseUrl, supabaseKey)
-const { userId } = useAuth();
+  const supabaseUrl = SUPABASEURL;
+  const supabaseKey = SUPABASEKEY;
+  const supabase = createClient(supabaseUrl, supabaseKey)
+  const { userId } = useAuth();
 
   useEffect(() => {
     loadInitialData();
     const appStateListener = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
-      appStateListener.remove(); // Cleanup app state listener on unmount
+      appStateListener.remove();
     };
   }, []);
 
@@ -48,7 +62,6 @@ const { userId } = useAuth();
       const currentDate = new Date().toISOString().split('T')[0];
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
   
-      // If it's a new day, reset the data
       if (lastResetDate !== currentDate) {
         await AsyncStorage.setItem('lastResetDate', currentDate);
         await AsyncStorage.setItem('caloriesEaten', '0');
@@ -62,14 +75,13 @@ const { userId } = useAuth();
         setWaterDrunk(parseInt(storedWaterDrunk) || 0);
       }
   
-      // Fetch today's workout durations
       const startOfToday = `${currentDate}T00:00:00.000Z`;
       const endOfToday = `${currentDate}T23:59:59.999Z`;
   
       const { data: workouts, error } = await supabase
         .from('workouts')
         .select('duration')
-        .eq('userId', userId)  // Ensure you have the userId from context or state
+        .eq('userId', userId)
         .gte('date', startOfToday)
         .lte('date', endOfToday);
   
@@ -78,21 +90,18 @@ const { userId } = useAuth();
         return;
       }
   
-      // Calculate total duration and calories burned
       const totalDurationInHours = workouts.reduce((total, workout) => {
         const [hours, minutes, seconds] = workout.duration.split(':').map(Number);
         return total + hours + minutes / 60 + seconds / 3600;
       }, 0);
   
-      const caloriesBurned = Math.round(totalDurationInHours * 400); // Assumes 400 calories burned per hour
+      const caloriesBurned = Math.round(totalDurationInHours * 400);
       setCaloriesBurned(caloriesBurned);
   
     } catch (error) {
       console.error('Failed to load initial data:', error);
     }
   };
-  
-  
 
   const saveCalorieGoal = async () => {
     try {
@@ -131,15 +140,6 @@ const { userId } = useAuth();
     }
   };
 
-  const resetWaterDrunk = async () => {
-    setWaterDrunk(0);
-    try {
-      await AsyncStorage.setItem('waterDrunk', '0');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const isWithinGoal = () => {
     const goal = parseInt(calorieGoal);
     if (isNaN(goal)) return false;
@@ -156,109 +156,119 @@ const { userId } = useAuth();
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Calorie Counter</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.title, { color: theme.text }]}>Calorie Counter</Text>
       <View style={styles.contentContainer}>
-        <Text style={[styles.quote, styles.lessBold]}>Your Calorie Goal: </Text>
+        <Text style={[styles.quote, styles.lessBold, { color: theme.text }]}>Your Calorie Goal: </Text>
         {isEditing ? (
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
               placeholder="Enter Calorie Goal"
+              placeholderTextColor={theme.inputText}
               keyboardType="numeric"
               value={calorieGoal}
               onChangeText={setCalorieGoal}
             />
-            <TouchableOpacity onPress={saveCalorieGoal} style={styles.button}>
-              <Text style={styles.buttonText}>Save</Text>
+            <TouchableOpacity onPress={saveCalorieGoal} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
+              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Save</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.goalContainer}>
-            <Text style={styles.goalText}>{calorieGoal}</Text>
-            <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.button}>
-              <Text style={styles.buttonText}>Edit</Text>
+            <Text style={[styles.goalText, { color: theme.text }]}>{calorieGoal}</Text>
+            <TouchableOpacity onPress={() => setIsEditing(true)} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
+              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Edit</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
       <View style={styles.calorieTrackContainer}>
-        <Text style={[styles.quote, styles.lessBold]}>Calories Eaten: {caloriesEaten} </Text>
+        <Text style={[styles.quote, styles.lessBold, { color: theme.text }]}>Calories Eaten: {caloriesEaten} </Text>
         {isAddingCalories ? (
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
               placeholder="Add Cals"
+              placeholderTextColor={theme.inputText}
               keyboardType="numeric"
               value={inputCalories}
               onChangeText={setInputCalories}
             />
-            <TouchableOpacity onPress={addCalories} style={styles.button}>
-              <Text style={styles.buttonText}>Add</Text>
+            <TouchableOpacity onPress={addCalories} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
+              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity onPress={() => setIsAddingCalories(true)} style={styles.button}>
-            <Text style={styles.buttonText}>Add Cals</Text>
+          <TouchableOpacity onPress={() => setIsAddingCalories(true)} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add Cals</Text>
           </TouchableOpacity>
         )}
       </View>
-      <Text style={[styles.quote1, styles.lessBold]}>Calories Burned: {caloriesBurned} </Text>
-      <Text style={[styles.quote1, styles.lessBold, isWithinGoal() ? styles.greenText : styles.redText]}>
+      <Text style={[styles.quote1, styles.lessBold, { color: theme.text }]}>Calories Burned: {caloriesBurned} </Text>
+      <Text style={[styles.quote1, styles.lessBold, isWithinGoal() ? styles.greenText : styles.redText, { color: theme.text }]}>
         Total Calories for the day: {caloriesEaten-caloriesBurned}
       </Text>
       <View style={styles.waterTrackContainer1}>
         <View style={styles.waterTrackContainer}>
-          <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText]}>
+          <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText, { color: theme.text }]}>
             Water Drunk: {waterDrunk} oz
           </Text>
           {isAddingWater ? (
             <View style={styles.inputContainer}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
                 placeholder="Add Water (oz)"
+                placeholderTextColor={theme.inputText}
                 keyboardType="numeric"
                 value={inputWater}
                 onChangeText={setInputWater}
               />
-              <TouchableOpacity onPress={addWater} style={styles.button}>
-                <Text style={styles.buttonText}>Add</Text>
+              <TouchableOpacity onPress={addWater} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
+                <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity onPress={() => setIsAddingWater(true)} style={styles.button1}>
-              <Text style={styles.buttonText}>Add Water</Text>
+            <TouchableOpacity onPress={() => setIsAddingWater(true)} style={[styles.button1, { backgroundColor: theme.buttonBackground }]}>
+              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add Water</Text>
             </TouchableOpacity>
           )}
         </View>
         <View style={styles.waterBottle}>
           <Image
-            source={require('./water-bottle.png')} // Update this path to your water bottle image
+            source={require('./water-bottle.png')}
             style={styles.waterBottleImage}
           />
           <View
             style={[
               styles.waterFill,
-              { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` }, // Calculate height percentage
+              { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` },
             ]}
           />
         </View>
-        <Link href="/RecipesPage" style={{ color: 'blue' }}>
-        Go to Recipes
-      </Link>
-        <Link href="/caloriebot" style={{ color: 'blue' }}>
+        <Link href="/RecipesPage" style={{ color: theme.text }}>
+          Go to Recipes
+        </Link>
+        <Link href="/caloriebot" style={{ color: theme.text }}>
           Go to CalorieBot
         </Link>
       </View>
       <StatusBar style="auto" />
     </View>
   );
-}
+};
+
+const CalorieCounter = () => {
+  return (
+    <ThemeProvider>
+      <CalorieCounterContent />
+    </ThemeProvider>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'purple',
     padding: 20,
     justifyContent: 'flex-start',
   },
@@ -266,7 +276,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: 'yellow',
     marginBottom: 20,
   },
   contentContainer: {
@@ -294,20 +303,17 @@ const styles = StyleSheet.create({
   quote: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'yellow',
     textAlign: 'center',
   },
   quote1: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'yellow',
     textAlign: 'center',
     marginTop: 20,
   },
   quote2: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'yellow',
     textAlign: 'center',
   },
   greenText: {
@@ -325,29 +331,28 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     padding: 5,
     width: 80,
     textAlign: 'center',
     borderRadius: 5,
-    backgroundColor: 'white',
     marginRight: 10,
   },
   button: {
-    backgroundColor: 'yellow',
     padding: 5,
     borderRadius: 10,
     alignItems: 'center',
+    borderWidth: 1,  // Add this line
+    borderColor: 'gray',  // Add this line
   },
   button1: {
-    backgroundColor: 'yellow',
     padding: 5,
     borderRadius: 10,
     alignItems: 'center',
     marginLeft: 8,
+    borderWidth: 1,  // Add this line
+    borderColor: 'gray',  // Add this line
   },
   buttonText: {
-    color: 'purple',
     fontWeight: 'bold',
     fontSize: 10,
   },
@@ -357,7 +362,6 @@ const styles = StyleSheet.create({
   },
   goalText: {
     fontSize: 18,
-    color: 'yellow',
     marginRight: 10,
   },
   waterBottle: {
@@ -380,3 +384,5 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
 });
+
+export default CalorieCounter;
