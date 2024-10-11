@@ -15,6 +15,7 @@ const RootLayout = () => {
         <Stack.Screen name="calorieCounter" />
         <Stack.Screen name="calorieBot" />
         <Stack.Screen name="recipesPage" />
+        <Stack.Screen name="foodanalyzer" />
       </Stack>
     </AuthProvider>
   );

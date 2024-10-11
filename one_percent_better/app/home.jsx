@@ -94,7 +94,9 @@ const HomeContent = () => {
           <Link href="/caloriecounter" style={{ color: theme.primary }}>Go to CalorieCounter</Link>
           <Link href="/journal" style={{ color: theme.primary }}>Go to Journal</Link>
           <Link href="/todolist0" style={{ color: theme.primary }}>Go to TodoList</Link>
+          <Link href="/foodanalyzer" style={{color: theme.primary}}>Analyze your food</Link>
           <Link href="/profile" style={{color: theme.primary}}>Edit Profile</Link>
+          
           <TouchableOpacity onPress={handleLogout} style={[styles.logoutButton, { backgroundColor: theme.primary }]}>
             <Text style={[styles.logoutText, { color: theme.secondary }]}>Logout</Text>
           </TouchableOpacity>
