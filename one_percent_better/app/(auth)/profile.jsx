@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
@@ -27,23 +27,23 @@ const ProfileCompletionContent = () => {
     const fetchProfileData = async () => {
       try {
         const userId = await SecureStore.getItemAsync('userId');
-        
+
         if (!userId) {
           console.error('No user ID found. Unable to fetch profile data.');
           return;
         }
-  
+
         const { data, error } = await supabase
           .from('users')
           .select('weight, age, gender')
           .eq('userId', userId)
           .single();
-  
+
         if (error) {
           console.error('Error fetching user profile:', error.message);
           return;
         }
-  
+
         if (data) {
           setWeight(data.weight ? data.weight.toString() : '');
           setAge(data.age ? data.age.toString() : '');
@@ -53,33 +53,33 @@ const ProfileCompletionContent = () => {
         console.error('Unexpected error fetching profile data:', error);
       }
     };
-  
+
     fetchProfileData();
   }, []);
 
   const handleSaveProfile = async () => {
     try {
       const userId = await SecureStore.getItemAsync('userId');
-  
+
       if (!userId) {
         console.error('No user ID found. Unable to update profile.');
         return;
       }
-  
+
       const { data, error } = await supabase
         .from('users')
         .update({ weight: weight, age: age, gender: gender })
         .eq('userId', userId);
-  
+
       if (error) {
         console.error('Error updating user profile:', error.message);
         return;
       }
-  
+
       await SecureStore.setItemAsync('userId', userId);
-  
+
       console.log('Profile updated successfully');
-  
+
       router.replace('/home');
     } catch (error) {
       console.error('Unexpected error during profile update:', error);
@@ -158,47 +158,49 @@ const ProfileCompletionContent = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Complete Your Profile</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Weight"
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-          placeholderTextColor={theme.text}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Age"
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-          placeholderTextColor={theme.text}
-        />
-        
-        <Text style={styles.label}>Gender:</Text>
-        <View style={styles.radioContainer}>
-          <TouchableOpacity
-            style={[styles.radioButton, gender === true && styles.radioButtonSelected]}
-            onPress={() => setGender(true)}
-          >
-            <Text style={styles.radioText}>Male</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.radioButton, gender === false && styles.radioButtonSelected]}
-            onPress={() => setGender(false)}
-          >
-            <Text style={styles.radioText}>Female</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Complete Your Profile</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Weight"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="numeric"
+            placeholderTextColor={theme.text}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Age"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+            placeholderTextColor={theme.text}
+          />
+
+          <Text style={styles.label}>Gender:</Text>
+          <View style={styles.radioContainer}>
+            <TouchableOpacity
+              style={[styles.radioButton, gender === true && styles.radioButtonSelected]}
+              onPress={() => setGender(true)}
+            >
+              <Text style={styles.radioText}>Male</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.radioButton, gender === false && styles.radioButtonSelected]}
+              onPress={() => setGender(false)}
+            >
+              <Text style={styles.radioText}>Female</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+            <Text style={styles.buttonText}>Save Profile</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
-          <Text style={styles.buttonText}>Save Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 

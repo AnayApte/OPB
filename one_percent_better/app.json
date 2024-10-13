@@ -2,7 +2,7 @@
   "expo": {
     "name": "One Percent Better",
     "slug": "one_percent_better",
-    "scheme": "one_percent_better",
+    "scheme": "onepb://",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
