@@ -44,7 +44,19 @@ export default function FoodAnalyzer() {
 
 DON'T OUTPUT ANYTHING BUT THE SPECIFIED FORMAT. I DON'T WANT AN EXPLANATION OR ANYTHING.
 
-AFTER THIS, OUTPUT A TOTAL AMOUNT OF CALORIES, PROTEIN, & FAT IN THE IMAGE (THE TOTAL AMOUNTS MUST EQUAL THE INDIVIDUAL AMOUNTS ADDED UP).`;
+AFTER THIS, OUTPUT A TOTAL AMOUNT OF CALORIES, PROTEIN, & FAT IN THE IMAGE (THE TOTAL AMOUNTS MUST EQUAL THE INDIVIDUAL AMOUNTS ADDED UP).
+
+If there are multiple of the same food item in the picture, output them all on one line, adding up the nutritional content so as to declutter up the results.
+When multiple of the same food are on the same line, the nutriontal content of the line should be singular, ex:
+Tacos x 3, calories for 1 taco, protein for 1 taco, fat for 1 taco
+However the total should still be all of them added up, so calories for 3 tacos, protein for 3 tacos, fat for 3 tacos
+
+NEVER OUTPUT ABOUT THE INGREDIENTS OF THE FOOD, ONLY THE FOOD ITSELF, ex:
+output tacos, not beef, lettuce, cheese, tortilla, etc. \n\n
+
+This also means that the nutritional information must be accurate to the food item, not the ingredients. \n\n
+
+`;
       const result = await model.generateContent([prompt, { inlineData: { data: base64, mimeType: "image/jpeg" } }]);
 
       setAnalysis(result.response.text());
