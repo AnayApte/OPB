@@ -1,3 +1,5 @@
+// one_percent_better/utils/supabaseClient.js
+
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'

@@ -1,3 +1,5 @@
+// app/(auth)/forgotPassword.jsx
+
 import React from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';

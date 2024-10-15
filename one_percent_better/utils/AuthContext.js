@@ -1,3 +1,5 @@
+// one_percent_better/utils/AuthContext.js
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from './supabaseClient';  // Import Supabase client

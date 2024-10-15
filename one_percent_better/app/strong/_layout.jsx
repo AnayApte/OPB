@@ -1,3 +1,4 @@
+// app/strong/_layout.jsx
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';

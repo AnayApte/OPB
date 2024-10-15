@@ -1,3 +1,5 @@
+// one_percent_better/utils/destroyDatabase.js
+
 // Update this as you add more tables
 const { createClient } = require('@supabase/supabase-js');
 

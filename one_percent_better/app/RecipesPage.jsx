@@ -1,3 +1,4 @@
+// app/RecipesPage.jsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { createClient } from '@supabase/supabase-js';

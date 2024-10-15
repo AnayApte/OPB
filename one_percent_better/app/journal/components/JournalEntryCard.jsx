@@ -1,3 +1,5 @@
+// app/journal/components/JournalEntryCard.jsx
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '../../ThemeContext';  // Adjust the import path as needed

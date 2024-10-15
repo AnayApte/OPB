@@ -1,3 +1,5 @@
+//app/journal/index.jsx
+
 import React, { useState, useEffect } from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, Keyboard, SafeAreaView } from 'react-native';
 import { format } from 'date-fns';

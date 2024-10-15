@@ -1,3 +1,5 @@
+// app/journal/JournalEntryForm.jsx
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { ThemeProvider, useTheme } from '../ThemeContext';

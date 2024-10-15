@@ -1,3 +1,5 @@
+// one_percent_better/utils/helpers.js
+
 export const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;

@@ -1,3 +1,5 @@
+// app/journal/components/JournalEntryForm.jsx
+
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity, Text, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import { useTheme } from '../../ThemeContext';  // Adjust the import path as needed

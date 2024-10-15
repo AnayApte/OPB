@@ -1,3 +1,5 @@
+// app/strong/workout-history.jsx
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';

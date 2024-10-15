@@ -1,3 +1,5 @@
+// app/foodanalyzer.jsx
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, Image, StyleSheet, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';

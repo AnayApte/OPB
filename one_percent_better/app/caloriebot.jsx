@@ -1,3 +1,5 @@
+// app/caloriebot.jsx
+
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';

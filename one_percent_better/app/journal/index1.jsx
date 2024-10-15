@@ -1,3 +1,5 @@
+// app/journal/index1.jsx
+
 import React, { useState } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
 import JournalEntryForm from './JournalEntryForm.jsx';

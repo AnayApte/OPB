@@ -1,3 +1,5 @@
+// app/medito.jsx
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { Audio } from 'expo-av';

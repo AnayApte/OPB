@@ -1,3 +1,5 @@
+// one_percent_better/utils/reseedDatabase.js
+
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'

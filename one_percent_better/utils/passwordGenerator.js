@@ -1,3 +1,5 @@
+// one_percent_better/utils/passwordGenerator.js
+
 // File: utils/passwordGenerator.js
 
 import bcrypt from 'react-native-bcrypt';

@@ -1,3 +1,7 @@
+// app/(auth)/profile.jsx
+
+
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
