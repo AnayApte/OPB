@@ -62,7 +62,11 @@ const ExerciseHistory = () => {
     const currentRecord = item.personalRecords.find(record => record.isCurrent);
     const bestSet = item.workoutExercises
       .flatMap(we => we.sets)
-      .find(set => set.setId === currentRecord.setId);
+      .find(set => set && currentRecord && set.setId === currentRecord.setId);
+
+    if (!currentRecord || !bestSet) {
+      return null;
+    }
 
     return (
       <TouchableOpacity onPress={() => openModal(item)} style={[styles.exerciseBox, { backgroundColor: theme.cardBackground }]}>
@@ -79,7 +83,11 @@ const ExerciseHistory = () => {
     const currentRecord = selectedExercise.personalRecords.find(record => record.isCurrent);
     const bestSet = selectedExercise.workoutExercises
       .flatMap(we => we.sets)
-      .find(set => set.setId === currentRecord.setId);
+      .find(set => set && currentRecord && set.setId === currentRecord.setId);
+
+    if (!currentRecord || !bestSet) {
+      return <Text style={{ color: theme.text }}>No records available</Text>;
+    }
 
     return (
       <View>

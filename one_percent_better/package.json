@@ -37,6 +37,7 @@
     "react-native-bcrypt": "^2.4.0",
     "react-native-calendars": "^1.1307.0",
     "react-native-dotenv": "^3.4.11",
+    "react-native-gesture-handler": "^2.20.0",
     "react-native-get-random-values": "^1.11.0",
     "react-native-image-picker": "^7.1.2",
     "react-native-modal-datetime-picker": "^17.1.0",
