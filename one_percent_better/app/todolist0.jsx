@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { createClient } from '@supabase/supabase-js';
-import { useAuth } from '../utils/AuthContext';
-import { SUPABASEURL, SUPABASEKEY } from '@env';
-import { ThemeProvider, useTheme } from './ThemeContext';
-import { format } from 'date-fns';
-import { TextInput, Button, Card, Title, Paragraph, List, IconButton, Menu } from 'react-native-paper';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { TextInput, Button, Card, Paragraph, IconButton, Menu, Title } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
-const supabase = createClient(SUPABASEURL, SUPABASEKEY);
+import { supabase } from '../utils/supabaseClient';
+import { format } from 'date-fns';
+import { useAuth } from '../utils/AuthContext';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
 function TodoList() {
   const { theme } = useTheme();
   const { userId } = useAuth();
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
-  const [newPriority, setNewPriority] = useState('low');
+  const [newPriority, setNewPriority] = useState('medium');
   const [newDueDate, setNewDueDate] = useState(new Date());
   const [isEditing, setIsEditing] = useState(false);
   const [currentTodo, setCurrentTodo] = useState(null);
@@ -66,10 +63,14 @@ function TodoList() {
       console.error('Error adding todo:', error);
     } else {
       setTodos([...todos, data[0]]);
-      setNewTodo('');
-      setNewPriority('low');
-      setNewDueDate(new Date());
+      resetInputs();
     }
+  };
+
+  const resetInputs = () => {
+    setNewTodo('');
+    setNewPriority('medium');
+    setNewDueDate(new Date());
   };
 
   const toggleComplete = async (id) => {
@@ -100,11 +101,11 @@ function TodoList() {
   };
 
   const editTodo = (todo) => {
-    setIsEditing(true);
     setCurrentTodo(todo);
     setNewTodo(todo.details);
     setNewPriority(todo.task_priority);
     setNewDueDate(new Date(todo.due_date));
+    setIsEditing(true);
   };
 
   const updateTodo = async () => {
@@ -121,102 +122,159 @@ function TodoList() {
       console.error('Error updating todo:', error);
     } else {
       setTodos(todos.map(todo => todo.id === currentTodo.id ? { ...todo, details: newTodo, task_priority: newPriority, due_date: newDueDate.toISOString() } : todo));
+      resetInputs();
       setIsEditing(false);
       setCurrentTodo(null);
-      setNewTodo('');
-      setNewPriority('low');
-      setNewDueDate(new Date());
     }
   };
 
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 'red';
+      case 'medium':
+        return 'orange';
+      case 'low':
+        return 'green';
+      default:
+        return 'gray';
+    }
+  };
+
+  const PrioritySymbol = ({ priority }) => (
+    <View style={[styles.prioritySymbol, { backgroundColor: getPriorityColor(priority) }]} />
+  );
+
+  const sortedTodos = useMemo(() => {
+    const priorityOrder = { high: 1, medium: 2, low: 3 };
+    return [...todos].sort((a, b) => {
+      if (a.completed && !b.completed) return 1;
+      if (!a.completed && b.completed) return -1;
+      if (a.completed && b.completed) return 0;
+      return priorityOrder[a.task_priority] - priorityOrder[b.task_priority];
+    });
+  }, [todos]);
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={{ color: theme.text }}>Todo List</Title>
-          <TextInput
-            label="New Todo"
-            value={newTodo}
-            onChangeText={setNewTodo}
-            style={styles.input}
-            theme={{ colors: { primary: theme.primary } }}
-          />
-          <View style={styles.row}>
-            <Menu
-              visible={showPriorityMenu}
-              onDismiss={() => setShowPriorityMenu(false)}
-              anchor={
-                <Button onPress={() => setShowPriorityMenu(true)} mode="outlined" style={styles.menuButton}>
-                  {newPriority.charAt(0).toUpperCase() + newPriority.slice(1)}
-                </Button>
-              }
-            >
-              <Menu.Item onPress={() => { setNewPriority('low'); setShowPriorityMenu(false); }} title="Low" />
-              <Menu.Item onPress={() => { setNewPriority('medium'); setShowPriorityMenu(false); }} title="Medium" />
-              <Menu.Item onPress={() => { setNewPriority('high'); setShowPriorityMenu(false); }} title="High" />
-            </Menu>
-            <Button onPress={() => setShowDatePicker(true)} mode="outlined" style={styles.menuButton}>
-              {format(newDueDate, 'PP')}
-            </Button>
-          </View>
-          {showDatePicker && (
-            <DateTimePicker
-              value={newDueDate}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) {
-                  setNewDueDate(selectedDate);
-                }
-              }}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={styles.container}>
+        <Title style={styles.title}>Todolist</Title>
+        <Card style={styles.card}>
+          <Card.Content>
+            <TextInput
+              label="New Todo"
+              value={newTodo}
+              onChangeText={setNewTodo}
+              style={styles.input}
+              theme={{ colors: { primary: theme.primary } }}
             />
-          )}
-          <Button mode="contained" onPress={isEditing ? updateTodo : addTodo} style={styles.addButton}>
-            {isEditing ? 'Update Todo' : 'Add Todo'}
-          </Button>
-        </Card.Content>
-      </Card>
-      <ScrollView style={styles.todoList}>
-        {todos.map((todo) => (
-          <Card key={todo.id} style={styles.todoItem}>
-            <Card.Content>
-              <View style={styles.todoHeader}>
-                <Paragraph style={[styles.todoTitle, todo.completed && styles.completedTodo]}>
-                  {todo.details}
-                </Paragraph>
-                <IconButton
-                  icon={todo.completed ? 'check-circle' : 'circle-outline'}
-                  onPress={() => toggleComplete(todo.id)}
-                  color={theme.primary}
-                />
-              </View>
-              <Paragraph style={styles.todoPriority}>
-                Priority: {todo.task_priority.charAt(0).toUpperCase() + todo.task_priority.slice(1)}
-              </Paragraph>
-              <Paragraph style={styles.todoDueDate}>
-                Due: {format(new Date(todo.due_date), 'PP')}
-              </Paragraph>
-              <View style={styles.todoActions}>
-                <Button onPress={() => editTodo(todo)} mode="text">
-                  Edit
-                </Button>
-                <Button onPress={() => deleteTodo(todo.id)} mode="text" color="red">
-                  Delete
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
-        ))}
-      </ScrollView>
-    </View>
+            <View style={styles.row}>
+              <Menu
+                visible={showPriorityMenu}
+                onDismiss={() => setShowPriorityMenu(false)}
+                anchor={
+                  <Button 
+                    onPress={() => setShowPriorityMenu(true)} 
+                    mode="outlined" 
+                    style={[styles.menuButton, { borderColor: '#3b0051' }]}
+                    labelStyle={{ color: '#3b0051' }}
+                  >
+                    <PrioritySymbol priority={newPriority} />
+                    <Paragraph style={styles.priorityText}>{newPriority.charAt(0).toUpperCase() + newPriority.slice(1)}</Paragraph>
+                  </Button>
+                }
+              >
+                <Menu.Item onPress={() => { setNewPriority('low'); setShowPriorityMenu(false); }} title="Low" leadingIcon={() => <PrioritySymbol priority="low" />} />
+                <Menu.Item onPress={() => { setNewPriority('medium'); setShowPriorityMenu(false); }} title="Medium" leadingIcon={() => <PrioritySymbol priority="medium" />} />
+                <Menu.Item onPress={() => { setNewPriority('high'); setShowPriorityMenu(false); }} title="High" leadingIcon={() => <PrioritySymbol priority="high" />} />
+              </Menu>
+              <Button 
+                onPress={() => setShowDatePicker(true)} 
+                mode="outlined" 
+                style={[styles.menuButton, { borderColor: '#3b0051' }]}
+                labelStyle={{ color: '#3b0051' }}
+              >
+                {format(newDueDate, 'PP')}
+              </Button>
+            </View>
+            {showDatePicker && (
+              <DateTimePicker
+                value={newDueDate}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (selectedDate) {
+                    setNewDueDate(selectedDate);
+                  }
+                }}
+              />
+            )}
+            <Button 
+              mode="contained" 
+              onPress={isEditing ? updateTodo : addTodo} 
+              style={[styles.addButton, { backgroundColor: '#3b0051' }]}
+            >
+              {isEditing ? 'Update Todo' : 'Add Todo'}
+            </Button>
+          </Card.Content>
+        </Card>
+        <ScrollView style={styles.todoList}>
+          {sortedTodos.map((todo) => (
+            <Card key={todo.id} style={[styles.todoItem, todo.completed && styles.completedTodoItem]}>
+              <Card.Content style={styles.todoContent}>
+                <View style={styles.todoHeader}>
+                  <View style={styles.prioritySymbolContainer}>
+                    <PrioritySymbol priority={todo.task_priority} />
+                  </View>
+                  <Paragraph style={[styles.todoTitle, todo.completed && styles.completedTodo]} numberOfLines={1}>
+                    {todo.details}
+                  </Paragraph>
+                  <IconButton
+                    icon={todo.completed ? 'check-circle' : 'circle-outline'}
+                    onPress={() => toggleComplete(todo.id)}
+                    color="#3b0051"
+                    size={16}
+                  />
+                </View>
+                <View style={styles.todoInfo}>
+                  <Paragraph style={styles.todoPriority} numberOfLines={1}>
+                    {todo.task_priority.charAt(0).toUpperCase() + todo.task_priority.slice(1)}
+                  </Paragraph>
+                  <Paragraph style={styles.todoDueDate} numberOfLines={1}>
+                    {format(new Date(todo.due_date), 'PP')}
+                  </Paragraph>
+                </View>
+                <View style={styles.todoActions}>
+                  <Button onPress={() => editTodo(todo)} mode="contained" color="#3b0051" compact style={styles.actionButton}>
+                    Edit
+                  </Button>
+                  <Button onPress={() => deleteTodo(todo.id)} mode="contained" color="#3b0051" compact style={styles.actionButton}>
+                    Delete
+                  </Button>
+                </View>
+              </Card.Content>
+            </Card>
+          ))}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
   },
   card: {
     marginBottom: 16,
@@ -232,6 +290,12 @@ const styles = StyleSheet.create({
   menuButton: {
     flex: 1,
     marginHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  priorityText: {
+    marginLeft: 8,
   },
   addButton: {
     marginTop: 8,
@@ -240,30 +304,59 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   todoItem: {
-    marginBottom: 8,
+    marginBottom: 4,
+    padding: 4,
+  },
+  completedTodoItem: {
+    opacity: 0.6,
+  },
+  todoContent: {
+    padding: 4,
   },
   todoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  prioritySymbolContainer: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  prioritySymbol: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
   todoTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     flex: 1,
   },
   completedTodo: {
     textDecorationLine: 'line-through',
   },
+  todoInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
   todoPriority: {
-    fontSize: 14,
+    fontSize: 12,
   },
   todoDueDate: {
-    fontSize: 14,
+    fontSize: 12,
   },
   todoActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    marginTop: 4,
+  },
+  actionButton: {
+    marginLeft: 4,
+    paddingHorizontal: 8,
   },
 });
 
