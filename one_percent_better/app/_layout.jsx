@@ -19,7 +19,7 @@ const RootLayout = () => {
             <Stack.Screen name="medito" />
             <Stack.Screen name="journal" />
             <Stack.Screen name="todolist0"/>
-            <Stack.Screen name="calorieCounter" />
+            <Stack.Screen name="caloriecounter" />
             <Stack.Screen name="calorieBot" />
             <Stack.Screen name="recipesPage" />
             <Stack.Screen name="foodanalyzer" />

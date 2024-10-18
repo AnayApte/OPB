@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, SafeAreaView, StyleSheet } from 'react-native';
+import { View, SafeAreaView, StyleSheet, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../utils/AuthContext';
-import { useTheme } from './ThemeContext';
-import { Appbar, Card, Title, Paragraph, Button, Surface, Text } from 'react-native-paper';
+import { ThemeProvider } from './ThemeContext';
+import { Appbar, Card, Title, Paragraph, Button, Surface, Text, IconButton } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const quotes = [
   "'The only limit to our realization of tomorrow is our doubts of today.' - Franklin D. Roosevelt",
@@ -19,10 +20,16 @@ const quotes = [
   "'It is hard to beat a person who never gives up' - Babe Ruth",
 ];
 
+const theme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  button: '#f2e2fb',
+  buttonText: '#3b0051',
+};
+
 export default function Home() {
   const { signOut } = useAuth();
   const router = useRouter();
-  const { theme } = useTheme();
   const [quote, setQuote] = useState("");
 
   useEffect(() => {
@@ -34,65 +41,57 @@ export default function Home() {
     router.replace('/');
   };
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#4a0e4e' }]}>
-      <StatusBar style="light" />
-      <Appbar.Header style={{ backgroundColor: '#7b1fa2' }}>
-        <Appbar.Content title="Home" titleStyle={{ color: '#ffffff' }} />
-      </Appbar.Header>
-      <View style={styles.content}>
-        <Card style={[styles.card, { backgroundColor: '#9c27b0' }]}>
-          <Card.Content>
-            <Title style={{ color: '#ffffff' }}>Welcome to the App!</Title>
-            <Paragraph style={{ color: '#f3e5f5' }}>This is your home screen.</Paragraph>
-          </Card.Content>
-        </Card>
-        <Card style={[styles.card, { backgroundColor: '#7b1fa2' }]}>
-          <Card.Content>
-            <Title style={{ color: '#ffffff' }}>Quote of the Day</Title>
-            <Paragraph style={{ color: '#e1bee7', fontStyle: 'italic' }}>{quote}</Paragraph>
-          </Card.Content>
-        </Card>
-        <Surface style={styles.buttonContainer}>
-          <Button
-            mode="contained"
-            onPress={() => router.push('/profile')}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-          >
-            Go to Profile
-          </Button>
-          <Button
-            mode="contained"
-            onPress={() => router.push('/medito')}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-          >
-            Medito
-          </Button>
-          <Button
-            mode="contained"
-            onPress={() => router.push('/todolist0')}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-          >
-            Todo List
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleSignOut}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-            labelStyle={styles.buttonLabel}
-          >
-            Sign Out
-          </Button>
-        </Surface>
+  const NavButton = ({ icon, label, onPress }) => (
+    <Button
+      mode="contained"
+      onPress={onPress}
+      style={styles.navButton}
+      contentStyle={styles.navButtonContent}
+      labelStyle={styles.navButtonLabel}
+    >
+      <View style={styles.navButtonInner}>
+        <MaterialCommunityIcons name={icon} size={24} color={theme.buttonText} />
+        <Text style={styles.navButtonText}>{label}</Text>
       </View>
-    </SafeAreaView>
+    </Button>
+  );
+
+  return (
+    <ThemeProvider value={theme}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <StatusBar style="light" />
+        <Appbar.Header style={styles.header}>
+          <Appbar.Content title="YO P BE!" titleStyle={styles.headerTitle} />
+          <IconButton
+            icon="logout"
+            color={theme.text}
+            size={24}
+            onPress={handleSignOut}
+          />
+        </Appbar.Header>
+        <ScrollView style={styles.content}>
+          <Card style={styles.welcomeCard}>
+            <Card.Content>
+              <Title style={styles.welcomeTitle}>Welcome to YO P BE!</Title>
+              <Paragraph style={styles.welcomeText}>Your mental and physical health companion.</Paragraph>
+            </Card.Content>
+          </Card>
+          <Card style={styles.quoteCard}>
+            <Card.Content>
+              <Title style={styles.quoteTitle}>Quote of the Day</Title>
+              <Paragraph style={styles.quoteText}>{quote}</Paragraph>
+            </Card.Content>
+          </Card>
+          <Surface style={styles.navContainer}>
+            <NavButton icon="account" label="Profile" onPress={() => router.push('/profile')} />
+            <NavButton icon="meditation" label="Medito" onPress={() => router.push('/medito')} />
+            <NavButton icon="format-list-checks" label="Todo List" onPress={() => router.push('/todolist0')} />
+            <NavButton icon="dumbbell" label="Strong" onPress={() => router.push('/strong')} />
+            <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
+          </Surface>
+        </ScrollView>
+      </SafeAreaView>
+    </ThemeProvider>
   );
 }
 
@@ -100,34 +99,76 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  headerTitle: {
+    color: theme.text,
+    fontWeight: 'bold',
+    fontSize: 24,
+  },
   content: {
+    flex: 1,
+    padding: 16,
+  },
+  welcomeCard: {
+    backgroundColor: theme.button,
+    marginBottom: 16,
+    borderRadius: 12,
+  },
+  welcomeTitle: {
+    color: theme.buttonText,
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  welcomeText: {
+    color: theme.buttonText,
+    fontSize: 16,
+  },
+  quoteCard: {
+    backgroundColor: theme.button,
+    marginBottom: 16,
+    borderRadius: 12,
+  },
+  quoteTitle: {
+    color: theme.buttonText,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  quoteText: {
+    color: theme.buttonText,
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  navContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  navButton: {
+    width: '48%',
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: theme.button,
+  },
+  navButtonContent: {
+    height: 80,
+  },
+  navButtonInner: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
   },
-  card: {
-    width: '100%',
-    marginBottom: 16,
+  navButtonLabel: {
+    color: theme.buttonText,
   },
-  buttonContainer: {
-    width: '100%',
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: 'transparent',
-  },
-  button: {
-    marginVertical: 8,
-    borderRadius: 8,
-    elevation: 4,
-    backgroundColor: '#6a1b9a',
-  },
-  buttonContent: {
-    height: 48,
-  },
-  buttonLabel: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  navButtonText: {
+    color: theme.buttonText,
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
