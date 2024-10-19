@@ -1,56 +1,95 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ThemeProvider, useTheme } from '../ThemeContext';
+import { Appbar, Button, Card, Text } from 'react-native-paper';
 import BackButton from '../../utils/BackButton';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../ThemeContext';
 
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#641f1f',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  buttonBackground: '#4CAF50',
-  buttonText: '#FFFFFF',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
-const StrongHome = () => {
+function StrongHomeContent() {
   const router = useRouter();
-  const { theme = defaultTheme } = useTheme() || {};
+  const { theme = defaultTheme } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
       <BackButton destination="/home"/>
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: theme.buttonBackground }]}
-        onPress={() => router.push('/strong/workout')}
-      >
-        <Text style={[styles.buttonText, { color: theme.buttonText }]}>Start New Workout</Text>
-      </TouchableOpacity>
+        <Appbar.Content title="Strong" />
+      </Appbar.Header>
+      <ScrollView style={styles.container}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.title, { color: theme.primary }]}>Welcome to Strong</Text>
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2936/2936886.png' }}
+              style={styles.image}
+            />
+            <Text style={[styles.description, { color: theme.text }]}>Track your workouts and progress</Text>
+          </Card.Content>
+        </Card>
+        
+        <Card style={styles.card}>
+          <Card.Content>
+            <Button 
+              mode="contained" 
+              onPress={() => router.push('/strong/workout')} 
+              style={styles.button} 
+              buttonColor={theme.buttonBackground}
+            >
+              Start New Workout
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    padding: 16,
+  },
+  card: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  description: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   button: {
-    padding: 15,
-    borderRadius: 5,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginTop: 8,
   },
 });
 
-export default StrongHome;
+export default function StrongHome() {
+  return (
+    <ThemeProvider>
+      <StrongHomeContent />
+    </ThemeProvider>
+  );
+}

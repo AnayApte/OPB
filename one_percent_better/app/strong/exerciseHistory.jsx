@@ -1,29 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import { calculateOneRepMax } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
-import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../ThemeContext';
+import { useRouter } from 'expo-router';
+import { ThemeProvider, useTheme } from '../ThemeContext';
+import { Appbar, Button, Card, Text, Modal, Portal, SegmentedButtons } from 'react-native-paper';
 
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#641f1f',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  cardBackground: '#FFFFFF',
-  buttonBackground: '#1E90FF',
-  buttonText: '#FFFFFF',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
-const ExerciseHistory = () => {
+function ExerciseHistoryContent() {
   const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('Records');
   const { userId } = useAuth();
-  const { theme = defaultTheme } = useTheme() || {};
+  const { theme = defaultTheme } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     if (userId) {
@@ -69,11 +70,13 @@ const ExerciseHistory = () => {
     }
 
     return (
-      <TouchableOpacity onPress={() => openModal(item)} style={[styles.exerciseBox, { backgroundColor: theme.cardBackground }]}>
-        <Text style={[styles.exerciseName, { color: theme.text }]}>{item.name}</Text>
-        <Text style={{ color: theme.text }}>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
-        <Text style={{ color: theme.text }}>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
-      </TouchableOpacity>
+      <Card style={styles.card} onPress={() => openModal(item)}>
+        <Card.Content>
+          <Text style={styles.exerciseName}>{item.name}</Text>
+          <Text>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
+          <Text>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
+        </Card.Content>
+      </Card>
     );
   };
 
@@ -86,28 +89,26 @@ const ExerciseHistory = () => {
       .find(set => set && currentRecord && set.setId === currentRecord.setId);
 
     if (!currentRecord || !bestSet) {
-      return <Text style={{ color: theme.text }}>No records available</Text>;
+      return <Text>No records available</Text>;
     }
 
     return (
-      <View>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Current One Rep Max:</Text>
-        <Text style={{ color: theme.text }}>{currentRecord.oneRepMax} lbs</Text>
+      <ScrollView>
+        <Text style={styles.sectionTitle}>Current One Rep Max:</Text>
+        <Text>{currentRecord.oneRepMax} lbs</Text>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Best Set:</Text>
-        <Text style={{ color: theme.text }}>{bestSet.weight} lbs x {bestSet.reps} reps</Text>
+        <Text style={styles.sectionTitle}>Best Set:</Text>
+        <Text>{bestSet.weight} lbs x {bestSet.reps} reps</Text>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>PR History:</Text>
+        <Text style={styles.sectionTitle}>PR History:</Text>
         <FlatList
           data={selectedExercise.personalRecords.sort((a, b) => new Date(b.date) - new Date(a.date))}
           keyExtractor={(item) => item.setId.toString()}
           renderItem={({ item }) => (
-            <View style={styles.prHistoryItem}>
-              <Text style={{ color: theme.text }}>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Text>
-            </View>
+            <Text>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Text>
           )}
         />
-      </View>
+      </ScrollView>
     );
   };
 
@@ -119,15 +120,17 @@ const ExerciseHistory = () => {
         data={selectedExercise.workoutExercises.sort((a, b) => new Date(b.workouts.date) - new Date(a.workouts.date))}
         keyExtractor={(item) => item.workoutId.toString()}
         renderItem={({ item }) => (
-          <View style={styles.workoutHistoryItem}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>{new Date(item.workouts.date).toLocaleDateString()}</Text>
-            <Text style={[styles.sectionSubtitle, { color: theme.text }]}>Sets Performed:</Text>
-            {item.sets.map((set, index) => (
-              <Text key={set.setId} style={{ color: theme.text }}>
-                Set {index + 1}: {set.reps} reps @ {set.weight} lbs (1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs)
-              </Text>
-            ))}
-          </View>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.sectionTitle}>{new Date(item.workouts.date).toLocaleDateString()}</Text>
+              <Text style={styles.sectionSubtitle}>Sets Performed:</Text>
+              {item.sets.map((set, index) => (
+                <Text key={set.setId}>
+                  Set {index + 1}: {set.reps} reps @ {set.weight} lbs (1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs)
+                </Text>
+              ))}
+            </Card.Content>
+          </Card>
         )}
       />
     );
@@ -135,54 +138,42 @@ const ExerciseHistory = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <BackButton destination="/home"/>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Exercise History" />
+      </Appbar.Header>
       <FlatList
         data={exercises}
         keyExtractor={(item) => item.exerciseId.toString()}
         renderItem={renderExerciseItem}
       />
 
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-          <View style={styles.tabContainer}>
-            <TouchableOpacity onPress={() => setActiveTab('Records')}>
-              <Text style={[styles.tabText, activeTab === 'Records' && styles.activeTabText, { color: theme.text }]}>Records</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setActiveTab('History')}>
-              <Text style={[styles.tabText, activeTab === 'History' && styles.activeTabText, { color: theme.text }]}>History</Text>
-            </TouchableOpacity>
-          </View>
-
+      <Portal>
+        <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)} contentContainerStyle={styles.modalContent}>
+          <SegmentedButtons
+            value={activeTab}
+            onValueChange={setActiveTab}
+            buttons={[
+              { value: 'Records', label: 'Records' },
+              { value: 'History', label: 'History' },
+            ]}
+          />
           {activeTab === 'Records' ? renderRecordsTab() : renderHistoryTab()}
-
-          <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeButton, { backgroundColor: theme.buttonBackground }]}>
-            <Text style={[styles.closeButtonText, { color: theme.buttonText }]}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+          <Button mode="contained" onPress={() => setModalVisible(false)} style={styles.closeButton}>
+            Close
+          </Button>
+        </Modal>
+      </Portal>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
-  exerciseBox: {
-    padding: 16,
-    borderRadius: 8,
+  card: {
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   exerciseName: {
     fontSize: 18,
@@ -196,38 +187,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
-  prHistoryItem: {
-    marginLeft: 16,
-  },
-  workoutHistoryItem: {
-    marginBottom: 16,
-  },
   modalContent: {
-    flex: 1,
-    padding: 16,
-    paddingTop: 50,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  activeTabText: {
-    color: '#1E90FF',
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 10,
   },
   closeButton: {
     marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
-  },
-  closeButtonText: {
-    textAlign: 'center',
-    fontWeight: 'bold',
   },
 });
 
-export default ExerciseHistory;
+
+
+export default function ExerciseHistory() {
+  return (
+    <ThemeProvider>
+      <ExerciseHistoryContent />
+    </ThemeProvider>
+  );
+}

@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 import { calculateOneRepMax } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BackButton from '../../utils/BackButton';
-import { useTheme } from '../ThemeContext';
+import { useRouter } from 'expo-router';
+import { ThemeProvider, useTheme } from '../ThemeContext';
+import { Appbar, Button, Card, Text, Modal, Portal } from 'react-native-paper';
 
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#641f1f',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  cardBackground: '#FFFFFF',
-  buttonBackground: '#1E90FF',
-  buttonText: '#FFFFFF',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
 const formatTime = (interval) => {
@@ -23,12 +23,13 @@ const formatTime = (interval) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-const WorkoutHistory = () => {
+function WorkoutHistoryContent() {
   const [workouts, setWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const { userId } = useAuth();
-  const { theme = defaultTheme } = useTheme() || {};
+  const { theme = defaultTheme } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     if (userId) {
@@ -79,93 +80,85 @@ const WorkoutHistory = () => {
   };
 
   const renderWorkoutItem = ({ item }) => (
-    <TouchableOpacity onPress={() => openModal(item)} style={[styles.workoutBox, { backgroundColor: theme.cardBackground }]}>
-      <Text style={[styles.dateText, { color: theme.text }]}>{new Date(item.date).toLocaleDateString()}</Text>
-      <Text style={{ color: theme.text }}>Duration: {formatTime(item.duration)}</Text>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Exercises:</Text>
-      {item.workoutExercises.map((workoutExercise) => {
-        const bestSet = workoutExercise.personalRecord ? 
-          workoutExercise.sets.find(set => set.setId === workoutExercise.personalRecord.setId) :
-          workoutExercise.sets.reduce((best, current) => 
-            calculateOneRepMax(current.weight, current.reps) > calculateOneRepMax(best.weight, best.reps) ? current : best,
-            workoutExercise.sets[0]
+    <Card style={styles.card} onPress={() => openModal(item)}>
+      <Card.Content>
+        <Text style={styles.dateText}>{new Date(item.date).toLocaleDateString()}</Text>
+        <Text>Duration: {formatTime(item.duration)}</Text>
+        <Text style={styles.sectionTitle}>Exercises:</Text>
+        {item.workoutExercises.map((workoutExercise) => {
+          const bestSet = workoutExercise.personalRecord ? 
+            workoutExercise.sets.find(set => set.setId === workoutExercise.personalRecord.setId) :
+            workoutExercise.sets.reduce((best, current) => 
+              calculateOneRepMax(current.weight, current.reps) > calculateOneRepMax(best.weight, best.reps) ? current : best,
+              workoutExercise.sets[0]
+            );
+
+          const bestSetInfo = bestSet ? `${bestSet.weight}x${bestSet.reps}` : 'N/A';
+
+          return (
+            <View key={workoutExercise.exerciseId} style={styles.exerciseRow}>
+              <Text>{workoutExercise.sets.length}x {workoutExercise.exercises.name}</Text>
+              <Text>Best Set: {bestSetInfo}</Text>
+            </View>
           );
-
-        const bestSetInfo = bestSet ? `${bestSet.weight}x${bestSet.reps}` : 'N/A';
-
-        return (
-          <View key={workoutExercise.exerciseId} style={styles.exerciseRow}>
-            <Text style={{ color: theme.text }}>{workoutExercise.sets.length}x {workoutExercise.exercises.name}</Text>
-            <Text style={{ color: theme.text }}>Best Set: {bestSetInfo}</Text>
-          </View>
-        );
-      })}
-    </TouchableOpacity>
+        })}
+      </Card.Content>
+    </Card>
   );
 
   const renderModalContent = () => {
     if (!selectedWorkout) return null;
 
     return (
-      <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-        <Text style={[styles.dateText, { color: theme.text }]}>{new Date(selectedWorkout.date).toLocaleDateString()}</Text>
-        <Text style={{ color: theme.text }}>Duration: {formatTime(selectedWorkout.duration)}</Text>
-        <FlatList
-          data={selectedWorkout.workoutExercises}
-          keyExtractor={(item) => item.exerciseId.toString()}
-          renderItem={({ item: workoutExercise }) => (
-            <View style={styles.exerciseDetails}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>{workoutExercise.exercises.name}</Text>
+      <ScrollView>
+        <Text style={styles.dateText}>{new Date(selectedWorkout.date).toLocaleDateString()}</Text>
+        <Text>Duration: {formatTime(selectedWorkout.duration)}</Text>
+        {selectedWorkout.workoutExercises.map((workoutExercise) => (
+          <Card key={workoutExercise.exerciseId} style={styles.card}>
+            <Card.Content>
+              <Text style={styles.sectionTitle}>{workoutExercise.exercises.name}</Text>
               {workoutExercise.sets.map((set, index) => (
                 <View key={set.setId} style={styles.setRow}>
-                  <Text style={{ color: theme.text }}>Set {index + 1}: {set.weight}x{set.reps}</Text>
-                  <Text style={{ color: theme.text }}>1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs</Text>
+                  <Text>Set {index + 1}: {set.weight}x{set.reps}</Text>
+                  <Text>1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs</Text>
                 </View>
               ))}
-            </View>
-          )}
-        />
-        <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeButton, { backgroundColor: theme.buttonBackground }]}>
-          <Text style={[styles.closeButtonText, { color: theme.buttonText }]}>Close</Text>
-        </TouchableOpacity>
-      </View>
+            </Card.Content>
+          </Card>
+        ))}
+        <Button mode="contained" onPress={() => setModalVisible(false)} style={styles.closeButton}>
+          Close
+        </Button>
+      </ScrollView>
     );
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <BackButton destination="/home"/>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Workout History" />
+      </Appbar.Header>
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.workoutId.toString()}
         renderItem={renderWorkoutItem}
       />
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        {renderModalContent()}
-      </Modal>
+      <Portal>
+        <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)} contentContainerStyle={styles.modalContent}>
+          {renderModalContent()}
+        </Modal>
+      </Portal>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
-  workoutBox: {
-    padding: 16,
-    borderRadius: 8,
+  card: {
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   dateText: {
     fontSize: 18,
@@ -180,12 +173,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   modalContent: {
-    flex: 1,
-    padding: 16,
-    paddingTop: 50,
-  },
-  exerciseDetails: {
-    marginTop: 16,
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 10,
   },
   setRow: {
     flexDirection: 'row',
@@ -193,13 +184,13 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
-  },
-  closeButtonText: {
-    textAlign: 'center',
-    fontWeight: 'bold',
   },
 });
 
-export default WorkoutHistory;
+export default function WorkoutHistory() {
+  return (
+    <ThemeProvider>
+      <WorkoutHistoryContent />
+    </ThemeProvider>
+  );
+}

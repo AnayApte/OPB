@@ -91,6 +91,8 @@ export default function Home() {
             <NavButton icon="format-list-checks" label="Todo List" onPress={() => router.push('/todolist0')} />
             <NavButton icon="dumbbell" label="Strong" onPress={() => router.push('/strong')} />
             <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
+            <NavButton icon="food" label="Food Analyzer" onPress={() => router.push('/foodanalyzer')} />
+            <NavButton icon="book-open-page-variant" label="Journal" onPress={() => router.push('/journal')} />
           </Surface>
         </ScrollView>
       </SafeAreaView>

@@ -1,20 +1,28 @@
-// app/foodanalyzer.jsx
-
 import React, { useState } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { Appbar, Button, Card, Paragraph, ActivityIndicator, Surface } from 'react-native-paper';
+import { Appbar, Button, Card, Text, ActivityIndicator, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // WARNING: Storing API keys in the client is not secure for production use
 const API_KEY = 'AIzaSyAY4p4uud0f5iSXH8SEBFm-UfhusLo5HwU';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-export default function FoodAnalyzer() {
-  const { theme } = useTheme();
+const defaultTheme = {
+  background: '#f2e2fb',
+  text: '#641f1f',
+  primary: '#3b0051',
+  secondary: '#f2f5ea',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
+};
+
+function FoodAnalyzerContent() {
+  const { theme = defaultTheme } = useTheme();
   const router = useRouter();
   const [image, setImage] = useState(null);
   const [analysis, setAnalysis] = useState('');
@@ -68,28 +76,44 @@ This also means that the nutritional information must be accurate to the food it
   };
 
   return (
-    <ThemeProvider>
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => router.back()} />
-          <Appbar.Content title="Food Analyzer" />
-        </Appbar.Header>
-        <Surface style={styles.content}>
-          <Button icon="camera" mode="contained" onPress={pickImage} style={styles.button}>
-            Pick an image from camera roll
-          </Button>
-          {loading && <ActivityIndicator animating={true} style={styles.loader} />}
-          {image && (
-            <Card style={styles.card}>
-              <Card.Cover source={{ uri: image }} />
-              <Card.Content>
-                <Paragraph>{analysis}</Paragraph>
-              </Card.Content>
-            </Card>
-          )}
-        </Surface>
-      </View>
-    </ThemeProvider>
+    <SafeAreaView style={[styles.container, { backgroundColor: defaultTheme.background }]}>
+      <Appbar.Header style = { {backgroundColor: defaultTheme.background } }>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content  title="Food Analyzer" />
+      </Appbar.Header>
+      <ScrollView style={styles.content}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.title, { color: defaultTheme.buttonBackground }]}>Welcome to Food Analyzer</Text>
+            <Text style={[styles.description, { color: theme.text }]}>
+              Unlock the nutritional secrets of your meals with our advanced AI-powered Food Analyzer. Simply upload a photo of your food, and we'll provide you with detailed nutritional information, including calories, protein, and fat content.
+            </Text>
+          </Card.Content>
+        </Card>
+        
+        <Card style={styles.card}>
+          <Card.Content>
+            <Button 
+              icon="camera" 
+              mode="contained" 
+              onPress={pickImage} 
+              style={styles.button}
+              buttonColor={defaultTheme.buttonBackground}
+            >
+              Pick an image from camera roll
+            </Button>
+            {loading && <ActivityIndicator animating={true} style={styles.loader} />}
+            {image && (
+              <View>
+                <Image source={{ uri: image }} style={styles.image} />
+                <Text style={[styles.analysisTitle, { color: theme.primary }]}>Analysis Results:</Text>
+                <Text style={[styles.analysisText, { color: theme.text }]}>{analysis}</Text>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -101,13 +125,47 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  card: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
   button: {
     marginBottom: 16,
   },
   loader: {
     marginVertical: 16,
   },
-  card: {
-    marginTop: 16,
+  image: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+    marginBottom: 16,
+    borderRadius: 8,
+  },
+  analysisTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  analysisText: {
+    fontSize: 16,
   },
 });
+
+export default function FoodAnalyzer() {
+  return (
+    <ThemeProvider>
+      <FoodAnalyzerContent />
+    </ThemeProvider>
+  );
+}

@@ -1,23 +1,24 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '../ThemeContext';
+import { IconButton } from 'react-native-paper';
 
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#FFB5C6',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  tabBar: '#f0f0f0',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
-const StrongLayoutContent = () => {
-  const { theme = defaultTheme } = useTheme() || {};
+function StrongLayoutContent() {
+  const { theme = defaultTheme } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: [styles.tabBar, { backgroundColor: theme.background }],
+        tabBarStyle: { backgroundColor: theme.background },
         headerShown: false,
       }}
     >
@@ -26,6 +27,9 @@ const StrongLayoutContent = () => {
         options={{
           title: 'Workout History',
           tabBarLabel: 'Workouts',
+          tabBarIcon: ({ color, size }) => (
+            <IconButton icon="history" size={size} iconColor={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -33,6 +37,9 @@ const StrongLayoutContent = () => {
         options={{
           title: 'Strong',
           tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <IconButton icon="home" size={size} iconColor={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -40,6 +47,9 @@ const StrongLayoutContent = () => {
         options={{
           title: 'Exercise History',
           tabBarLabel: 'Exercises',
+          tabBarIcon: ({ color, size }) => (
+            <IconButton icon="dumbbell" size={size} iconColor={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -50,18 +60,12 @@ const StrongLayoutContent = () => {
       />
     </Tabs>
   );
-};
+}
 
-const StrongLayout = () => (
-  <ThemeProvider>
-    <StrongLayoutContent />
-  </ThemeProvider>
-);
-
-const styles = StyleSheet.create({
-  tabBar: {
-    // Add any additional styles here
-  },
-});
-
-export default StrongLayout;
+export default function StrongLayout() {
+  return (
+    <ThemeProvider>
+      <StrongLayoutContent />
+    </ThemeProvider>
+  );
+}
