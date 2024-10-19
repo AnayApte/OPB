@@ -347,7 +347,7 @@ const WorkoutScreen = () => {
                 .single();
               
               if (newExerciseError) throw newExerciseError;
-              exerciseId = newExercise.exerciseId;
+              exerciseId =   newExercise.exerciseId;
             } else {
               exerciseId = existingExercise.exerciseId;
             }
@@ -387,7 +387,7 @@ const WorkoutScreen = () => {
               }
             }
       
-            const { data: existingPR, error: prError }   = await supabase
+            const { data: existingPR, error: prError } = await supabase
               .from('personalRecords')
               .select('*')
               .eq('userId', userId)

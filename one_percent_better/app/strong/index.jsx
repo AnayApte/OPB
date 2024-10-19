@@ -23,7 +23,7 @@ const StrongHome = () => {
       <BackButton destination="/home"/>
       <TouchableOpacity
         style={[styles.button, { backgroundColor: theme.buttonBackground }]}
-        onPress={() => router.push('/strong/workout')}
+        onPress={() => router.push('/strong/workout?autoStart=true')}
       >
         <Text style={[styles.buttonText, { color: theme.buttonText }]}>Start New Workout</Text>
       </TouchableOpacity>
