@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import { formatTime, calculateOneRepMax, formatExerciseName } from '../../utils/helpers';
@@ -8,7 +8,13 @@ import 'react-native-get-random-values';
 import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
-import { ScrollView } from 'react-native-gesture-handler';
+
+const formatExerciseNameForDisplay = (name) => {
+  return name
+    .split(/[_\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 const defaultTheme = {
   background: '#FFFFFF',
@@ -29,48 +35,82 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) =>
     transparent={true}
     visible={visible}
     onRequestClose={onCancel}
+    animationType="fade"
   >
-    <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
-      <View style={[styles.modalContent, { backgroundColor: theme.modalBackground }]}>
-        <Text style={[styles.modalTitle, { color: theme.modalText }]}>{title}</Text>
-        <Text style={[styles.modalMessage, { color: theme.modalText }]}>{message}</Text>
-        <View style={styles.modalButtonContainer}>
-          {onCancel && (
-            <TouchableOpacity style={[styles.modalButton, { borderColor: theme.buttonText }]} onPress={onCancel}>
-              <Text style={[styles.modalButtonText, { color: theme.buttonText }]}>Cancel</Text>
+    <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.modalMessage, { color: theme.text }]}>{message}</Text>
+          <View style={styles.modalButtonContainer}>
+            {onCancel && (
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.buttonBackground }]} onPress={onCancel}>
+                <Text style={[styles.modalButtonText, { color: theme.buttonText }]}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.buttonBackground }]} onPress={onConfirm}>
+              <Text style={[styles.modalButtonText, { color: theme.buttonText }]}>OK</Text>
             </TouchableOpacity>
-          )}
-          <TouchableOpacity style={[styles.modalButton, { borderColor: theme.buttonText }]} onPress={onConfirm}>
-            <Text style={[styles.modalButtonText, { color: theme.buttonText }]}>OK</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     </View>
   </Modal>
 );
 
 const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
   const [exercises, setExercises] = useState([]);
+  const [filteredExercises, setFilteredExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+
+  const ITEMS_PER_PAGE = 50;
 
   useEffect(() => {
-    fetchExercises();
-  }, []);
+    if (visible) {
+      fetchExercises();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (searchQuery === '') {
+      setFilteredExercises(exercises);
+    } else {
+      const filtered = exercises.filter(exercise =>
+        exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredExercises(filtered);
+    }
+  }, [searchQuery, exercises]);
 
   const fetchExercises = async () => {
+    if (!hasMore) return;
+
     const options = {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': '7884f1a8f6mshf52b668731d14f2p1b246ajsn455799bad1ea', // Replace with your actual RapidAPI key
+        'X-RapidAPI-Key': '7884f1a8f6mshf52b668731d14f2p1b246ajsn455799bad1ea',
         'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
       }
     };
 
     try {
-      const response = await fetch('https://exercisedb.p.rapidapi.com/exercises', options);
-      const data = await response.json();
-      setExercises(data);
+      const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?limit=${ITEMS_PER_PAGE}&offset=${page * ITEMS_PER_PAGE}`, options);
+      const newData = await response.json();
+
+      if (newData.length === 0) {
+        setHasMore(false);
+      } else {
+        const updatedExercises = [...exercises, ...newData];
+        setExercises(updatedExercises);
+        setFilteredExercises(updatedExercises);
+        setPage(prevPage => prevPage + 1);
+      }
+
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch exercises');
@@ -78,38 +118,124 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
     }
   };
 
+  const handleExercisePress = (exercise) => {
+    setSelectedExercise(exercise);
+  };
+
+  const handleSelectExercise = () => {
+    onSelect(formatExerciseNameForDisplay(selectedExercise.name));
+    setSelectedExercise(null);
+    onClose();
+  };
+
   const renderExerciseItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.exerciseItem}
-      onPress={() => onSelect(item.name.toUpperCase())}
+      style={[styles.exerciseItem, { borderBottomColor: theme.inputBorder }]}
+      onPress={() => handleExercisePress(item)}
     >
-      <Text style={[styles.exerciseItemText, { color: theme.text }]}>{item.name.toUpperCase()}</Text>
+      <Text style={[styles.exerciseItemText, { color: theme.text }]}>
+        {formatExerciseNameForDisplay(item.name)}
+      </Text>
     </TouchableOpacity>
+  );
+
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      fetchExercises();
+    }
+  };
+
+  const renderExerciseDetails = () => (
+    <ScrollView contentContainerStyle={styles.exerciseDetailsContainer}>
+      <Text style={[styles.exerciseDetailsTitle, { color: theme.text }]}>
+        {formatExerciseNameForDisplay(selectedExercise.name)}
+      </Text>
+      <View style={styles.exerciseInfoContainer}>
+        <Text style={[styles.exerciseInfoText, { color: theme.text }]}>
+          Body Part: {formatExerciseNameForDisplay(selectedExercise.bodyPart)}
+        </Text>
+        <Text style={[styles.exerciseInfoText, { color: theme.text }]}>
+          Equipment: {formatExerciseNameForDisplay(selectedExercise.equipment)}
+        </Text>
+        <Text style={[styles.exerciseInfoText, { color: theme.text }]}>
+          Target: {formatExerciseNameForDisplay(selectedExercise.target)}
+        </Text>
+      </View>
+      <Text style={[styles.exerciseDetailsSectionTitle, { color: theme.text }]}>Instructions:</Text>
+      {selectedExercise.instructions.map((instruction, index) => (
+        <Text key={index} style={[styles.exerciseInstruction, { color: theme.text }]}>
+          {index + 1}. {instruction}
+        </Text>
+      ))}
+      <TouchableOpacity
+        style={[styles.selectButton, { backgroundColor: theme.buttonBackground }]}
+        onPress={handleSelectExercise}
+      >
+        <Text style={[styles.selectButtonText, { color: theme.buttonText }]}>Select</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.backButton, { backgroundColor: theme.buttonBackground }]}
+        onPress={() => setSelectedExercise(null)}
+      >
+        <Text style={[styles.backButtonText, { color: theme.buttonText }]}>Back to List</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={[styles.modalContainer, { backgroundColor: theme.modalBackground }]}>
-        <Text style={[styles.modalTitle, { color: theme.modalText }]}>Select Exercise</Text>
-        {loading ? (
-          <ActivityIndicator size="large" color={theme.buttonBackground} />
-        ) : error ? (
-          <Text style={[styles.errorText, { color: theme.modalText }]}>{error}</Text>
-        ) : (
-          <FlatList
-            data={exercises}
-            renderItem={renderExerciseItem}
-            keyExtractor={(item) => item.id.toString()}
-          />
-        )}
-        <TouchableOpacity style={[styles.closeButton, { backgroundColor: theme.buttonBackground }]} onPress={onClose}>
-          <Text style={[styles.closeButtonText, { color: theme.buttonText }]}>Close</Text>
-        </TouchableOpacity>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          {selectedExercise ? (
+            renderExerciseDetails()
+          ) : (
+            <>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Exercise</Text>
+              <TextInput
+                style={[styles.searchInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
+                placeholder="Search exercises..."
+                placeholderTextColor={theme.inputBorder}
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (text === '') {
+                    setFilteredExercises(exercises);
+                  }
+                }}
+              />
+              {loading && exercises.length === 0 ? (
+                <ActivityIndicator size="large" color={theme.buttonBackground} />
+              ) : error ? (
+                <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
+              ) : (
+                <FlatList
+                  data={filteredExercises}
+                  renderItem={renderExerciseItem}
+                  keyExtractor={(item, index) => `${item.id}-${index}`}
+                  style={styles.exerciseList}
+                  onEndReached={handleLoadMore}
+                  onEndReachedThreshold={0.1}
+                  ListFooterComponent={() => (
+                    loading && exercises.length > 0 ? (
+                      <ActivityIndicator size="small" color={theme.buttonBackground} />
+                    ) : null
+                  )}
+                />
+              )}
+              <TouchableOpacity 
+                style={[styles.closeButton, { backgroundColor: theme.buttonBackground }]} 
+                onPress={onClose}
+              >
+                <Text style={[styles.closeButtonText, { color: theme.buttonText }]}>Close</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </SafeAreaView>
       </View>
     </Modal>
   );
@@ -253,7 +379,7 @@ const WorkoutScreen = () => {
               .eq('isCurrent', true)
               .single();
       
-            if (prError && prError.code !== 'PGRST116') throw prError;
+            if (prError && prError.code !==   'PGRST116') throw prError;
       
             if (!existingPR || bestOneRepMax > existingPR.oneRepMax) {
               const { error: updatePreviousError } = await supabase
@@ -339,7 +465,7 @@ const WorkoutScreen = () => {
         <TextInput
           style={[styles.input, styles.setsInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
           placeholder="Sets"
-          placeholderTextColor={theme.inputText}
+          placeholderTextColor={theme.inputBorder}
           value={sets}
           onChangeText={setSets}
           keyboardType="numeric"
@@ -357,24 +483,24 @@ const WorkoutScreen = () => {
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item, index: exerciseIndex }) => (
           <View style={[styles.exerciseContainer, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.exerciseName, { color: theme.text }]}>{item.name}</Text>
+            <Text style={[styles.exerciseName, { color: theme.text }]}>
+              {formatExerciseNameForDisplay(item.name)}
+            </Text>
             {item.sets.map((set, setIndex) => (
               <View key={setIndex} style={styles.setContainer}>
                 <Text style={[styles.setText, { color: theme.text }]}>Set {setIndex + 1}:</Text>
                 <TextInput
                   style={[styles.setInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
                   placeholder="Reps"
-                  placeholderTextColor={theme.inputText}
+                  placeholderTextColor={theme.inputBorder}
                   value={set.reps}
-                  onChangeText={(reps) => updateSet(exerciseIndex, setIndex, 'reps', 
-
- reps)}
+                  onChangeText={(reps) => updateSet(exerciseIndex, setIndex, 'reps', reps)}
                   keyboardType="numeric"
                 />
                 <TextInput
                   style={[styles.setInput, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
                   placeholder="Weight"
-                  placeholderTextColor={theme.inputText}
+                  placeholderTextColor={theme.inputBorder}
                   value={set.weight}
                   onChangeText={(weight) => updateSet(exerciseIndex, setIndex, 'weight', weight)}
                   keyboardType="numeric"
@@ -450,6 +576,9 @@ const styles = StyleSheet.create({
     padding: 10,
     marginRight: 10,
   },
+  inputText: {
+    fontSize: 16,
+  },
   setsInput: {
     flex: 0,
     width: 50,
@@ -481,19 +610,25 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   modalContent: {
+    width: '100%',
     padding: 20,
     borderRadius: 10,
     alignItems: 'center',
-    elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   modalMessage: {
     marginBottom: 20,
@@ -507,38 +642,90 @@ const styles = StyleSheet.create({
   modalButton: {
     padding: 10,
     borderRadius: 5,
-    borderWidth: 1,
     minWidth: 80,
     alignItems: 'center',
   },
   modalButtonText: {
     fontWeight: 'bold',
   },
-  modalContainer: {
+  exerciseList: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
   exerciseItem: {
-    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
   },
   exerciseItemText: {
     fontSize: 16,
   },
+  closeButton: {
+    marginTop: 20,
+    paddingVertical: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   errorText: {
     fontSize: 18,
     textAlign: 'center',
-  },
-  closeButton: {
     marginTop: 20,
-    padding: 10,
-    borderRadius: 5,
   },
-  closeButtonText: {
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  exerciseDetailsContainer: {
+    padding: 20,
+  },
+  exerciseDetailsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  exerciseInfoContainer: {
+    marginBottom: 20,
+  },
+  exerciseInfoText: {
     fontSize: 16,
+    marginBottom: 5,
+  },
+  exerciseDetailsSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  exerciseInstruction: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  selectButton: {
+    padding: 15,
+    alignItems: 'center',
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  selectButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    padding: 15,
+    alignItems: 'center',
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  backButtonText: {
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });
