@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
-import { calculateOneRepMax } from '../../utils/helpers';
+import { calculateOneRepMax, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,11 +62,15 @@ const ExerciseHistory = () => {
     const currentRecord = item.personalRecords.find(record => record.isCurrent);
     const bestSet = item.workoutExercises
       .flatMap(we => we.sets)
-      .find(set => set.setId === currentRecord.setId);
+      .find(set => set && currentRecord && set.setId === currentRecord.setId);
+
+    if (!currentRecord || !bestSet) {
+      return null;
+    }
 
     return (
       <TouchableOpacity onPress={() => openModal(item)} style={[styles.exerciseBox, { backgroundColor: theme.cardBackground }]}>
-        <Text style={[styles.exerciseName, { color: theme.text }]}>{item.name}</Text>
+        <Text style={[styles.exerciseName, { color: theme.text }]}>{formatExerciseNameForDisplay(item.name)}</Text>
         <Text style={{ color: theme.text }}>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
         <Text style={{ color: theme.text }}>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
       </TouchableOpacity>
@@ -79,7 +83,11 @@ const ExerciseHistory = () => {
     const currentRecord = selectedExercise.personalRecords.find(record => record.isCurrent);
     const bestSet = selectedExercise.workoutExercises
       .flatMap(we => we.sets)
-      .find(set => set.setId === currentRecord.setId);
+      .find(set => set && currentRecord && set.setId === currentRecord.setId);
+
+    if (!currentRecord || !bestSet) {
+      return <Text style={{ color: theme.text }}>No records available</Text>;
+    }
 
     return (
       <View>
