@@ -1,159 +1,148 @@
-// app/caloriebot.jsx
-
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, Image } from 'react-native';
+import { createClient } from '@supabase/supabase-js';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BackButton from '../utils/BackButton';
+import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { Appbar, Button, Card, Text } from 'react-native-paper';
+import { SUPABASEURL, SUPABASEKEY } from '@env';
 
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#641f1f',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
-const ChatGPTContent = () => {
-  const { theme = defaultTheme } = useTheme() || {};
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([]);
+const supabaseUrl = SUPABASEURL;
+const supabaseKey = SUPABASEKEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+function RecipesContent() {
+  const { theme = defaultTheme } = useTheme();
+  const router = useRouter();
+  const [recipes, setRecipes] = useState([]);
+  const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const OPENAI_API_KEY = 'sk-None-n9q3aEokGPhawjfDwP5LT3BlbkFJcTBHTYIPgO6kx8bPgK5A';
+  const [recipeType, setRecipeType] = useState('cutting');
 
-  const handleSend = async () => {
-    if (input.trim() === '') return;
-
-    const newMessage = { text: input, sender: 'user' };
-    setMessages([...messages, newMessage]);
-    setInput('');
+  const fetchData = async () => {
     setLoading(true);
-
     try {
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: 'You are a helpful assistant.' },
-            { role: 'user', content: input },
-          ],
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          },
-        }
-      );
+      const { data, error } = await supabase.from('recipes').select('*');
+      setLoading(false);
 
-      const botMessage = { text: response.data.choices[0].message.content.trim(), sender: 'bot' };
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
+      if (error) {
+        console.error('Error fetching data:', error);
+      } else {
+        console.log('Fetched data:', data);
+        setRecipes(data);
+        filterRecipes(data, recipeType);
+      }
     } catch (error) {
-      console.error('Error fetching GPT response:', error);
-      console.error('Response data:', error.response ? error.response.data : 'No response data');
+      console.error('Error fetching data:', error);
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
+  const filterRecipes = (data, type) => {
+    console.log('Filtering recipes for type:', type);
+    const filtered = data.filter(recipe => recipe.highorlowcalories === (type === 'bulking'));
+    console.log('Filtered recipes:', filtered);
+    setFilteredRecipes(filtered);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    filterRecipes(recipes, recipeType);
+  }, [recipeType, recipes]);
+
   const renderItem = ({ item }) => (
-    <View style={[
-      styles.message,
-      item.sender === 'bot' 
-        ? [styles.botMessage, { backgroundColor: theme.secondary }]
-        : [styles.userMessage, { backgroundColor: theme.primary }]
-    ]}>
-      <Text style={{ color: item.sender === 'bot' ? theme.text : theme.secondary }}>{item.text}</Text>
-    </View>
+    <Card style={styles.card}>
+      <Card.Cover source={{ uri: item.image_address }} />
+      <Card.Content>
+        <Text style={styles.title}>{item['food name']}</Text>
+        <Text style={styles.text}>Ingredients:{'\n'}{item.ingredients}</Text>
+        <Text style={styles.text}>Calories: {item.calories}</Text>
+        <Text style={styles.text}>Protein: {item['protein (grams)']} grams</Text>
+        <Text style={styles.text}>Directions:{'\n'}{item.directions}</Text>
+      </Card.Content>
+    </Card>
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: theme.background }]}
-    >
-      <BackButton destination="/calorieCounter"/>
-      <Text style={[styles.title, { color: theme.primary }]}>Calorie Bot</Text>
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => index.toString()}
-        style={styles.chatContainer}
-      />
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={[styles.input, { color: theme.text, borderColor: theme.primary }]}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type your message..."
-          placeholderTextColor={theme.text}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Recipes" />
+      </Appbar.Header>
+      <View style={styles.content}>
+        <View style={styles.toggleContainer}>
+          <Button
+            mode={recipeType === 'cutting' ? 'contained' : 'outlined'}
+            onPress={() => setRecipeType('cutting')}
+            style={styles.toggleButton}
+          >
+            Cutting
+          </Button>
+          <Button
+            mode={recipeType === 'bulking' ? 'contained' : 'outlined'}
+            onPress={() => setRecipeType('bulking')}
+            style={styles.toggleButton}
+          >
+            Bulking
+          </Button>
+        </View>
+        {loading && <Text>Loading...</Text>}
+        {!loading && filteredRecipes.length === 0 && <Text>No recipes found</Text>}
+        <FlatList
+          data={filteredRecipes}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
         />
-        <TouchableOpacity
-          onPress={handleSend}
-          disabled={loading}
-          style={[styles.button, { backgroundColor: theme.primary }]}
-        >
-          <Text style={[styles.buttonText, { color: theme.secondary }]}>Send</Text>
-        </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-};
-
-const ChatGPTPage = () => {
-  return (
-    <ThemeProvider>
-      <ChatGPTContent />
-    </ThemeProvider>
-  );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: 20,
   },
-  chatContainer: {
-    flex: 1,
+  toggleButton: {
+    marginHorizontal: 5,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
+  card: {
+    marginBottom: 16,
   },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    marginRight: 10,
-  },
-  message: {
-    padding: 10,
-    borderRadius: 10,
-    marginVertical: 5,
-    maxWidth: '80%',
-  },
-  userMessage: {
-    alignSelf: 'flex-end',
-  },
-  botMessage: {
-    alignSelf: 'flex-start',
-  },
-  button: {
-    padding: 10,
-    borderRadius: 10,
-  },
-  buttonText: {
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  text: {
+    marginBottom: 8,
   },
 });
 
-export default ChatGPTPage;
+export default function RecipesPage() {
+  return (
+    <ThemeProvider>
+      <RecipesContent />
+    </ThemeProvider>
+  );
+}
