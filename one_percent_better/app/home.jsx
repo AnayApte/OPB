@@ -67,7 +67,7 @@ export default function Home() {
           <Appbar.Content title="One Percent Better" titleStyle={styles.headerTitle} />
           <IconButton
             icon="logout"
-            color={theme.text}
+            iconColor={'#f2e2fb'}
             size={24}
             onPress={handleLogout}
           />
