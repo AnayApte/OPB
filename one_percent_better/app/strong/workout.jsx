@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView, AppState } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import { formatTime, calculateOneRepMax, formatExerciseName, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
@@ -236,6 +236,7 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
 
 const WorkoutScreen = () => {
   const router = useRouter();
+  const { autoStart } = useLocalSearchParams();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [time, setTime] = useState(0);
   const [exercises, setExercises] = useState([]);
@@ -257,8 +258,30 @@ const WorkoutScreen = () => {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  const toggleTimer = () => {
-    setIsTimerRunning(!isTimerRunning);
+  useEffect(() => {
+    if (autoStart === 'true') {
+      startWorkout();
+    }
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [autoStart]);
+
+  const handleAppStateChange = (nextAppState) => {
+    if (nextAppState === 'background' || nextAppState === 'inactive') {
+      setIsTimerRunning(false);
+    }
+  };
+
+  const startWorkout = () => {
+    setIsTimerRunning(true);
+  };
+
+  const pauseWorkout = () => {
+    setIsTimerRunning(false);
   };
 
   const resetWorkout = () => {
@@ -364,7 +387,7 @@ const WorkoutScreen = () => {
               }
             }
       
-            const { data: existingPR, error: prError } = await supabase
+            const { data: existingPR, error: prError }   = await supabase
               .from('personalRecords')
               .select('*')
               .eq('userId', userId)
@@ -372,7 +395,7 @@ const WorkoutScreen = () => {
               .eq('isCurrent', true)
               .single();
       
-            if (prError && prError.code !==   'PGRST116') throw prError;
+            if (prError && prError.code !== 'PGRST116') throw prError;
       
             if (!existingPR || bestOneRepMax > existingPR.oneRepMax) {
               const { error: updatePreviousError } = await supabase
@@ -383,7 +406,7 @@ const WorkoutScreen = () => {
       
               if (updatePreviousError) throw updatePreviousError;
       
-              const { error: insertError } =   await supabase
+              const { error: insertError } = await supabase
                 .from('personalRecords')
                 .insert({
                   userId: userId,
@@ -434,17 +457,31 @@ const WorkoutScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <BackButton destination="/home"/>
+      <BackButton destination="/strong"/>
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: isTimerRunning ? theme.background : theme.buttonBackground, borderColor: theme.buttonText, borderWidth: 2 }]}
-        onPress={toggleTimer}
+        style={[
+          styles.button,
+          {
+            backgroundColor: isTimerRunning ? theme.background : theme.buttonBackground,
+            borderColor: theme.buttonText,
+            borderWidth: 2,
+          },
+        ]}
+        onPress={isTimerRunning ? pauseWorkout : startWorkout}
       >
-        <Text style={[styles.buttonText, { color: isTimerRunning ? theme.primary : theme.buttonText }]}>
-          {isTimerRunning ? 'Pause' : 'Start'} Workout
+        <Text
+          style={[
+            styles.buttonText,
+            { color: isTimerRunning ? theme.primary : theme.buttonText },
+          ]}
+        >
+          {isTimerRunning ? 'Pause Workout' : 'Resume Workout'}
         </Text>
       </TouchableOpacity>
       
-      <Text style={[styles.timerText, { color: theme.text }]}>{formatTime(time)}</Text>
+      <Text style={[styles.timerText, { color: theme.text }]}>
+        {`${String(Math.floor(time / 3600)).padStart(2, '0')}:${String(Math.floor((time % 3600) / 60)).padStart(2, '0')}:${String(time % 60).padStart(2, '0')}`}
+      </Text>
       
       <View style={styles.inputContainer}>
         <TouchableOpacity
@@ -553,10 +590,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   timerText: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    fontVariant: ['tabular-nums'],
   },
   inputContainer: {
     flexDirection: 'row',
