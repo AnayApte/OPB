@@ -6,6 +6,8 @@ import { useAuth } from '../utils/AuthContext';
 import { ThemeProvider } from './ThemeContext';
 import { Appbar, Card, Title, Paragraph, Button, Surface, Text, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+
 
 const quotes = [
   "'The only limit to our realization of tomorrow is our doubts of today.' - Franklin D. Roosevelt",
@@ -28,7 +30,7 @@ const theme = {
 };
 
 export default function Home() {
-  const { signOut } = useAuth();
+  const { userId, setUserId } = useAuth();
   const router = useRouter();
   const [quote, setQuote] = useState("");
 
@@ -36,9 +38,10 @@ export default function Home() {
     setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace('/');
+  const handleLogout = async () => {
+    await SecureStore.deleteItemAsync('userId');
+    setUserId(null);
+    router.replace('/(auth)/login');
   };
 
   const NavButton = ({ icon, label, onPress }) => (
@@ -66,7 +69,7 @@ export default function Home() {
             icon="logout"
             color={theme.text}
             size={24}
-            onPress={handleSignOut}
+            onPress={handleLogout}
           />
         </Appbar.Header>
         <ScrollView style={styles.content}>
