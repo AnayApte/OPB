@@ -1,30 +1,31 @@
-// app/caloriecounter.jsx
-
 import React, { useState, useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, AppState } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import BackButton from '../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Appbar, TextInput, Button, Card, Text } from 'react-native-paper';
 
 const defaultTheme = {
-  background: 'purple',
-  text: 'yellow',
-  primary: 'yellow',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  buttonBackground: 'yellow',
-  buttonText: 'purple',
-  inputBackground: 'white',
-  inputText: 'black',
-  inputBorder: 'yellow',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
-const CalorieCounterContent = () => {
-  const { theme = defaultTheme } = useTheme() || {};
+const supabaseUrl = SUPABASEURL;
+const supabaseKey = SUPABASEKEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+function CalorieCounterContent() {
+  const { theme = defaultTheme } = useTheme();
+  const router = useRouter();
+  const { userId } = useAuth();
   const [calorieGoal, setCalorieGoal] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [caloriesEaten, setCaloriesEaten] = useState(0);
@@ -35,25 +36,9 @@ const CalorieCounterContent = () => {
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
 
-  const supabaseUrl = SUPABASEURL;
-  const supabaseKey = SUPABASEKEY;
-  const supabase = createClient(supabaseUrl, supabaseKey)
-  const { userId } = useAuth();
-
   useEffect(() => {
     loadInitialData();
-    const appStateListener = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      appStateListener.remove();
-    };
   }, []);
-
-  const handleAppStateChange = (nextAppState) => {
-    if (nextAppState === 'active') {
-      loadInitialData();
-    }
-  };
 
   const loadInitialData = async () => {
     try {
@@ -151,7 +136,7 @@ const CalorieCounterContent = () => {
     return caloriesEaten >= lowerBound && caloriesEaten <= upperBound;
   };
 
-  const isWithinGoal1 = () => {
+  const isWithinWaterGoal = () => {
     const goal = 100;
     if (isNaN(goal)) return false;
     const lowerBound = goal * 0.9;
@@ -159,220 +144,164 @@ const CalorieCounterContent = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <BackButton destination="/home"/>
-      <Text style={[styles.title, { color: theme.text }]}>Calorie Counter</Text>
-      <View style={styles.contentContainer}>
-        <Text style={[styles.quote, styles.lessBold, { color: theme.text }]}>Your Calorie Goal: </Text>
-        {isEditing ? (
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-              placeholder="Enter Calorie Goal"
-              placeholderTextColor={theme.inputText}
-              keyboardType="numeric"
-              value={calorieGoal}
-              onChangeText={setCalorieGoal}
-            />
-            <TouchableOpacity onPress={saveCalorieGoal} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
-              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.goalContainer}>
-            <Text style={[styles.goalText, { color: theme.text }]}>{calorieGoal}</Text>
-            <TouchableOpacity onPress={() => setIsEditing(true)} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
-              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <View style={styles.calorieTrackContainer}>
-        <Text style={[styles.quote, styles.lessBold, { color: theme.text }]}>Calories Eaten: {caloriesEaten} </Text>
-        {isAddingCalories ? (
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-              placeholder="Add Cals"
-              placeholderTextColor={theme.inputText}
-              keyboardType="numeric"
-              value={inputCalories}
-              onChangeText={setInputCalories}
-            />
-            <TouchableOpacity onPress={addCalories} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
-              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity onPress={() => setIsAddingCalories(true)} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
-            <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add Cals</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      <Text style={[styles.quote1, styles.lessBold, { color: theme.text }]}>Calories Burned: {caloriesBurned} </Text>
-      <Text style={[styles.quote1, styles.lessBold, isWithinGoal() ? styles.greenText : styles.redText, { color: theme.text }]}>
-        Total Calories for the day: {caloriesEaten-caloriesBurned}
-      </Text>
-      <View style={styles.waterTrackContainer1}>
-        <View style={styles.waterTrackContainer}>
-          <Text style={[styles.quote2, styles.lessBold, isWithinGoal1() ? styles.greenText : styles.redText, { color: theme.text }]}>
-            Water Drunk: {waterDrunk} oz
-          </Text>
-          {isAddingWater ? (
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-                placeholder="Add Water (oz)"
-                placeholderTextColor={theme.inputText}
-                keyboardType="numeric"
-                value={inputWater}
-                onChangeText={setInputWater}
-              />
-              <TouchableOpacity onPress={addWater} style={[styles.button, { backgroundColor: theme.buttonBackground }]}>
-                <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity onPress={() => setIsAddingWater(true)} style={[styles.button1, { backgroundColor: theme.buttonBackground }]}>
-              <Text style={[styles.buttonText, { color: theme.buttonText }]}>Add Water</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <View style={styles.waterBottle}>
-          <Image
-            source={require('./water-bottle.png')}
-            style={styles.waterBottleImage}
-          />
-          <View
-            style={[
-              styles.waterFill,
-              { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` },
-            ]}
-          />
-        </View>
-        <Link href="/RecipesPage" style={{ color: theme.text }}>
-          Go to Recipes
-        </Link>
-        <Link href="/caloriebot" style={{ color: theme.text }}>
-          Go to CalorieBot
-        </Link>
-      </View>
-      <StatusBar style="auto" />
-    </View>
-  );
-};
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Calorie Counter" />
+      </Appbar.Header>
+      <ScrollView style={styles.content}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.title, { color: theme.primary }]}>Your Calorie Goal</Text>
+            {isEditing ? (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  label="Enter Calorie Goal"
+                  value={calorieGoal}
+                  onChangeText={setCalorieGoal}
+                  keyboardType="numeric"
+                  mode="outlined"
+                />
+                <Button mode="contained" onPress={saveCalorieGoal} style={styles.button}>
+                  Save
+                </Button>
+              </View>
+            ) : (
+              <View style={styles.goalContainer}>
+                <Text style={[styles.goalText, { color: theme.text }]}>{calorieGoal}</Text>
+                <Button mode="contained" onPress={() => setIsEditing(true)} style={styles.button}>
+                  Edit
+                </Button>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
 
-const CalorieCounter = () => {
-  return (
-    <ThemeProvider>
-      <CalorieCounterContent />
-    </ThemeProvider>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.subtitle, { color: theme.primary }]}>Calories Eaten: {caloriesEaten}</Text>
+            {isAddingCalories ? (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  label="Add Calories"
+                  value={inputCalories}
+                  onChangeText={setInputCalories}
+                  keyboardType="numeric"
+                  mode="outlined"
+                />
+                <Button mode="contained" onPress={addCalories} style={styles.button}>
+                  Add
+                </Button>
+              </View>
+            ) : (
+              <Button mode="contained" onPress={() => setIsAddingCalories(true)} style={styles.button}>
+                Add Calories
+              </Button>
+            )}
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.subtitle, { color: theme.primary }]}>Calories Burned: {caloriesBurned}</Text>
+            <Text style={[styles.subtitle, { color: isWithinGoal() ? 'green' : 'red' }]}>
+              Total Calories for the day: {caloriesEaten - caloriesBurned}
+            </Text>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.subtitle, { color: isWithinWaterGoal() ? 'green' : 'red' }]}>
+              Water Drunk: {waterDrunk} oz
+            </Text>
+            {isAddingWater ? (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  label="Add Water (oz)"
+                  value={inputWater}
+                  onChangeText={setInputWater}
+                  keyboardType="numeric"
+                  mode="outlined"
+                />
+                <Button mode="contained" onPress={addWater} style={styles.button}>
+                  Add
+                </Button>
+              </View>
+            ) : (
+              <Button mode="contained" onPress={() => setIsAddingWater(true)} style={styles.button}>
+                Add Water
+              </Button>
+            )}
+            <View style={styles.waterBottle}>
+              <Image
+                source={require('./water-bottle.png')}
+                style={styles.waterBottleImage}
+              />
+              <View
+                style={[
+                  styles.waterFill,
+                  { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` },
+                ]}
+              />
+            </View>
+          </Card.Content>
+        </Card>
+
+        <Button mode="contained" onPress={() => router.push('/RecipesPage')} style={styles.button}>
+          Go to Recipes
+        </Button>
+        <Button mode="contained" onPress={() => router.push('/caloriebot')} style={styles.button}>
+          Go to CalorieBot
+        </Button>
+      </ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'flex-start',
+  },
+  content: {
+    padding: 16,
+  },
+  card: {
+    marginBottom: 16,
   },
   title: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 16,
     textAlign: 'center',
-    marginBottom: 20,
   },
-  contentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  calorieTrackContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  waterTrackContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 0,
-    flexDirection: 'row',
-  },
-  waterTrackContainer1: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  quote: {
+  subtitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  quote1: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  quote2: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  greenText: {
-    color: 'green',
-  },
-  redText: {
-    color: 'red',
-  },
-  lessBold: {
-    fontWeight: '400',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 8,
   },
   input: {
-    borderWidth: 1,
-    padding: 5,
-    width: 80,
-    textAlign: 'center',
-    borderRadius: 5,
-    marginRight: 10,
+    marginBottom: 8,
   },
   button: {
-    padding: 5,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,  // Add this line
-    borderColor: 'gray',  // Add this line
-  },
-  button1: {
-    padding: 5,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginLeft: 8,
-    borderWidth: 1,  // Add this line
-    borderColor: 'gray',  // Add this line
-  },
-  buttonText: {
-    fontWeight: 'bold',
-    fontSize: 10,
+    marginTop: 8,
   },
   goalContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   goalText: {
     fontSize: 18,
-    marginRight: 10,
   },
   waterBottle: {
     position: 'relative',
     width: 100,
     height: 300,
     marginTop: 20,
+    alignSelf: 'center',
     overflow: 'hidden',
   },
   waterBottleImage: {
@@ -389,4 +318,10 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CalorieCounter;
+export default function CalorieCounter() {
+  return (
+    <ThemeProvider>
+      <CalorieCounterContent />
+    </ThemeProvider>
+  );
+}

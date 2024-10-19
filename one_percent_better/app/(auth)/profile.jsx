@@ -1,32 +1,27 @@
-// app/(auth)/profile.jsx
-
-
-
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
-import BackButton from '../../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Appbar, TextInput, Button, Card, Text, RadioButton } from 'react-native-paper';
 
-// Default theme colors in case the theme is not available
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#641f1f',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  border: '#CCCCCC',
-  inputBackground: '#F0F0F0',
-  buttonText: '#FFFFFF',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
-const ProfileCompletionContent = () => {
+function ProfileContent() {
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState(null);
   const router = useRouter();
-  const { theme = defaultTheme } = useTheme() || {};
+  const { theme = defaultTheme } = useTheme();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -91,128 +86,101 @@ const ProfileCompletionContent = () => {
     }
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    content: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginBottom: 32,
-      color: theme.primary,
-    },
-    input: {
-      width: '100%',
-      height: 40,
-      borderColor: theme.border,
-      borderWidth: 1,
-      borderRadius: 5,
-      marginBottom: 16,
-      paddingHorizontal: 10,
-      color: theme.text,
-      backgroundColor: theme.inputBackground,
-    },
-    label: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 8,
-      color: theme.text,
-    },
-    radioContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 32,
-    },
-    radioButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 10,
-      borderWidth: 1,
-      borderColor: theme.border,
-      borderRadius: 5,
-      marginHorizontal: 10,
-    },
-    radioButtonSelected: {
-      backgroundColor: theme.primary,
-    },
-    radioText: {
-      fontSize: 16,
-      marginLeft: 8,
-      color: theme.text,
-    },
-    saveButton: {
-      backgroundColor: theme.primary,
-      paddingHorizontal: 32,
-      paddingVertical: 12,
-      borderRadius: 8,
-      width: '100%',
-      alignItems: 'center',
-    },
-    buttonText: {
-      color: theme.buttonText,
-      fontSize: 18,
-      fontWeight: 'bold',
-    },
-  });
-
   return (
-    
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-      <BackButton destination="/home"/>
-        <Text style={styles.title}>Complete Your Profile</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Weight"
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-          placeholderTextColor={theme.text}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Age"
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-          placeholderTextColor={theme.text}
-        />
-        
-        <Text style={styles.label}>Gender:</Text>
-        <View style={styles.radioContainer}>
-          <TouchableOpacity
-            style={[styles.radioButton, gender === true && styles.radioButtonSelected]}
-            onPress={() => setGender(true)}
-          >
-            <Text style={styles.radioText}>Male</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.radioButton, gender === false && styles.radioButtonSelected]}
-            onPress={() => setGender(false)}
-          >
-            <Text style={styles.radioText}>Female</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
-          <Text style={styles.buttonText}>Save Profile</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Profile" />
+      </Appbar.Header>
+      <ScrollView style={styles.content}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.title, { color: defaultTheme.primary }]}>Complete Your Profile</Text>
+            <Text style={[styles.description, { color: theme.text }]}>
+              Provide your information to personalize your experience and get the most out of the app.
+            </Text>
+            <TextInput
+              style={styles.input}
+              label="Weight"
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="numeric"
+              mode="outlined"
+            />
+            <TextInput
+              style={styles.input}
+              label="Age"
+              value={age}
+              onChangeText={setAge}
+              keyboardType="numeric"
+              mode="outlined"
+            />
+            <Text style={[styles.label, { color: theme.text }]}>Gender:</Text>
+            <RadioButton.Group onValueChange={value => setGender(value)} value={gender}>
+              <View style={styles.radioContainer}>
+                <RadioButton.Item label="Male" value={true} />
+                <RadioButton.Item label="Female" value={false} />
+              </View>
+            </RadioButton.Group>
+          </Card.Content>
+        </Card>
+        <Button 
+          mode="contained" 
+          onPress={handleSaveProfile}
+          style={styles.saveButton}
+          buttonColor={theme.buttonBackground}
+        >
+          Save Profile
+        </Button>
+      </ScrollView>
     </SafeAreaView>
   );
-};
+}
 
-export default function ProfileCompletion() {
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  card: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  input: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  radioContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  saveButton: {
+    marginTop: 16,
+  },
+});
+
+export default function Profile() {
   return (
     <ThemeProvider>
-      <ProfileCompletionContent />
+      <ProfileContent />
     </ThemeProvider>
   );
 }

@@ -1,42 +1,46 @@
-//app/journal/index.jsx
-
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, Keyboard, SafeAreaView } from 'react-native';
-import { format } from 'date-fns';
-
+import { View, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, SafeAreaView } from 'react-native';
+import { Appbar, Button, Card, Text, Modal, Portal } from 'react-native-paper';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
-
+import { useRouter } from 'expo-router';
+import { ThemeProvider, useTheme } from '../ThemeContext';
 import JournalEntryForm from './components/JournalEntryForm';
 import JournalEntryCard from './components/JournalEntryCard';
-import BackButton from '../../utils/BackButton';
 
 const supabaseUrl = SUPABASEURL;
 const supabaseKey = SUPABASEKEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const App = () => {
+const defaultTheme = {
+  background: '#f2e2fb',
+  text: '#641f1f',
+  primary: '#3b0051',
+  secondary: '#f2f5ea',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
+};
+
+function JournalContent() {
   const { userId } = useAuth();
+  const router = useRouter();
+  const { theme = defaultTheme } = useTheme();
   const [entries, setEntries] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [currentEntry, setCurrentEntry] = useState({ title: '', body: '' }); // Ensure initialized
+  const [currentEntry, setCurrentEntry] = useState({ title: '', body: '' });
 
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
-  
-    // Manually construct the formatted date
     const day = date.getDate();
-    const month = date.toLocaleString('en-US', { month: 'long' }); // 'August'
+    const month = date.toLocaleString('en-US', { month: 'long' });
     const year = date.getFullYear();
     const hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
-    const formattedHours = hours % 12 || 12; // Convert to 12-hour format
-  
-    // Format: 'Published on: 19 August 2024, 12:34 PM'
+    const formattedHours = hours % 12 || 12;
     return `${day} ${month} ${year} at ${formattedHours}:${minutes} ${ampm}`;
-  };  
+  };
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -50,13 +54,12 @@ const App = () => {
         if (error) {
           console.error('Error fetching entries:', error);
         } else {
-          // Format the timestamps immediately after fetching
           const formattedEntries = data.map((entry) => ({
             ...entry,
             date: formatTimestamp(entry.date),
             edited: entry.edited ? formatTimestamp(entry.edited) : null,
           }));
-          setEntries(formattedEntries); // Set the formatted entries
+          setEntries(formattedEntries);
         }
       } catch (error) {
         console.error('Fetch entries failed:', error);
@@ -160,42 +163,35 @@ const App = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffb5c6' }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: defaultTheme.background }]}>
+      <Appbar.Header style = { {backgroundColor: defaultTheme.background } }>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content  title="Journal" />
+      </Appbar.Header>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-        <Text>{'\n'}</Text>
-          <BackButton destination="/home" />
+        <View style={styles.content}>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={[styles.title, { color: defaultTheme.primary }]}>Welcome to Your Journal</Text>
+              <Text style={[styles.description, { color: theme.text }]}>
+                Capture your thoughts, feelings, and experiences. Journaling is a powerful tool for self-reflection and personal growth.
+              </Text>
+            </Card.Content>
+          </Card>
 
-          <TouchableOpacity
-            style={styles.newEntryButton}
+          <Button
+            mode="contained"
             onPress={() => {
               setCurrentEntry({ title: '', body: '' });
               setModalVisible(true);
             }}
+            style={styles.newEntryButton}
+            buttonColor={defaultTheme.buttonBackground}
           >
-            <Text style={styles.newEntryButtonText}>New Entry</Text>
-          </TouchableOpacity>
+            New Entry
+          </Button>
 
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={isModalVisible}
-            onRequestClose={handleCancel}
-          >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <View style={styles.modalContainer}>
-                <View style={styles.modalView}>
-                  <JournalEntryForm
-                    entry={currentEntry || { title: '', body: '' }}
-                    onSave={handleSaveEntry}
-                    onCancel={handleCancel}
-                  />
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
-
-          <Text style={styles.entriesTitle}>Your previous entries:</Text>
+          <Text style={[styles.entriesTitle, { color: defaultTheme.primary }]}>Your previous entries:</Text>
           <FlatList
             data={entries}
             keyExtractor={(item) => item.id.toString()}
@@ -206,63 +202,70 @@ const App = () => {
                 onDelete={handleDeleteEntry}
               />
             )}
-            ListEmptyComponent={() => <Text style={styles.empty}>No entries yet</Text>}
+            ListEmptyComponent={() => <Text style={[styles.empty, { color: theme.text }]}>No entries yet</Text>}
           />
+
+          <Portal>
+            <Modal visible={isModalVisible} onDismiss={handleCancel} contentContainerStyle={styles.modalContainer}>
+              <JournalEntryForm
+                entry={currentEntry || { title: '', body: '' }}
+                onSave={handleSaveEntry}
+                onCancel={handleCancel}
+              />
+            </Modal>
+          </Portal>
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  content: {
+    flex: 1,
     padding: 16,
-    backgroundColor: '#ffb5c6',
+  },
+  card: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   newEntryButton: {
-    backgroundColor: '#641f1f',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
     marginBottom: 16,
-    marginTop: 25,
-  },
-  newEntryButtonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
   },
   entriesTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginVertical: 20,
+    marginBottom: 8,
   },
   empty: {
     textAlign: 'center',
-    color: 'gray',
     marginTop: 20,
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 8,
   },
 });
 
-export default App;
+export default function Journal() {
+  return (
+    <ThemeProvider>
+      <JournalContent />
+    </ThemeProvider>
+  );
+}
