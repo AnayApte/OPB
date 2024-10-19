@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import BackButton from '../utils/BackButton';
 
 const defaultTheme = {
   background: 'purple',
@@ -159,6 +160,7 @@ const CalorieCounterContent = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <BackButton destination="/home"/>
       <Text style={[styles.title, { color: theme.text }]}>Calorie Counter</Text>
       <View style={styles.contentContainer}>
         <Text style={[styles.quote, styles.lessBold, { color: theme.text }]}>Your Calorie Goal: </Text>

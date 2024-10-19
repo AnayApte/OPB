@@ -61,7 +61,7 @@ export default function Home() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <StatusBar style="light" />
         <Appbar.Header style={styles.header}>
-          <Appbar.Content title="YO P BE!" titleStyle={styles.headerTitle} />
+          <Appbar.Content title="One Percent Better" titleStyle={styles.headerTitle} />
           <IconButton
             icon="logout"
             color={theme.text}
@@ -72,7 +72,7 @@ export default function Home() {
         <ScrollView style={styles.content}>
           <Card style={styles.welcomeCard}>
             <Card.Content>
-              <Title style={styles.welcomeTitle}>Welcome to YO P BE!</Title>
+              <Title style={styles.welcomeTitle}>Welcome to One Percent Better!</Title>
               <Paragraph style={styles.welcomeText}>Your mental and physical health companion.</Paragraph>
             </Card.Content>
           </Card>

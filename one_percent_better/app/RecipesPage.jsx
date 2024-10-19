@@ -65,7 +65,7 @@ const RecipesContent = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <BackButton destination="/calorieCounter"/>
+      <BackButton destination="/caloriecounter"/>
       <View style={styles.toggleContainer}>
         <TouchableOpacity
           style={[styles.toggleButton, recipeType === 'cutting' && styles.activeButton, { backgroundColor: theme.primary }]}

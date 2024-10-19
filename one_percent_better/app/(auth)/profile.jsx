@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
+import BackButton from '../../utils/BackButton';
 
 // Default theme colors in case the theme is not available
 const defaultTheme = {
@@ -162,8 +163,10 @@ const ProfileCompletionContent = () => {
   });
 
   return (
+    
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+      <BackButton destination="/home"/>
         <Text style={styles.title}>Complete Your Profile</Text>
         <TextInput
           style={styles.input}

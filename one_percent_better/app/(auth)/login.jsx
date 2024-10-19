@@ -1,26 +1,25 @@
-// app/(auth)/login.jsx
-
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Image } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
+import { TextInput, Button, Surface, Text, Card } from 'react-native-paper';
 
 const defaultTheme = {
   background: '#FFb5c6',
   text: '#641f1f',
-  primary: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
-  buttonBackground: '#8B4513',  // Changed to brown
+  buttonBackground: '#3b0051',
   buttonText: '#f2f5ea',
   inputBackground: 'white',
   inputText: 'black',
   inputBorder: '#641f1f',
-  link: '#1e90ff',
+  link: '#3b0051',
 };
 
-const LoginContent = () => {
+function LoginContent() {
   const [userOrEmail, setUserOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
@@ -66,100 +65,124 @@ const LoginContent = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.text }]}>Login</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-          placeholder="Email or Username"
-          placeholderTextColor={theme.text}
-          value={userOrEmail}
-          onChangeText={setUserOrEmail}
-        />
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-          placeholder="Password"
-          placeholderTextColor={theme.text}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity style={[styles.loginButton, { backgroundColor: '#641f1f' }]} onPress={handleLogin}>
-          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Login</Text>
-        </TouchableOpacity>
-        <View style={styles.signUp}>
-          <Link href="/(auth)/signup" asChild>
-            <TouchableOpacity>
-              <Text style={[styles.linkText, { color: theme.link }]}>Don't have an account? Sign up instead</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-        <View style={styles.forgotPassword}>
-          <Link href="/(auth)/forgotPassword" asChild>
-            <TouchableOpacity>
-              <Text style={[styles.linkText, { color: theme.link }]}>Forgot password?</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <View style={styles.centerContainer}>
+        <ScrollView 
+          style={styles.scrollViewContent} 
+          contentContainerStyle={[styles.scrollViewContentContainer, styles.topPadding]}
+        >
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={[styles.title, { color: '#3b0051' }]}>Welcome Back</Text>
+              <Image
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/5087/5087579.png' }}
+                style={styles.image}
+              />
+              <TextInput
+                label="Email or Username"
+                value={userOrEmail}
+                onChangeText={setUserOrEmail}
+                style={styles.input}
+                theme={{ colors: { primary: '#3b0051' } }}
+              />
+              <TextInput
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                style={styles.input}
+                theme={{ colors: { primary: '#3b0051' } }}
+              />
+              <Button 
+                mode="contained" 
+                onPress={handleLogin} 
+                style={styles.button} 
+                buttonColor="#3b0051"
+                textColor={theme.buttonText}
+              >
+                Login
+              </Button>
+            </Card.Content>
+          </Card>
+
+          <Card style={styles.card}>
+            <Card.Content>
+              <Link href="/(auth)/signup" asChild>
+                <Button 
+                  mode="outlined" 
+                  style={styles.button} 
+                  textColor="#3b0051"
+                  buttonColor="transparent"
+                >
+                  Don't have an account? Sign up
+                </Button>
+              </Link>
+              <Link href="/(auth)/forgotPassword" asChild>
+                <Button 
+                  mode="text" 
+                  style={styles.button} 
+                  textColor="#3b0051"
+                >
+                  Forgot password?
+                </Button>
+              </Link>
+            </Card.Content>
+          </Card>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
-};
-
-const Login = () => (
-  <ThemeProvider>
-    <LoginContent />
-  </ThemeProvider>
-);
+}
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
-  content: {
+  centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+  },
+  scrollViewContent: {
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  scrollViewContentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  card: {
+    marginBottom: 16,
+    width: '100%',
+    maxWidth: 400,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 32,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   input: {
-    width: '100%',
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 16,
-    paddingHorizontal: 10,
+    marginBottom: 8,
   },
-  loginButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-    backgroundColor: 'brown',
+  button: {
+    marginTop: 8,
   },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  signUp: {
-    flexDirection: 'row',
-    width: '100%',
-    marginTop: 20,
-  },
-  forgotPassword: {
-    flexDirection: 'row',
-    width: '100%',
-    marginTop: 20,
-  },
-  linkText: {
-    fontSize: 16,
+  topPadding: {
+    paddingTop: 0,
   },
 });
 
-export default Login;
+export default function Login() {
+  return (
+    <ThemeProvider>
+      <LoginContent />
+    </ThemeProvider>
+  );
+}

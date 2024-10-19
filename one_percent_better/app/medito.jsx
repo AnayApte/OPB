@@ -1,14 +1,12 @@
-// app/medito.jsx
-
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Image } from 'react-native';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { Appbar, TextInput, Button, Surface, Text, ProgressBar, Card } from 'react-native-paper';
+import { Appbar, TextInput, Button, Surface, Text, Card, IconButton, ProgressBar } from 'react-native-paper';
 
-export default function Medito() {
+function Medito() {
   const { theme } = useTheme();
   const router = useRouter();
   const [inputMinutes, setInputMinutes] = useState('');
@@ -58,38 +56,35 @@ export default function Medito() {
     await sound.playAsync();
   };
 
-  const handleInputChange = (text, type) => {
-    const numericValue = text.replace(/[^0-9]/g, '');
-    if (type === 'minutes') {
-      setInputMinutes(numericValue);
-    } else {
-      setInputSeconds(numericValue);
-    }
-  };
-
   const startTimer = () => {
-    const totalSeconds = parseInt(inputMinutes) * 60 + parseInt(inputSeconds);
-    if (totalSeconds > 0) {
-      setMinutes(Math.floor(totalSeconds / 60));
-      setSeconds(totalSeconds % 60);
-      setIsInputVisible(false);
-      setIsRunning(true);
-      playSound();
-    }
+    if (inputMinutes.trim() === '' && inputSeconds.trim() === '') return;
+    
+    const totalSeconds = parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0');
+    setMinutes(Math.floor(totalSeconds / 60));
+    setSeconds(totalSeconds % 60);
+    setIsInputVisible(false);
+    setIsRunning(true);
+    playSound();
   };
 
-  const handleReset = () => {
-    setIsInputVisible(true);
+  const stopTimer = () => {
     setIsRunning(false);
-    setInputMinutes('');
-    setInputSeconds('');
     if (sound) {
       sound.stopAsync();
     }
   };
 
+  const resetTimer = () => {
+    stopTimer();
+    setIsInputVisible(true);
+    setInputMinutes('');
+    setInputSeconds('');
+    setMinutes(0);
+    setSeconds(0);
+  };
+
   useEffect(() => {
-    let interval = null;
+    let interval;
     if (isRunning) {
       interval = setInterval(() => {
         if (seconds > 0) {
@@ -106,78 +101,85 @@ export default function Medito() {
           }
         }
       }, 1000);
-    } else if (!isRunning && seconds !== 0) {
+    } else {
       clearInterval(interval);
     }
     return () => clearInterval(interval);
   }, [isRunning, minutes, seconds]);
 
   return (
-    <ThemeProvider>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={[styles.container, { backgroundColor: theme.background }]}
-      >
-        <Appbar.Header>
-          <Appbar.BackAction onPress={() => router.back()} />
-          <Appbar.Content title="Meditation" />
-        </Appbar.Header>
-        <Surface style={styles.content}>
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={[styles.challenge, { color: theme.text }]}>Challenge: Meditate for 30 days.</Text>
-              <Text style={[styles.title, { color: theme.primary }]}>Medito</Text>
-              <Image
-                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
-                style={styles.image}
-              />
-              <Text style={[styles.streak, { color: theme.text }]}>Current Streak: {streak} days</Text>
-            </Card.Content>
-          </Card>
-          
-          {isInputVisible ? (
-            <View style={styles.inputContainer}>
-              <TextInput
-                label="Minutes"
-                value={inputMinutes}
-                onChangeText={(text) => handleInputChange(text, 'minutes')}
-                keyboardType="numeric"
-                style={styles.input}
-              />
-              <TextInput
-                label="Seconds"
-                value={inputSeconds}
-                onChangeText={(text) => handleInputChange(text, 'seconds')}
-                keyboardType="numeric"
-                style={styles.input}
-              />
-              <Button mode="contained" onPress={startTimer} style={styles.button}>
-                Start Timer
-              </Button>
-            </View>
-          ) : (
-            <View style={styles.timerContainer}>
-              <Text style={[styles.timer, { color: theme.primary }]} onPress={handleReset}>
-                {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
-              </Text>
-              {seconds === 0 && !isRunning && (
-                <Button mode="contained" onPress={handleReset} style={styles.button}>
-                  Reset
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Medito" />
+      </Appbar.Header>
+      <ScrollView style={styles.container}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.challenge, { color: theme.text }]}>Challenge: Meditate for 30 days.</Text>
+            <Text style={[styles.title, { color: '#3b0051' }]}>Medito</Text>
+            <Image
+              source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
+              style={styles.image}
+            />
+            <Text style={[styles.streak, { color: theme.text }]}>Current Streak: {streak} days</Text>
+          </Card.Content>
+        </Card>
+        
+        <Card style={styles.card}>
+          <Card.Content>
+            {isInputVisible ? (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  label="Minutes"
+                  value={inputMinutes}
+                  onChangeText={setInputMinutes}
+                  keyboardType="numeric"
+                  style={styles.input}
+                />
+                <TextInput
+                  label="Seconds"
+                  value={inputSeconds}
+                  onChangeText={setInputSeconds}
+                  keyboardType="numeric"
+                  style={styles.input}
+                />
+                <Button mode="contained" buttonColor="#3b0051" onPress={startTimer} style={styles.button}>
+                  Start Meditation
                 </Button>
-              )}
-            </View>
-          )}
-        </Surface>
-      </KeyboardAvoidingView>
-    </ThemeProvider>
+              </View>
+            ) : (
+              <View style={styles.timerContainer}>
+                <Text style={[styles.timer, { color: '#3b0051' }]}>
+                  {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                </Text>
+                <ProgressBar
+                  progress={1 - (minutes * 60 + seconds) / (parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0'))}
+                  color="#3b0051"
+                  style={styles.progressBar}
+                />
+                <View style={styles.buttonContainer}>
+                  <Button mode="contained" buttonColor="#3b0051" onPress={isRunning ? stopTimer : startTimer} style={styles.button}>
+                    {isRunning ? 'Pause' : 'Resume'}
+                  </Button>
+                  <Button mode="outlined" buttonColor="#3b0051" onPress={resetTimer} style={styles.button}>
+                    Reset
+                  </Button>
+                </View>
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
-  content: {
+  container: {
     flex: 1,
     padding: 16,
   },
@@ -189,15 +191,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
+    color: '#3b0051',
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
-  },
-  image: {
-    width: 200,
-    height: 200,
-    alignSelf: 'center',
     marginBottom: 16,
   },
   streak: {
@@ -221,5 +218,30 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: '#3b0051'
+  },
+  progressBar: {
+    height: 10,
+    width: '100%',
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  image: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
 });
+
+export default function MeditoWrapper() {
+  return (
+    <ThemeProvider>
+      <Medito />
+    </ThemeProvider>
+  );
+}
