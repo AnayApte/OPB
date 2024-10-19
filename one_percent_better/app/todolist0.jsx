@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
-import { TextInput, Button, Card, Paragraph, IconButton, Menu, Title } from 'react-native-paper';
+import { TextInput, Button, Card, Paragraph, IconButton, Menu, Title, Appbar } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../utils/supabaseClient';
 import { format } from 'date-fns';
 import { useAuth } from '../utils/AuthContext';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import BackButton from '../utils/BackButton';
 
 function TodoList() {
   const { theme } = useTheme();
   const { userId } = useAuth();
+  const navigation = useNavigation();
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState('');
   const [newPriority, setNewPriority] = useState('medium');
@@ -62,7 +65,7 @@ function TodoList() {
     if (error) {
       console.error('Error adding todo:', error);
     } else {
-      setTodos([...todos, data[0]]);
+      setTodos([data[0], ...todos]);
       resetInputs();
     }
   };
@@ -157,8 +160,11 @@ function TodoList() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View style={styles.container}>
+      <View style={styles.header}>
+        <BackButton destination="/home"/>
         <Title style={styles.title}>Todolist</Title>
+      </View>
+      <View style={styles.container}>
         <Card style={styles.card}>
           <Card.Content>
             <TextInput
@@ -234,24 +240,22 @@ function TodoList() {
                     icon={todo.completed ? 'check-circle' : 'circle-outline'}
                     onPress={() => toggleComplete(todo.id)}
                     color="#3b0051"
-                    size={16}
+                    size={20}
+                    style={styles.completeButton}
                   />
                 </View>
-                <View style={styles.todoInfo}>
-                  <Paragraph style={styles.todoPriority} numberOfLines={1}>
-                    {todo.task_priority.charAt(0).toUpperCase() + todo.task_priority.slice(1)}
-                  </Paragraph>
+                <View style={styles.todoFooter}>
                   <Paragraph style={styles.todoDueDate} numberOfLines={1}>
                     {format(new Date(todo.due_date), 'PP')}
                   </Paragraph>
-                </View>
-                <View style={styles.todoActions}>
-                  <Button onPress={() => editTodo(todo)} mode="contained" color="#3b0051" compact style={styles.actionButton}>
-                    Edit
-                  </Button>
-                  <Button onPress={() => deleteTodo(todo.id)} mode="contained" color="#3b0051" compact style={styles.actionButton}>
-                    Delete
-                  </Button>
+                  <View style={styles.todoActions}>
+                    <Button onPress={() => editTodo(todo)} mode="contained" color="#3b0051" compact style={styles.actionButton}>
+                      Edit
+                    </Button>
+                    <Button onPress={() => deleteTodo(todo.id)} mode="contained" color="#3b0051" compact style={styles.actionButton}>
+                      Delete
+                    </Button>
+                  </View>
                 </View>
               </Card.Content>
             </Card>
@@ -270,14 +274,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
   card: {
     marginBottom: 16,
+    marginTop: 16,
   },
   input: {
     marginBottom: 8,
@@ -311,7 +310,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   todoContent: {
-    padding: 4,
+    padding: 0,
   },
   todoHeader: {
     flexDirection: 'row',
@@ -319,44 +318,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prioritySymbolContainer: {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
   },
   prioritySymbol: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   todoTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
   },
   completedTodo: {
     textDecorationLine: 'line-through',
   },
-  todoInfo: {
+  todoFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  todoPriority: {
-    fontSize: 12,
+    alignItems: 'center',
+    marginTop: 4,
   },
   todoDueDate: {
-    fontSize: 12,
+    fontSize: 14,
   },
   todoActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 4,
   },
   actionButton: {
     marginLeft: 4,
     paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  completeButton: {
+    margin: 0,
+    padding: 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 30,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
   },
 });
 
