@@ -93,6 +93,8 @@ export default function Home() {
             <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
             <NavButton icon="food" label="Food Analyzer" onPress={() => router.push('/foodanalyzer')} />
             <NavButton icon="book-open-page-variant" label="Journal" onPress={() => router.push('/journal')} />
+            <NavButton icon="calendar" label="Calendar" onPress={() => router.push('/Calendar')} />
+
           </Surface>
         </ScrollView>
       </SafeAreaView>

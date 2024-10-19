@@ -1,36 +1,39 @@
-//app/Calendar.jsx
-
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Appbar, Card, Paragraph, Modal, Portal, Text, IconButton } from 'react-native-paper';
 import { Calendar } from 'react-native-calendars';
-import { useTheme } from './ThemeContext';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
-import BackButton from '../utils/BackButton';
-import { ThemeProvider } from './ThemeContext';
+import { ThemeProvider, useTheme } from './ThemeContext';
+import { useRouter } from 'expo-router';
+import { format, parseISO } from 'date-fns';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const supabase = createClient(SUPABASEURL, SUPABASEKEY);
 
 const defaultTheme = {
-  background: '#FFFFFF',
-  text: '#000000',
-  primary: '#641f1f',
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#3b0051',
   secondary: '#f2f5ea',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const InteractiveCalendarContent = () => {
-  const { theme = defaultTheme } = useTheme() || {};
+function InteractiveCalendarContent() {
+  const { theme = defaultTheme } = useTheme();
   const { userId } = useAuth();
+  const router = useRouter();
   const [todos, setTodos] = useState([]);
   const [workouts, setWorkouts] = useState([]);
   const [journals, setJournals] = useState([]);
-  const [journalModalVisible, setJournalModalVisible] = useState(false);
-  const [workoutModalVisible, setWorkoutModalVisible] = useState(false);
-  const [selectedJournal, setSelectedJournal] = useState(null);
-  const [selectedWorkout, setSelectedWorkout] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [dayModalVisible, setDayModalVisible] = useState(false);
+  const [selectedDayItems, setSelectedDayItems] = useState([]);
 
   useEffect(() => {
     if (userId) {
@@ -57,11 +60,11 @@ const InteractiveCalendarContent = () => {
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high':
-        return '#FF6347'; // Red
+        return 'red';
       case 'medium':
-        return '#FFD700'; // Yellow
+        return 'orange';
       case 'low':
-        return '#90EE90'; // Green
+        return 'green';
       default:
         return theme.secondary;
     }
@@ -72,226 +75,211 @@ const InteractiveCalendarContent = () => {
 
     todos.forEach(todo => {
       const date = todo.due_date.split('T')[0];
-      if (!markedDates[date]) markedDates[date] = { dots: [], tasks: [] };
-      markedDates[date].dots.push({ key: 'todo', color: getPriorityColor(todo.task_priority) });
-      markedDates[date].tasks.push({ 
-        type: 'todo', 
-        text: todo.details, 
-        priority: todo.task_priority 
-      });
+      if (!markedDates[date]) markedDates[date] = { dots: [] };
+      markedDates[date].dots.push({ key: `todo-${todo.id}`, color: getPriorityColor(todo.task_priority) });
     });
 
     workouts.forEach(workout => {
       const date = workout.date.split('T')[0];
-      if (!markedDates[date]) markedDates[date] = { dots: [], tasks: [] };
-      markedDates[date].dots.push({ key: 'workout', color: theme.primary });
-      markedDates[date].tasks.push({ 
-        type: 'workout', 
-        text: 'Workout', 
-        onPress: () => {
-          setSelectedWorkout(workout);
-          setWorkoutModalVisible(true);
-        }
-      });
+      if (!markedDates[date]) markedDates[date] = { dots: [] };
+      markedDates[date].dots.push({ key: `workout-${workout.id}`, color: theme.primary });
     });
 
     journals.forEach(journal => {
       const date = journal.date.split('T')[0];
-      if (!markedDates[date]) markedDates[date] = { dots: [], tasks: [] };
-      markedDates[date].dots.push({ key: 'journal', color: theme.primary });
-      markedDates[date].tasks.push({ 
-        type: 'journal', 
-        text: `Entry: ${journal.title}`, 
-        onPress: () => {
-          setSelectedJournal(journal);
-          setJournalModalVisible(true);
-        }
-      });
+      if (!markedDates[date]) markedDates[date] = { dots: [] };
+      markedDates[date].dots.push({ key: `journal-${journal.id}`, color: theme.primary });
     });
 
     return markedDates;
   };
 
-  const renderDay = ({ date, state, marking }) => {
-    const dayTasks = marking?.tasks || [];
-    return (
-      <View style={[styles.dayContainer, { backgroundColor: theme.background }]}>
-        <Text style={[styles.dayText, { color: state === 'disabled' ? theme.secondary : theme.text }]}>
-          {date.day}
-        </Text>
-        <ScrollView style={styles.taskScrollView}>
-          {dayTasks.map((task, index) => (
-            <TouchableOpacity 
-              key={index} 
-              style={[
-                styles.taskItem, 
-                { backgroundColor: task.type === 'todo' ? getPriorityColor(task.priority) : theme.secondary }
-              ]}
-              onPress={task.onPress}
-            >
-              <Text style={[styles.taskText, { color: theme.text }]} numberOfLines={2}>
-                {task.text}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-    );
+  const handleDayPress = (day) => {
+    const date = day.dateString;
+    const dayItems = [
+      ...todos.filter(todo => todo.due_date.startsWith(date)),
+      ...workouts.filter(workout => workout.date.startsWith(date)),
+      ...journals.filter(journal => journal.date.startsWith(date))
+    ];
+    setSelectedDate(date);
+    setSelectedDayItems(dayItems);
+    setDayModalVisible(true);
+  };
+
+  const renderItemDetails = (item) => {
+    if ('details' in item) {
+      // Todo item
+      return (
+        <View style={[styles.itemContainer, { borderColor: getPriorityColor(item.task_priority) }]}>
+          <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={20} color={getPriorityColor(item.task_priority)} />
+          <View style={styles.itemTextContainer}>
+            <Paragraph style={styles.itemTitle}>{item.details}</Paragraph>
+            <Paragraph style={styles.itemSubtitle}>Priority: {item.task_priority}</Paragraph>
+            <Paragraph style={styles.itemSubtitle}>Due: {format(parseISO(item.due_date), 'PP')}</Paragraph>
+          </View>
+        </View>
+      );
+    } else if ('duration' in item) {
+      // Workout item
+      return (
+        <View style={[styles.itemContainer, { borderColor: theme.primary }]}>
+          <MaterialCommunityIcons name="dumbbell" size={20} color={theme.primary} />
+          <View style={styles.itemTextContainer}>
+            <Paragraph style={styles.itemTitle}>Workout</Paragraph>
+            <Paragraph style={styles.itemSubtitle}>Duration: {item.duration}</Paragraph>
+          </View>
+        </View>
+      );
+    } else if ('title' in item) {
+      // Journal item
+      return (
+        <View style={[styles.itemContainer, { borderColor: theme.primary }]}>
+          <MaterialCommunityIcons name="book-open-variant" size={20} color={theme.primary} />
+          <View style={styles.itemTextContainer}>
+            <Paragraph style={styles.itemTitle}>{item.title}</Paragraph>
+            <Paragraph style={styles.itemSubtitle} numberOfLines={2}>{item.body}</Paragraph>
+          </View>
+        </View>
+      );
+    }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <BackButton destination="/home"/>
-      <Text style={[styles.title, { color: theme.primary }]}>Interactive Calendar</Text>
-      <Calendar
-        style={styles.calendar}
-        markedDates={getMarkedDates()}
-        dayComponent={renderDay}
-        theme={{
-          backgroundColor: theme.background,
-          calendarBackground: theme.background,
-          textSectionTitleColor: theme.text,
-          selectedDayBackgroundColor: theme.primary,
-          selectedDayTextColor: theme.secondary,
-          todayTextColor: theme.primary,
-          dayTextColor: theme.text,
-          textDisabledColor: theme.secondary,
-          dotColor: theme.primary,
-          selectedDotColor: theme.secondary,
-          arrowColor: theme.primary,
-          monthTextColor: theme.primary,
-          indicatorColor: theme.primary,
-        }}
-      />
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={journalModalVisible}
-        onRequestClose={() => setJournalModalVisible(false)}
-      >
-        <View style={styles.centeredView}>
-          <View style={[styles.modalView, { backgroundColor: theme.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.primary }]}>{selectedJournal?.title}</Text>
-            <ScrollView>
-              <Text style={[styles.modalBody, { color: theme.text }]}>{selectedJournal?.body}</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Interactive Calendar" />
+      </Appbar.Header>
+      <ScrollView style={styles.content}>
+        <Card style={styles.calendarCard}>
+          <Card.Content>
+            <Calendar
+              style={styles.calendar}
+              markedDates={getMarkedDates()}
+              onDayPress={handleDayPress}
+              markingType={'multi-dot'}
+              theme={{
+                backgroundColor: theme.background,
+                calendarBackground: theme.background,
+                textSectionTitleColor: theme.text,
+                selectedDayBackgroundColor: theme.primary,
+                selectedDayTextColor: theme.secondary,
+                todayTextColor: theme.primary,
+                dayTextColor: theme.text,
+                textDisabledColor: theme.secondary,
+                dotColor: theme.primary,
+                selectedDotColor: theme.secondary,
+                arrowColor: theme.primary,
+                monthTextColor: theme.primary,
+                indicatorColor: theme.primary,
+              }}
+            />
+          </Card.Content>
+        </Card>
+      </ScrollView>
+      <Portal>
+        <Modal 
+          visible={dayModalVisible} 
+          onDismiss={() => setDayModalVisible(false)} 
+          contentContainerStyle={styles.modalContainer}
+          style={{ margin: 0 }}
+        >
+          <View style={[styles.modalContent, { width: SCREEN_WIDTH * 0.9 }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedDate ? format(parseISO(selectedDate), 'PP') : 'Items'}</Text>
+              <IconButton
+                icon="close"
+                size={24}
+                onPress={() => setDayModalVisible(false)}
+                style={styles.closeButton}
+              />
+            </View>
+            <ScrollView style={styles.modalScroll}>
+              {selectedDayItems.map((item, index) => (
+                <View key={`${item.id}-${index}`} style={styles.itemWrapper}>
+                  {renderItemDetails(item)}
+                </View>
+              ))}
             </ScrollView>
-            <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: theme.primary }]}
-              onPress={() => setJournalModalVisible(false)}
-            >
-              <Text style={[styles.buttonText, { color: theme.secondary }]}>Close</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={workoutModalVisible}
-        onRequestClose={() => setWorkoutModalVisible(false)}
-      >
-        <View style={styles.centeredView}>
-          <View style={[styles.modalView, { backgroundColor: theme.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.primary }]}>Workout Details</Text>
-            <Text style={[styles.modalBody, { color: theme.text }]}>Duration: {selectedWorkout?.duration}</Text>
-            <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: theme.primary }]}
-              onPress={() => setWorkoutModalVisible(false)}
-            >
-              <Text style={[styles.buttonText, { color: theme.secondary }]}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </View>
+        </Modal>
+      </Portal>
+    </SafeAreaView>
   );
-};
+}
 
-const InteractiveCalendar = () => {
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: 16,
+  },
+  calendarCard: {
+    marginBottom: 16,
+  },
+  calendar: {
+    height: SCREEN_WIDTH,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    margin: 0,
+    padding: 0,
+  },
+  modalScroll: {
+    maxHeight: '100%',
+  },
+  itemWrapper: {
+    marginBottom: 10,
+  },
+  itemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+  },
+  itemTextContainer: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  itemTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  itemSubtitle: {
+    fontSize: 14,
+    color: 'gray',
+  },
+});
+
+export default function InteractiveCalendar() {
   return (
     <ThemeProvider>
       <InteractiveCalendarContent />
     </ThemeProvider>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 50,
-    textAlign: 'center',
-  },
-  calendar: {
-    height: SCREEN_WIDTH,
-  },
-  dayContainer: {
-    width: SCREEN_WIDTH / 7 - 4,
-    height: SCREEN_WIDTH / 7 * 1.5,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    padding: 2,
-  },
-  dayText: {
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  taskScrollView: {
-    flex: 1,
-  },
-  taskItem: {
-    padding: 2,
-    marginTop: 2,
-    borderRadius: 3,
-  },
-  taskText: {
-    fontSize: 8,
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    margin: 20,
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    width: '90%',
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  modalBody: {
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  closeButton: {
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 10,
-  },
-  buttonText: {
-    fontWeight: 'bold',
-  },
-});
-
-export default InteractiveCalendar;
+}

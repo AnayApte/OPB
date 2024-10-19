@@ -23,6 +23,7 @@ const RootLayout = () => {
             <Stack.Screen name="calorieBot" />
             <Stack.Screen name="recipesPage" />
             <Stack.Screen name="foodanalyzer" />
+            <Stack.Screen name="Calendar" />
           </Stack>
         </AuthProvider>
       </ThemeProvider>
