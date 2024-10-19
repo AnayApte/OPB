@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
-import { calculateOneRepMax } from '../../utils/helpers';
+import { calculateOneRepMax, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,7 +70,7 @@ const ExerciseHistory = () => {
 
     return (
       <TouchableOpacity onPress={() => openModal(item)} style={[styles.exerciseBox, { backgroundColor: theme.cardBackground }]}>
-        <Text style={[styles.exerciseName, { color: theme.text }]}>{item.name}</Text>
+        <Text style={[styles.exerciseName, { color: theme.text }]}>{formatExerciseNameForDisplay(item.name)}</Text>
         <Text style={{ color: theme.text }}>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
         <Text style={{ color: theme.text }}>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
       </TouchableOpacity>

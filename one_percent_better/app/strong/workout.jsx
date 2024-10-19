@@ -2,19 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
-import { formatTime, calculateOneRepMax, formatExerciseName } from '../../utils/helpers';
+import { formatTime, calculateOneRepMax, formatExerciseName, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import 'react-native-get-random-values';
 import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
-
-const formatExerciseNameForDisplay = (name) => {
-  return name
-    .split(/[_\s]+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
 
 const defaultTheme = {
   background: '#FFFFFF',
@@ -390,7 +383,7 @@ const WorkoutScreen = () => {
       
               if (updatePreviousError) throw updatePreviousError;
       
-              const { error: insertError } = await supabase
+              const { error: insertError } =   await supabase
                 .from('personalRecords')
                 .insert({
                   userId: userId,

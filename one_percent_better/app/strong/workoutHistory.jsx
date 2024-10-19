@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
-import { calculateOneRepMax } from '../../utils/helpers';
+import { calculateOneRepMax, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../utils/BackButton';
@@ -95,7 +95,7 @@ const WorkoutHistory = () => {
 
         return (
           <View key={workoutExercise.exerciseId} style={styles.exerciseRow}>
-            <Text style={{ color: theme.text }}>{workoutExercise.sets.length}x {workoutExercise.exercises.name}</Text>
+            <Text style={{ color: theme.text }}>{workoutExercise.sets.length}x {formatExerciseNameForDisplay(workoutExercise.exercises.name)}</Text>
             <Text style={{ color: theme.text }}>Best Set: {bestSetInfo}</Text>
           </View>
         );
@@ -115,7 +115,7 @@ const WorkoutHistory = () => {
           keyExtractor={(item) => item.exerciseId.toString()}
           renderItem={({ item: workoutExercise }) => (
             <View style={styles.exerciseDetails}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>{workoutExercise.exercises.name}</Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>{formatExerciseNameForDisplay(workoutExercise.exercises.name)}</Text>
               {workoutExercise.sets.map((set, index) => (
                 <View key={set.setId} style={styles.setRow}>
                   <Text style={{ color: theme.text }}>Set {index + 1}: {set.weight}x{set.reps}</Text>
