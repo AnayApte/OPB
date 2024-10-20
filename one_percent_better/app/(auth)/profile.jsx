@@ -123,7 +123,7 @@ const ProfileCompletionContent = () => {
     radioContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginBottom: 32,
+      marginBottom: 10,  // Reduced margin to bring the first row closer to the second row
     },
     radioButton: {
       flexDirection: 'row',
@@ -142,6 +142,11 @@ const ProfileCompletionContent = () => {
       marginLeft: 8,
       color: theme.text,
     },
+    secondRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: 30,  // Increase margin between "Prefer not to say" and the save button
+    },
     saveButton: {
       backgroundColor: theme.primary,
       paddingHorizontal: 32,
@@ -158,6 +163,7 @@ const ProfileCompletionContent = () => {
   });
 
   return (
+    // Wrap the content in a TouchableWithoutFeedback to dismiss the keyboard when tapping outside the inputs
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
@@ -178,8 +184,10 @@ const ProfileCompletionContent = () => {
             keyboardType="numeric"
             placeholderTextColor={theme.text}
           />
-
+          
           <Text style={styles.label}>Gender:</Text>
+
+          {/* First row: Male and Female */}
           <View style={styles.radioContainer}>
             <TouchableOpacity
               style={[styles.radioButton, gender === true && styles.radioButtonSelected]}
@@ -192,6 +200,16 @@ const ProfileCompletionContent = () => {
               onPress={() => setGender(false)}
             >
               <Text style={styles.radioText}>Female</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Second row: Prefer not to say */}
+          <View style={styles.secondRow}>
+            <TouchableOpacity
+              style={[styles.radioButton, gender === null && styles.radioButtonSelected]}
+              onPress={() => setGender(null)}
+            >
+              <Text style={styles.radioText}>Prefer not to say</Text>
             </TouchableOpacity>
           </View>
 
