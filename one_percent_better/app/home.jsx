@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, SafeAreaView, StyleSheet, ScrollView } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { View, Text, SafeAreaView, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../utils/AuthContext';
-import { ThemeProvider } from './ThemeContext';
-import { Appbar, Card, Title, Paragraph, Button, Surface, Text, IconButton } from 'react-native-paper';
+import { ThemeProvider, useTheme } from './ThemeContext';
+import { StatusBar } from 'expo-status-bar';
+import { Appbar, Card, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
-
+import { Title, Paragraph } from 'react-native-paper';
 
 const quotes = [
-  "'The only limit to our realization of tomorrow is our doubts of today.' - Franklin D. Roosevelt",
-  "'Success is not final, failure is not fatal: It is the courage to continue that counts.' - Winston Churchill",
-  "'Do not wait to strike till the iron is hot, but make it hot by striking.' - William Butler Yeats",
-  "'Perfection is not attainable, but if we chase perfection we can catch excellence. ' - Vince Lombardi",
-  "'When you have a dream, you have got to grab it and never let go' - Carol Burnett",
-  "'Either you run the day or the day runs you' - Jim Rohn",
-  "'I do not like to gamble, but if there is one thing I am willing to bet on it is myself' - Beyonce",
-  "'It is not whether you get knocked down, it is whether you get up' - Vince Lombardi",
-  "'You miss 100% of the shots you do not take.' - Wayne Gretzky",
-  "'It is hard to beat a person who never gives up' - Babe Ruth",
+  "The only way to do great work is to love what you do. - Steve Jobs",
+  "Believe you can and you're halfway there. - Theodore Roosevelt",
+  "Your time is limited, don't waste it living someone else's life. - Steve Jobs",
+  "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill",
+  "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt"
 ];
 
 const theme = {
@@ -30,7 +24,7 @@ const theme = {
 };
 
 export default function Home() {
-  const { userId, setUserId } = useAuth();
+  const { signOut } = useAuth();
   const router = useRouter();
   const [quote, setQuote] = useState("");
 
@@ -38,38 +32,71 @@ export default function Home() {
     setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   }, []);
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
+    
     await SecureStore.deleteItemAsync('userId');
     setUserId(null);
-    router.replace('/(auth)/login');
+    router.replace('/(auth)/login', { animation: 'slide_from_left' });
   };
 
-  const NavButton = ({ icon, label, onPress }) => (
-    <Button
-      mode="contained"
+  const HeaderIcon = ({ icon, onPress }) => (
+    <Pressable
       onPress={onPress}
-      style={styles.navButton}
-      contentStyle={styles.navButtonContent}
-      labelStyle={styles.navButtonLabel}
+      style={({ pressed }) => [
+        styles.headerIconContainer,
+        { opacity: pressed ? 0.7 : 1 }
+      ]}
     >
-      <View style={styles.navButtonInner}>
-        <MaterialCommunityIcons name={icon} size={24} color={theme.buttonText} />
-        <Text style={styles.navButtonText}>{label}</Text>
+      <View style={styles.headerIconBackground}>
+        <MaterialCommunityIcons name={icon} size={32} color={theme.text} />
       </View>
-    </Button>
+    </Pressable>
   );
+
+  const NavButton = ({ icon, label, onPress, style, iconSize = 24 }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => {
+          setIsPressed(false);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.navButton,
+          style,
+          isPressed && styles.navButtonPressed
+        ]}
+      >
+        <View style={styles.navButtonInner}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={iconSize} 
+            color={isPressed ? theme.background : theme.buttonText} 
+          />
+          <Text style={[
+            styles.navButtonText,
+            isPressed && styles.navButtonTextPressed
+          ]}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
 
   return (
     <ThemeProvider value={theme}>
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <StatusBar style="light" />
         <Appbar.Header style={styles.header}>
+          <HeaderIcon
+            icon="account"
+            onPress={() => router.push('/profile')}
+          />
           <Appbar.Content title="One Percent Better" titleStyle={styles.headerTitle} />
-          <IconButton
+          <HeaderIcon
             icon="logout"
-            iconColor={'#f2e2fb'}
-            size={24}
-            onPress={handleLogout}
+            onPress={handleSignOut}
           />
         </Appbar.Header>
         <ScrollView style={styles.content}>
@@ -86,15 +113,18 @@ export default function Home() {
             </Card.Content>
           </Card>
           <Surface style={styles.navContainer}>
-            <NavButton icon="account" label="Profile" onPress={() => router.push('/profile')} />
+            <NavButton 
+              icon="calendar" 
+              label="Calendar" 
+              onPress={() => router.push('/Calendar')} 
+              style={styles.calendarButton}
+            />
             <NavButton icon="meditation" label="Medito" onPress={() => router.push('/medito')} />
-            <NavButton icon="format-list-checks" label="Todo List" onPress={() => router.push('/todolist0')} />
             <NavButton icon="dumbbell" label="Strong" onPress={() => router.push('/strong')} />
             <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
             <NavButton icon="food" label="Food Analyzer" onPress={() => router.push('/foodanalyzer')} />
+            <NavButton icon="format-list-checks" label="Todo List" onPress={() => router.push('/todolist0')} />
             <NavButton icon="book-open-page-variant" label="Journal" onPress={() => router.push('/journal')} />
-            <NavButton icon="calendar" label="Calendar" onPress={() => router.push('/Calendar')} />
-
           </Surface>
         </ScrollView>
       </SafeAreaView>
@@ -109,11 +139,22 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: 'transparent',
     elevation: 0,
+    justifyContent: 'space-between',
   },
   headerTitle: {
     color: theme.text,
     fontWeight: 'bold',
     fontSize: 24,
+  },
+  headerIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 60,
+  },
+  headerIconBackground: {
+    backgroundColor: 'rgba(242, 226, 251, 0.2)',
+    borderRadius: 20,
+    padding: 8,
   },
   content: {
     flex: 1,
@@ -160,22 +201,35 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 8,
     backgroundColor: theme.button,
-  },
-  navButtonContent: {
     height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  navButtonPressed: {
+    backgroundColor: theme.text,
+    transform: [{ scale: 0.95 }], 
   },
   navButtonInner: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  navButtonLabel: {
-    color: theme.buttonText,
-  },
   navButtonText: {
     color: theme.buttonText,
-    fontSize: 14,
-    marginTop: 4,
+    fontSize: 16,
+    marginTop: 8,
     textAlign: 'center',
+    fontWeight: 'bold', 
+  },
+  navButtonTextPressed: {
+    color: theme.background,
+  },
+  calendarButton: {
+    width: '100%',
+    marginBottom: 12,
   },
 });
