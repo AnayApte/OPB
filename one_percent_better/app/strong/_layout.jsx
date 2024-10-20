@@ -79,7 +79,7 @@ const StrongLayoutContent = () => {
       <Tabs.Screen
         name="workout"
         options={{
-          href: null,
+          tabBarButton: () => null,
         }}
       />
     </Tabs>

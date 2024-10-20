@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView, AppState } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
-import { formatTime, calculateOneRepMax, formatExerciseName, formatExerciseNameForDisplay } from '../../utils/helpers';
+import { calculateOneRepMax, formatExerciseName, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import 'react-native-get-random-values';
-import BackButton from '../../utils/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
 import { Appbar, Card, Title, Paragraph, Button, Surface, Text, ProgressBar } from 'react-native-paper';
@@ -273,6 +272,13 @@ const WorkoutScreen = () => {
     setAlertVisible(true);
   };
 
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
+
   const endWorkout = async () => {
     if (!userId) {
       console.error('No user logged in');
@@ -386,11 +392,12 @@ const WorkoutScreen = () => {
       
               const { error: insertError } = await supabase
                 .from('personalRecords')
+                
                 .insert({
                   userId: userId,
                   exerciseId: exerciseId,
                   setId: bestSetId,
-                  oneRepMax:  bestOneRepMax,
+                  oneRepMax: bestOneRepMax,
                   date: new Date().toISOString(),
                   isCurrent: true
                 });
@@ -439,8 +446,11 @@ const WorkoutScreen = () => {
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Workout" titleStyle={styles.headerTitle} />
       </Appbar.Header>
-      <ScrollView style={styles.container}>
-        <Card style={styles.card}>
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={{ paddingTop: 20 }}
+      >
+        <Card style={[styles.card, styles.timerCard]}>
           <Card.Content>
             <Title style={styles.timerText}>
               {formatTime(time)}
@@ -578,6 +588,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 16,
+    paddingTop: 20,
   },
   button: {
     marginTop: 8,
@@ -701,6 +712,10 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 10,
+  },
+  timerCard: {
+    marginTop: 20,
+    paddingTop: 20,
   },
 });
 
