@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, FlatList, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { Appbar, Button, Card, Text, ActivityIndicator } from 'react-native-paper';
+import { Appbar, Button, Card, Text, ActivityIndicator, Searchbar } from 'react-native-paper';
 import axios from 'axios';
+import { supabase } from '../utils/supabaseClient';
+import { useAuth } from '../utils/AuthContext';
+import * as SecureStore from 'expo-secure-store';
 
 const defaultTheme = {
   background: '#FFb5c6',
@@ -18,21 +21,23 @@ const defaultTheme = {
 const EDAMAM_APP_ID = '4499d167';
 const EDAMAM_APP_KEY = '24cbb2c75a14cc21b95de2f02a7ee4aa';
 
-const fetchRecipes = async (type = null) => {
+const RECIPES_PER_PAGE = 10;
+
+const fetchRecipes = async (type = null, calorieGoal = null, from = 0, to = RECIPES_PER_PAGE, query = '') => {
   const params = {
     app_id: EDAMAM_APP_ID,
     app_key: EDAMAM_APP_KEY,
     type: 'public',
-    from: 0,
-    to: 100, // Fetch 100 recipes for all cases
+    from,
+    to,
   };
 
-  if (type === 'cutting') {
-    params.diet = 'low-carb';
-    params.calories = '100-500';
-  } else if (type === 'bulking') {
-    params.diet = 'high-protein';
-    params.calories = '500-800';
+  if (type === 'recommended' && calorieGoal) {
+    params.calories = `${Math.round(calorieGoal * 0.2)}-${Math.round(calorieGoal * 0.4)}`;
+  }
+
+  if (query) {
+    params.q = query;
   }
 
   try {
@@ -40,9 +45,6 @@ const fetchRecipes = async (type = null) => {
     return response.data.hits.map(hit => hit.recipe);
   } catch (error) {
     console.error('Error fetching recipes:', error);
-    if (error.response && error.response.status === 401) {
-      throw new Error('Authentication failed. Please check your API credentials.');
-    }
     throw error;
   }
 };
@@ -50,29 +52,131 @@ const fetchRecipes = async (type = null) => {
 function RecipesContent() {
   const { theme = defaultTheme } = useTheme();
   const router = useRouter();
+  const { userId } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [recipeType, setRecipeType] = useState(null);
+  const [recipeType, setRecipeType] = useState('all');
   const [error, setError] = useState(null);
+  const [calorieGoal, setCalorieGoal] = useState(null);
+  const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchData = async (type) => {
+  const fetchCalorieGoal = async () => {
+    try {
+      const storedUserId = await SecureStore.getItemAsync('userId');
+      
+      if (!storedUserId) {
+        console.error('No user ID found. Unable to fetch profile data.');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('weight, height, age, gender, activity_level, lose_weight, gain_weight, weeks')
+        .eq('userId', storedUserId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user data:', error);
+        return;
+      }
+
+      if (!data) {
+        console.warn('No user data found. Proceeding without calorie goal calculation.');
+        return;
+      }
+
+      // Convert height to cm and weight to kg
+      const heightCm = data.height * 2.54;
+      const weightKg = data.weight * 0.453592;
+
+      // Calculate BMR
+      let bmr;
+      if (data.gender === 'Male') {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age + 5;
+      } else if (data.gender === 'Female') {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age - 161;
+      } else {
+        const maleBmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age + 5;
+        const femaleBmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age - 161;
+        bmr = (maleBmr + femaleBmr) / 2;
+      }
+
+      // Calculate TDEE
+      let tdee;
+      switch (data.activity_level) {
+        case 'Sedentary':
+          tdee = bmr * 1.2;
+          break;
+        case 'Lightly Active':
+          tdee = bmr * 1.375;
+          break;
+        case 'Moderately Active':
+          tdee = bmr * 1.55;
+          break;
+        case 'Very Active':
+          tdee = bmr * 1.725;
+          break;
+        default:
+          tdee = bmr * 1.2;
+      }
+
+      // Calculate calorie goal
+      let goal;
+      if (data.lose_weight > 0) {
+        const deficit = (data.lose_weight * 3500) / (data.weeks * 7);
+        goal = tdee - deficit;
+      } else if (data.gain_weight > 0) {
+        const surplus = (data.gain_weight * 3500) / (data.weeks * 7);
+        goal = tdee + surplus;
+      } else {
+        goal = tdee;
+      }
+
+      setCalorieGoal(Math.round(goal));
+    } catch (error) {
+      console.error('Error calculating calorie goal:', error);
+    }
+  };
+
+  const fetchData = useCallback(async () => {
+    if (loading || !hasMore) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchRecipes(type);
-      const sortedData = data.sort((a, b) => a.label.localeCompare(b.label));
-      setRecipes(sortedData);
+      const from = page * RECIPES_PER_PAGE;
+      const to = (page + 1) * RECIPES_PER_PAGE;
+      const newRecipes = await fetchRecipes(recipeType, calorieGoal, from, to, searchQuery);
+      if (newRecipes.length === 0) {
+        setHasMore(false);
+      } else {
+        setRecipes(prevRecipes => {
+          const uniqueNewRecipes = newRecipes.filter(
+            newRecipe => !prevRecipes.some(prevRecipe => prevRecipe.uri === newRecipe.uri)
+          );
+          return [...prevRecipes, ...uniqueNewRecipes];
+        });
+        setPage(prevPage => prevPage + 1);
+      }
     } catch (err) {
       setError(err.message || 'Failed to fetch recipes. Please try again later.');
       console.error('Error fetching recipes:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [recipeType, calorieGoal, page, loading, hasMore, searchQuery]);
 
   useEffect(() => {
-    fetchData(recipeType);
-  }, [recipeType]);
+    fetchCalorieGoal();
+  }, []);
+
+  useEffect(() => {
+    setRecipes([]);
+    setPage(0);
+    setHasMore(true);
+    fetchData();
+  }, [recipeType, calorieGoal, searchQuery]);
 
   const handleOpenRecipe = (url) => {
     Linking.openURL(url).catch((err) => console.error('An error occurred', err));
@@ -102,6 +206,13 @@ function RecipesContent() {
     </Card>
   );
 
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    setRecipes([]);
+    setPage(0);
+    setHasMore(true);
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header>
@@ -111,28 +222,51 @@ function RecipesContent() {
       <View style={styles.content}>
         <View style={styles.toggleContainer}>
           <Button
-            mode={recipeType === 'cutting' ? 'contained' : 'outlined'}
-            onPress={() => setRecipeType(recipeType === 'cutting' ? null : 'cutting')}
+            mode={recipeType === 'all' ? 'contained' : 'outlined'}
+            onPress={() => {
+              setRecipeType('all');
+              setRecipes([]);
+              setPage(0);
+              setHasMore(true);
+            }}
             style={styles.toggleButton}
           >
-            Cutting
+            All Recipes
           </Button>
           <Button
-            mode={recipeType === 'bulking' ? 'contained' : 'outlined'}
-            onPress={() => setRecipeType(recipeType === 'bulking' ? null : 'bulking')}
+            mode={recipeType === 'recommended' ? 'contained' : 'outlined'}
+            onPress={() => {
+              setRecipeType('recommended');
+              setRecipes([]);
+              setPage(0);
+              setHasMore(true);
+            }}
             style={styles.toggleButton}
           >
-            Bulking
+            Recommended Recipes
           </Button>
         </View>
-        {loading && <ActivityIndicator animating={true} color={theme.primary} />}
+        {recipeType === 'recommended' && calorieGoal && (
+          <Text style={styles.calorieGoal}>
+            Here are recipes to fit your caloric goal of: {calorieGoal} calories/day
+          </Text>
+        )}
+        <Searchbar
+          placeholder="Search recipes"
+          onChangeText={handleSearch}
+          value={searchQuery}
+          style={styles.searchBar}
+        />
         {error && <Text style={styles.error}>{error}</Text>}
-        {!loading && !error && recipes.length === 0 && <Text>No recipes found</Text>}
         <FlatList
           data={recipes}
           renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item) => item.uri}
           contentContainerStyle={styles.listContainer}
+          onEndReached={fetchData}
+          onEndReachedThreshold={0.1}
+          ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={theme.primary} />}
+          ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No recipes found</Text>}
         />
       </View>
     </SafeAreaView>
@@ -182,6 +316,19 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+  },
+  calorieGoal: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  searchBar: {
+    marginBottom: 16,
   },
 });
 

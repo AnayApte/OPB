@@ -42,11 +42,6 @@ function CalorieCounterContent() {
 
   const loadInitialData = async () => {
     try {
-      const storedCalorieGoal = await AsyncStorage.getItem('calorieGoal');
-      if (storedCalorieGoal !== null) {
-        setCalorieGoal(storedCalorieGoal);
-      }
-  
       const currentDate = new Date().toISOString().split('T')[0];
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
   
@@ -79,24 +74,84 @@ function CalorieCounterContent() {
       }
   
       const totalDurationInHours = workouts.reduce((total, workout) => {
-        const [hours, minutes, seconds] = workout.duration.split(':').map(Number);
+        const [hours, minutes, seconds] = 
+ workout.duration.split(':').map(Number);
         return total + hours + minutes / 60 + seconds / 3600;
       }, 0);
   
       const caloriesBurned = Math.round(totalDurationInHours * 400);
       setCaloriesBurned(caloriesBurned);
   
+      await calculateCalorieGoal();
     } catch (error) {
       console.error('Failed to load initial data:', error);
     }
   };
 
-  const saveCalorieGoal = async () => {
+  const calculateCalorieGoal = async () => {
     try {
-      await AsyncStorage.setItem('calorieGoal', calorieGoal);
-      setIsEditing(false);
+      const { data, error } = await supabase
+        .from('users')
+        .select('weight, height, age, gender, activity_level, lose_weight, gain_weight, weeks')
+        .eq('userId', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user data:', error);
+        return;
+      }
+
+      // Convert height to cm and weight to kg
+      const heightCm = data.height * 2.54;
+      const weightKg = data.weight * 0.453592;
+
+      // Calculate BMR
+      let bmr;
+      if (data.gender === 'Male') {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age + 5;
+      } else if (data.gender === 'Female') {
+        bmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age - 161;
+      } else {
+        const maleBmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age + 5;
+        const femaleBmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age - 161;
+        bmr = (maleBmr + femaleBmr) / 2;
+      }
+
+      // Calculate TDEE
+      let tdee;
+      switch (data.activity_level) {
+        case 'Sedentary':
+          tdee = bmr * 1.2;
+          break;
+        case 'Lightly Active':
+          tdee = bmr * 1.375;
+          break;
+        case 'Moderately Active':
+          tdee = bmr * 1.55;
+          break;
+        case 'Very Active':
+          tdee = bmr * 1.725;
+          break;
+        default:
+          tdee = bmr * 1.2;
+      }
+
+      // Calculate calorie goal
+      let goal;
+      if (data.lose_weight > 0) {
+        const deficit = (data.lose_weight * 3500) / (data.weeks * 7);
+        goal = tdee - deficit;
+      } else if (data.gain_weight > 0) {
+        const surplus = (data.gain_weight * 3500) / (data.weeks * 7);
+        goal = tdee + surplus;
+      } else {
+        goal = tdee;
+      }
+
+      setCalorieGoal(Math.round(goal).toString());
+      await AsyncStorage.setItem('calorieGoal', Math.round(goal).toString());
     } catch (error) {
-      console.error(error);
+      console.error('Error calculating calorie goal:', error);
     }
   };
 
@@ -153,28 +208,7 @@ function CalorieCounterContent() {
         <Card style={styles.card}>
           <Card.Content>
             <Text style={[styles.title, { color: theme.primary }]}>Your Calorie Goal</Text>
-            {isEditing ? (
-              <View>
-                <TextInput
-                  style={styles.input}
-                  label="Enter Calorie Goal"
-                  value={calorieGoal}
-                  onChangeText={setCalorieGoal}
-                  keyboardType="numeric"
-                  mode="outlined"
-                />
-                <Button mode="contained" onPress={saveCalorieGoal} style={styles.button}>
-                  Save
-                </Button>
-              </View>
-            ) : (
-              <View style={styles.goalContainer}>
-                <Text style={[styles.goalText, { color: theme.text }]}>{calorieGoal}</Text>
-                <Button mode="contained" onPress={() => setIsEditing(true)} style={styles.button}>
-                  Edit
-                </Button>
-              </View>
-            )}
+            <Text style={[styles.goalText, { color: theme.text }]}>{calorieGoal}</Text>
           </Card.Content>
         </Card>
 
@@ -288,13 +322,9 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
   },
-  goalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   goalText: {
     fontSize: 18,
+    textAlign: 'center',
   },
   waterBottle: {
     position: 'relative',
