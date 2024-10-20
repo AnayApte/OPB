@@ -5,7 +5,7 @@ import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Appbar, TextInput, Button, Card, Text, RadioButton } from 'react-native-paper';
+import { Appbar, TextInput, Button, Card, Text, SegmentedButtons } from 'react-native-paper';
 
 const defaultTheme = {
   background: '#FFb5c6',
@@ -18,8 +18,13 @@ const defaultTheme = {
 
 function ProfileContent() {
   const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState('');
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState(null);
+  const [gender, setGender] = useState('');
+  const [activityLevel, setActivityLevel] = useState('');
+  const [weightGoal, setWeightGoal] = useState('maintain');
+  const [weightChange, setWeightChange] = useState('');
+  const [weeks, setWeeks] = useState('');
   const router = useRouter();
   const { theme = defaultTheme } = useTheme();
 
@@ -35,7 +40,7 @@ function ProfileContent() {
   
         const { data, error } = await supabase
           .from('users')
-          .select('weight, age, gender')
+          .select('weight, height, age, gender, activity_level, lose_weight, gain_weight, weeks')
           .eq('userId', userId)
           .single();
   
@@ -46,8 +51,20 @@ function ProfileContent() {
   
         if (data) {
           setWeight(data.weight ? data.weight.toString() : '');
+          setHeight(data.height ? data.height.toString() : '');
           setAge(data.age ? data.age.toString() : '');
-          setGender(data.gender);
+          setGender(data.gender || '');
+          setActivityLevel(data.activity_level || '');
+          if (data.lose_weight > 0) {
+            setWeightGoal('lose');
+            setWeightChange(data.lose_weight.toString());
+          } else if (data.gain_weight > 0) {
+            setWeightGoal('gain');
+            setWeightChange(data.gain_weight.toString());
+          } else {
+            setWeightGoal('maintain');
+          }
+          setWeeks(data.weeks ? data.weeks.toString() : '');
         }
       } catch (error) {
         console.error('Unexpected error fetching profile data:', error);
@@ -66,9 +83,20 @@ function ProfileContent() {
         return;
       }
   
+      const updateData = {
+        weight,
+        height,
+        age,
+        gender,
+        activity_level: activityLevel,
+        lose_weight: weightGoal === 'lose' ? parseFloat(weightChange) : 0,
+        gain_weight: weightGoal === 'gain' ? parseFloat(weightChange) : 0,
+        weeks: weightGoal !== 'maintain' ? parseInt(weeks) : 0
+      };
+  
       const { data, error } = await supabase
         .from('users')
-        .update({ weight: weight, age: age, gender: gender })
+        .update(updateData)
         .eq('userId', userId);
   
       if (error) {
@@ -101,9 +129,17 @@ function ProfileContent() {
             </Text>
             <TextInput
               style={styles.input}
-              label="Weight"
+              label="Weight (lbs)"
               value={weight}
               onChangeText={setWeight}
+              keyboardType="numeric"
+              mode="outlined"
+            />
+            <TextInput
+              style={styles.input}
+              label="Height (in)"
+              value={height}
+              onChangeText={setHeight}
               keyboardType="numeric"
               mode="outlined"
             />
@@ -116,12 +152,64 @@ function ProfileContent() {
               mode="outlined"
             />
             <Text style={[styles.label, { color: theme.text }]}>Gender:</Text>
-            <RadioButton.Group onValueChange={value => setGender(value)} value={gender}>
-              <View style={styles.radioContainer}>
-                <RadioButton.Item label="Male" value={true} />
-                <RadioButton.Item label="Female" value={false} />
+            <SegmentedButtons
+              value={gender}
+              onValueChange={setGender}
+              buttons={[
+                { value: 'Male', label: 'Male' },
+                { value: 'Female', label: 'Female' },
+                { value: 'NA', label: 'Prefer Not to Say' },
+              ]}
+              style={styles.segmentedButtons}
+            />
+            <Text style={[styles.label, { color: theme.text }]}>Activity Level:</Text>
+            <SegmentedButtons
+              value={activityLevel}
+              onValueChange={setActivityLevel}
+              buttons={[
+                { value: 'Sedentary', label: 'Sedentary' },
+                { value: 'Lightly Active', label: 'Light' },
+                { value: 'Moderately Active', label: 'Moderate' },
+                { value: 'Very Active', label: 'Very' },
+              ]}
+              style={styles.segmentedButtons}
+            />
+            <Text style={[styles.label, { color: theme.text }]}>Weight Goal:</Text>
+            <Text style={styles.weightGoalText}>I want to</Text>
+            <SegmentedButtons
+              value={weightGoal}
+              onValueChange={setWeightGoal}
+              buttons={[
+                { value: 'gain', label: 'Gain' },
+                { value: 'lose', label: 'Lose' },
+                { value: 'maintain', label: 'Maintain' },
+              ]}
+              style={styles.weightGoalButtons}
+            />
+            {weightGoal !== 'maintain' && (
+              <View style={styles.weightChangeContainer}>
+                <TextInput
+                  style={styles.weightChangeInput}
+                  label="lbs"
+                  value={weightChange}
+                  onChangeText={setWeightChange}
+                  keyboardType="numeric"
+                  mode="outlined"
+                  disabled={weightGoal === 'maintain'}
+                />
+                <Text style={styles.inText}>lbs in</Text>
+                <TextInput
+                  style={styles.weeksInput}
+                  label="weeks"
+                  value={weeks}
+                  onChangeText={setWeeks}
+                  keyboardType="numeric"
+                  mode="outlined"
+                  disabled={weightGoal === 'maintain'}
+                />
+                <Text style={styles.weeksText}>weeks</Text>
               </View>
-            </RadioButton.Group>
+            )}
           </Card.Content>
         </Card>
         <Button 
@@ -167,13 +255,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  radioContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
   saveButton: {
     marginTop: 16,
+  },
+  segmentedButtons: {
+    marginBottom: 16,
+  },
+  weightGoalText: {
+    marginBottom: 8,
+  },
+  weightGoalButtons: {
+    marginBottom: 16,
+  },
+  weightChangeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  weightChangeInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  inText: {
+    marginHorizontal: 8,
+  },
+  weeksInput: {
+    flex: 1,
+    marginLeft: 8,
+    marginRight: 8,
+  },
+  weeksText: {
+    marginLeft: 4,
   },
 });
 

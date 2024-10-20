@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '../ThemeContext';
-import { Appbar, BottomNavigation } from 'react-native-paper';
+import { BottomNavigation } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const theme = {
