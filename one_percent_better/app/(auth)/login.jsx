@@ -1,20 +1,33 @@
-// auth/login.jsx
 import React, { useState } from 'react';
 import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
+import { ThemeProvider, useTheme } from '../ThemeContext';
 
-export default function Login() {
+const defaultTheme = {
+  background: '#FFb5c6',
+  text: '#641f1f',
+  primary: '#641f1f',
+  secondary: '#f2f5ea',
+  buttonBackground: '#8B4513',  // Changed to brown
+  buttonText: '#f2f5ea',
+  inputBackground: 'white',
+  inputText: 'black',
+  inputBorder: '#641f1f',
+  link: '#1e90ff',
+};
+
+const LoginContent = () => {
   const [userOrEmail, setUserOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { theme = defaultTheme } = useTheme() || {};
 
   const handleLogin = async () => {
     try {
       let loginEmail = userOrEmail;
 
-      // Check if the input is a username and fetch the corresponding email
       if (!userOrEmail.includes('@')) {
         const { data: userRecord, error: userError } = await supabase
           .from('users')
@@ -29,7 +42,6 @@ export default function Login() {
         loginEmail = userRecord.email;
       }
 
-      // Authenticate the user with Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password,
@@ -42,7 +54,6 @@ export default function Login() {
 
       const userId = data.user.id;
 
-      // Store the user ID securely and navigate to the home page
       await SecureStore.setItemAsync('userId', userId);
       router.replace('/home');
 
@@ -52,84 +63,87 @@ export default function Login() {
     }
   };
 
-  
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Login</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Login</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
           placeholder="Email or Username"
+          placeholderTextColor={theme.text}
           value={userOrEmail}
           onChangeText={setUserOrEmail}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
           placeholder="Password"
+          placeholderTextColor={theme.text}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
         />
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity style={[styles.loginButton, { backgroundColor: '#641f1f' }]} onPress={handleLogin}>
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Login</Text>
         </TouchableOpacity>
         <View style={styles.signUp}>
           <Link href="/(auth)/signup" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Don't have an account? Sign up instead</Text>
+              <Text style={[styles.linkText, { color: theme.link }]}>Don't have an account? Sign up instead</Text>
             </TouchableOpacity>
           </Link>
         </View>
         <View style={styles.forgotPassword}>
           <Link href="/(auth)/forgotPassword" asChild>
             <TouchableOpacity>
-              <Text style={styles.linkText}>Forgot password?</Text>
+              <Text style={[styles.linkText, { color: theme.link }]}>Forgot password?</Text>
             </TouchableOpacity>
           </Link>
         </View>
       </View>
     </SafeAreaView>
   );
-}
+};
+
+const Login = () => (
+  <ThemeProvider>
+    <LoginContent />
+  </ThemeProvider>
+);
 
 const styles = StyleSheet.create({
-  container: {       
-    flex: 1,       
-    backgroundColor: 'white',     
-  },     
-  content: {       
-    flex: 1,       
-    justifyContent: 'center',       
-    alignItems: 'center',       
-    paddingHorizontal: 20,     
-  },     
-  title: {       
-    fontSize: 24,       
-    fontWeight: 'bold',       
-    marginBottom: 32,     
-  },     
-  input: {       
-    width: '100%',       
-    height: 40,       
-    borderColor: 'gray',       
-    borderWidth: 1,       
-    borderRadius: 5,       
-    marginBottom: 16,       
-    paddingHorizontal: 10,     
-  },     
-  loginButton: {       
-    backgroundColor: 'green',       
-    paddingHorizontal: 32,       
-    paddingVertical: 12,       
-    borderRadius: 8,       
-    width: '100%',       
-    alignItems: 'center',     
-  },     
-  buttonText: {       
-    color: 'white',       
-    fontSize: 18,       
-    fontWeight: 'bold',     
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 32,
+  },
+  input: {
+    width: '100%',
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 5,
+    marginBottom: 16,
+    paddingHorizontal: 10,
+  },
+  loginButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: 'brown',
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   signUp: {
     flexDirection: 'row',
@@ -142,7 +156,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   linkText: {
-    color: 'blue',
     fontSize: 16,
   },
 });
+
+export default Login;

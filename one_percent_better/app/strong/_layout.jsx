@@ -1,12 +1,24 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { ThemeProvider, useTheme } from '../ThemeContext';
 
-export default function StrongLayout() {
+const defaultTheme = {
+  background: '#FFFFFF',
+  text: '#000000',
+  primary: '#FFB5C6',
+  secondary: '#f2f5ea',
+  tabBar: '#f0f0f0',
+};
+
+const StrongLayoutContent = () => {
+  const { theme = defaultTheme } = useTheme() || {};
+
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: styles.tabBar,
-        headerShown: false, // Hides the top header bar
+        tabBarStyle: [styles.tabBar, { backgroundColor: theme.background }],
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -38,10 +50,18 @@ export default function StrongLayout() {
       />
     </Tabs>
   );
-}
+};
+
+const StrongLayout = () => (
+  <ThemeProvider>
+    <StrongLayoutContent />
+  </ThemeProvider>
+);
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#f0f0f0',
+    // Add any additional styles here
   },
 });
+
+export default StrongLayout;
