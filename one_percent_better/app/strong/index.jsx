@@ -1,95 +1,95 @@
 import React from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ThemeProvider, useTheme } from '../ThemeContext';
-import { Appbar, Button, Card, Text } from 'react-native-paper';
-import BackButton from '../../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../ThemeContext';
+import { Appbar, Button, Card, Title, Paragraph } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
-};
-
-function StrongHomeContent() {
+const StrongHome = () => {
   const router = useRouter();
-  const { theme = defaultTheme } = useTheme();
+  const { theme } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-      <BackButton destination="/home"/>
-        <Appbar.Content title="Strong" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Strong" titleStyle={styles.headerTitle} />
       </Appbar.Header>
-      <ScrollView style={styles.container}>
+      <View style={styles.content}>
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={[styles.title, { color: theme.primary }]}>Welcome to Strong</Text>
-            <Image
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2936/2936886.png' }}
-              style={styles.image}
-            />
-            <Text style={[styles.description, { color: theme.text }]}>Track your workouts and progress</Text>
+            <Title style={styles.cardTitle}>Welcome to Strong</Title>
+            <Paragraph style={styles.cardText}>Track your workouts and achieve your fitness goals.</Paragraph>
           </Card.Content>
         </Card>
-        
-        <Card style={styles.card}>
-          <Card.Content>
-            <Button 
-              mode="contained" 
-              onPress={() => router.push('/strong/workout')} 
-              style={styles.button} 
-              buttonColor={theme.buttonBackground}
-            >
-              Start New Workout
-            </Button>
-          </Card.Content>
-        </Card>
-      </ScrollView>
+        <Button
+          mode="contained"
+          onPress={() => router.push('/strong/workout?autoStart=true')}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+          labelStyle={styles.buttonLabel}
+        >
+          <MaterialCommunityIcons name="dumbbell" size={24} color={theme.buttonText} />
+          <Title style={styles.buttonText}>Start New Workout</Title>
+        </Button>
+      </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    padding: 16,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  headerTitle: {
+    color: '#f2e2fb',
+    fontWeight: 'bold',
+    fontSize: 24,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   card: {
-    marginBottom: 16,
+    width: '100%',
+    marginBottom: 20,
+    borderRadius: 12,
   },
-  title: {
-    fontSize: 24,
+  cardTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
   },
-  image: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  description: {
+  cardText: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 16,
   },
   button: {
-    marginTop: 8,
+    width: '100%',
+    height: 80,
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonLabel: {
+    fontSize: 18,
+  },
+  buttonText: {
+    marginLeft: 10,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
-export default function StrongHome() {
-  return (
-    <ThemeProvider>
-      <StrongHomeContent />
-    </ThemeProvider>
-  );
-}
+export default StrongHome;

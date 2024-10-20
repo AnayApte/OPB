@@ -1,35 +1,65 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
+import { StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '../ThemeContext';
-import { IconButton } from 'react-native-paper';
+import { Appbar, BottomNavigation } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+const theme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  button: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
-function StrongLayoutContent() {
-  const { theme = defaultTheme } = useTheme();
+const StrongLayoutContent = () => {
+  const { theme } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: { backgroundColor: theme.background },
         headerShown: false,
       }}
+      tabBar={({ navigation, state, descriptors, insets }) => (
+        <BottomNavigation.Bar
+          navigationState={state}
+          safeAreaInsets={insets}
+          onTabPress={({ route, preventDefault }) => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (event.defaultPrevented) {
+              preventDefault();
+            } else {
+              navigation.navigate(route.name);
+            }
+          }}
+          renderIcon={({ route, focused, color }) => {
+            const iconName = 
+              route.name === 'workoutHistory' ? 'history' :
+              route.name === 'index' ? 'home' :
+              route.name === 'exerciseHistory' ? 'dumbbell' :
+              'circle';
+            return <MaterialCommunityIcons name={iconName} size={24} color={color} />;
+          }}
+          getLabelText={({ route }) => {
+            const { options } = descriptors[route.key];
+            return options.tabBarLabel || options.title || route.name;
+          }}
+          style={[styles.bottomNavigation, { backgroundColor: theme.background }]}
+          activeColor={theme.text}
+          inactiveColor={theme.text + '80'}
+        />
+      )}
     >
       <Tabs.Screen
         name="workoutHistory"
         options={{
           title: 'Workout History',
           tabBarLabel: 'Workouts',
-          tabBarIcon: ({ color, size }) => (
-            <IconButton icon="history" size={size} iconColor={color} />
-          ),
         }}
       />
       <Tabs.Screen
@@ -37,9 +67,6 @@ function StrongLayoutContent() {
         options={{
           title: 'Strong',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <IconButton icon="home" size={size} iconColor={color} />
-          ),
         }}
       />
       <Tabs.Screen
@@ -47,9 +74,6 @@ function StrongLayoutContent() {
         options={{
           title: 'Exercise History',
           tabBarLabel: 'Exercises',
-          tabBarIcon: ({ color, size }) => (
-            <IconButton icon="dumbbell" size={size} iconColor={color} />
-          ),
         }}
       />
       <Tabs.Screen
@@ -60,12 +84,20 @@ function StrongLayoutContent() {
       />
     </Tabs>
   );
-}
+};
 
-export default function StrongLayout() {
-  return (
-    <ThemeProvider>
-      <StrongLayoutContent />
-    </ThemeProvider>
-  );
-}
+const StrongLayout = () => (
+  <ThemeProvider value={theme}>
+    <StrongLayoutContent />
+  </ThemeProvider>
+);
+
+const styles = StyleSheet.create({
+  bottomNavigation: {
+    elevation: 0,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+});
+
+export default StrongLayout;

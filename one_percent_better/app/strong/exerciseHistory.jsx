@@ -1,29 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { View, FlatList, TouchableOpacity, Modal, StyleSheet, ScrollView } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
-import { calculateOneRepMax } from '../../utils/helpers';
+import { calculateOneRepMax, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ThemeProvider, useTheme } from '../ThemeContext';
-import { Appbar, Button, Card, Text, Modal, Portal, SegmentedButtons } from 'react-native-paper';
+import { useTheme } from '../ThemeContext';
+import { Appbar, Card, Title, Paragraph, Button, Text, Surface } from 'react-native-paper';
 
-const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
-};
-
-function ExerciseHistoryContent() {
+const ExerciseHistory = () => {
   const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('Records');
   const { userId } = useAuth();
-  const { theme = defaultTheme } = useTheme();
+  const { theme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -70,11 +61,11 @@ function ExerciseHistoryContent() {
     }
 
     return (
-      <Card style={styles.card} onPress={() => openModal(item)}>
+      <Card style={styles.exerciseCard} onPress={() => openModal(item)}>
         <Card.Content>
-          <Text style={styles.exerciseName}>{item.name}</Text>
-          <Text>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Text>
-          <Text>Current 1RM: {currentRecord.oneRepMax} lbs</Text>
+          <Title>{formatExerciseNameForDisplay(item.name)}</Title>
+          <Paragraph>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Paragraph>
+          <Paragraph>Current 1RM: {currentRecord.oneRepMax} lbs</Paragraph>
         </Card.Content>
       </Card>
     );
@@ -89,26 +80,26 @@ function ExerciseHistoryContent() {
       .find(set => set && currentRecord && set.setId === currentRecord.setId);
 
     if (!currentRecord || !bestSet) {
-      return <Text>No records available</Text>;
+      return <Paragraph>No records available</Paragraph>;
     }
 
     return (
-      <ScrollView>
-        <Text style={styles.sectionTitle}>Current One Rep Max:</Text>
-        <Text>{currentRecord.oneRepMax} lbs</Text>
+      <View>
+        <Title>Current One Rep Max:</Title>
+        <Paragraph>{currentRecord.oneRepMax} lbs</Paragraph>
 
-        <Text style={styles.sectionTitle}>Best Set:</Text>
-        <Text>{bestSet.weight} lbs x {bestSet.reps} reps</Text>
+        <Title>Best Set:</Title>
+        <Paragraph>{bestSet.weight} lbs x {bestSet.reps} reps</Paragraph>
 
-        <Text style={styles.sectionTitle}>PR History:</Text>
+        <Title>PR History:</Title>
         <FlatList
           data={selectedExercise.personalRecords.sort((a, b) => new Date(b.date) - new Date(a.date))}
           keyExtractor={(item) => item.setId.toString()}
           renderItem={({ item }) => (
-            <Text>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Text>
+            <Paragraph>{new Date(item.date).toLocaleDateString()}: {item.oneRepMax} lbs</Paragraph>
           )}
         />
-      </ScrollView>
+      </View>
     );
   };
 
@@ -120,14 +111,14 @@ function ExerciseHistoryContent() {
         data={selectedExercise.workoutExercises.sort((a, b) => new Date(b.workouts.date) - new Date(a.workouts.date))}
         keyExtractor={(item) => item.workoutId.toString()}
         renderItem={({ item }) => (
-          <Card style={styles.card}>
+          <Card style={styles.workoutHistoryCard}>
             <Card.Content>
-              <Text style={styles.sectionTitle}>{new Date(item.workouts.date).toLocaleDateString()}</Text>
-              <Text style={styles.sectionSubtitle}>Sets Performed:</Text>
+              <Title>{new Date(item.workouts.date).toLocaleDateString()}</Title>
+              <Paragraph>Sets Performed:</Paragraph>
               {item.sets.map((set, index) => (
-                <Text key={set.setId}>
+                <Paragraph key={set.setId}>
                   Set {index + 1}: {set.reps} reps @ {set.weight} lbs (1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs)
-                </Text>
+                </Paragraph>
               ))}
             </Card.Content>
           </Card>
@@ -138,72 +129,82 @@ function ExerciseHistoryContent() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
+      <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Exercise History" />
+        <Appbar.Content title="Exercise History" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <FlatList
         data={exercises}
         keyExtractor={(item) => item.exerciseId.toString()}
         renderItem={renderExerciseItem}
+        contentContainerStyle={styles.listContent}
       />
 
-      <Portal>
-        <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)} contentContainerStyle={styles.modalContent}>
-          <SegmentedButtons
-            value={activeTab}
-            onValueChange={setActiveTab}
-            buttons={[
-              { value: 'Records', label: 'Records' },
-              { value: 'History', label: 'History' },
-            ]}
-          />
-          {activeTab === 'Records' ? renderRecordsTab() : renderHistoryTab()}
-          <Button mode="contained" onPress={() => setModalVisible(false)} style={styles.closeButton}>
-            Close
-          </Button>
-        </Modal>
-      </Portal>
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <SafeAreaView style={[styles.modalContent, { backgroundColor: theme.background }]}>
+          <Appbar.Header style={styles.header}>
+            <Appbar.Content title={selectedExercise ? formatExerciseNameForDisplay(selectedExercise.name) : ''} titleStyle={styles.headerTitle} />
+            <Appbar.Action icon="close" onPress={() => setModalVisible(false)} />
+          </Appbar.Header>
+          <Surface style={styles.tabContainer}>
+            <Button mode={activeTab === 'Records' ? 'contained' : 'outlined'} onPress={() => setActiveTab('Records')}>
+              Records
+            </Button>
+            <Button mode={activeTab === 'History' ? 'contained' : 'outlined'} onPress={() => setActiveTab('History')}>
+              History
+            </Button>
+          </Surface>
+          <ScrollView style={styles.tabContent}>
+            {activeTab === 'Records' ? renderRecordsTab() : renderHistoryTab()}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  card: {
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  headerTitle: {
+    color: '#f2e2fb',
+    fontWeight: 'bold',
+    fontSize: 24,
+  },
+  listContent: {
+    padding: 16,
+  },
+  exerciseCard: {
     marginBottom: 16,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginTop: 8,
-  },
-  sectionSubtitle: {
-    fontWeight: 'bold',
-    marginTop: 4,
+    borderRadius: 12,
   },
   modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    margin: 20,
-    borderRadius: 10,
+    flex: 1,
   },
-  closeButton: {
-    marginTop: 16,
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 16,
+    elevation: 0,
+  },
+  tabContent: {
+    flex: 1,
+    padding: 16,
+  },
+  workoutHistoryCard: {
+    marginBottom: 16,
+    borderRadius: 12,
   },
 });
 
-
-
-export default function ExerciseHistory() {
-  return (
-    <ThemeProvider>
-      <ExerciseHistoryContent />
-    </ThemeProvider>
-  );
-}
+export default ExerciseHistory;

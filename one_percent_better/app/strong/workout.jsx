@@ -1,32 +1,230 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView, AppState } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
-import { formatTime, calculateOneRepMax, formatExerciseName } from '../../utils/helpers';
+import { formatTime, calculateOneRepMax, formatExerciseName, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
-import { ThemeProvider, useTheme } from '../ThemeContext';
-import { Appbar, Button, Card, TextInput, Text, Modal, Portal } from 'react-native-paper';
+import 'react-native-get-random-values';
+import BackButton from '../../utils/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../ThemeContext';
+import { Appbar, Card, Title, Paragraph, Button, Surface, Text, ProgressBar } from 'react-native-paper';
 
-const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) => (
+  <Modal
+    transparent={true}
+    visible={visible}
+    onRequestClose={onCancel}
+    animationType="fade"
+  >
+    <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.modalMessage, { color: theme.text }]}>{message}</Text>
+          <View style={styles.modalButtonContainer}>
+            {onCancel && (
+              <Button mode="contained" onPress={onCancel} style={styles.modalButton}>
+                Cancel
+              </Button>
+            )}
+            <Button mode="contained" onPress={onConfirm} style={styles.modalButton}>
+              OK
+            </Button>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
+  </Modal>
+);
+
+const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
+  const [exercises, setExercises] = useState([]);
+  const [filteredExercises, setFilteredExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+
+  const ITEMS_PER_PAGE = 50;
+
+  useEffect(() => {
+    if (visible) {
+      fetchExercises();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (searchQuery === '') {
+      setFilteredExercises(exercises);
+    } else {
+      const filtered = exercises.filter(exercise =>
+        exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredExercises(filtered);
+    }
+  }, [searchQuery, exercises]);
+
+  const fetchExercises = async () => {
+    if (!hasMore) return;
+
+    const options = {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': '7884f1a8f6mshf52b668731d14f2p1b246ajsn455799bad1ea',
+        'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
+      }
+    };
+
+    try {
+      const response = await fetch(`https://exercisedb.p.rapidapi.com/exercises?limit=${ITEMS_PER_PAGE}&offset=${page * ITEMS_PER_PAGE}`, options);
+      const newData = await response.json();
+
+      if (newData.length === 0) {
+        setHasMore(false);
+      } else {
+        const updatedExercises = [...exercises, ...newData];
+        setExercises(updatedExercises);
+        setFilteredExercises(updatedExercises);
+        setPage(prevPage => prevPage + 1);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch exercises');
+      setLoading(false);
+    }
+  };
+
+  const handleExercisePress = (exercise) => {
+    setSelectedExercise(exercise);
+  };
+
+  const handleSelectExercise = () => {
+    onSelect(formatExerciseNameForDisplay(selectedExercise.name));
+    setSelectedExercise(null);
+    onClose();
+  };
+
+  const renderExerciseItem = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.exerciseItem, { borderBottomColor: theme.text }]}
+      onPress={() => handleExercisePress(item)}
+    >
+      <Text style={[styles.exerciseItemText, { color: theme.text }]}>
+        {formatExerciseNameForDisplay(item.name)}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      fetchExercises();
+    }
+  };
+
+  const renderExerciseDetails = () => (
+    <ScrollView contentContainerStyle={styles.exerciseDetailsContainer}>
+      <Title style={[styles.exerciseDetailsTitle, { color: theme.text }]}>
+        {formatExerciseNameForDisplay(selectedExercise.name)}
+      </Title>
+      <View style={styles.exerciseInfoContainer}>
+        <Paragraph style={[styles.exerciseInfoText, { color: theme.text }]}>
+          Body Part: {formatExerciseNameForDisplay(selectedExercise.bodyPart)}
+        </Paragraph>
+        <Paragraph style={[styles.exerciseInfoText, { color: theme.text }]}>
+          Equipment: {formatExerciseNameForDisplay(selectedExercise.equipment)}
+        </Paragraph>
+        <Paragraph style={[styles.exerciseInfoText, { color: theme.text }]}>
+          Target: {formatExerciseNameForDisplay(selectedExercise.target)}
+        </Paragraph>
+      </View>
+      <Title style={[styles.exerciseDetailsSectionTitle, { color: theme.text }]}>Instructions:</Title>
+      {selectedExercise.instructions.map((instruction, index) => (
+        <Paragraph key={index} style={[styles.exerciseInstruction, { color: theme.text }]}>
+          {index + 1}. {instruction}
+        </Paragraph>
+      ))}
+      <Button mode="contained" onPress={handleSelectExercise} style={styles.selectButton}>
+        Select
+      </Button>
+      <Button mode="outlined" onPress={() => setSelectedExercise(null)} style={styles.backButton}>
+        Back to List
+      </Button>
+    </ScrollView>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          {selectedExercise ? (
+            renderExerciseDetails()
+          ) : (
+            <>
+              <Title style={[styles.modalTitle, { color: theme.text }]}>Select Exercise</Title>
+              <TextInput
+                style={[styles.searchInput, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.text }]}
+                placeholder="Search exercises..."
+                placeholderTextColor={theme.text}
+                value={searchQuery}
+                onChangeText={(text) => {
+                  setSearchQuery(text);
+                  if (text === '') {
+                    setFilteredExercises(exercises);
+                  }
+                }}
+              />
+              {loading && exercises.length === 0 ? (
+                <ActivityIndicator size="large" color={theme.primary} />
+              ) : error ? (
+                <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
+              ) : (
+                <FlatList
+                  data={filteredExercises}
+                  renderItem={renderExerciseItem}
+                  keyExtractor={(item, index) => `${item.id}-${index}`}
+                  style={styles.exerciseList}
+                  onEndReached={handleLoadMore}
+                  onEndReachedThreshold={0.1}
+                  ListFooterComponent={() => (
+                    loading && exercises.length > 0 ? (
+                      <ActivityIndicator size="small" color={theme.primary} />
+                    ) : null
+                  )}
+                />
+              )}
+              <Button mode="contained" onPress={onClose} style={styles.closeButton}>
+                Close
+              </Button>
+            </>
+          )}
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
 };
 
-function WorkoutContent() {
+const WorkoutScreen = () => {
   const router = useRouter();
-  const { userId } = useAuth();
-  const { theme = defaultTheme } = useTheme();
+  const { autoStart } = useLocalSearchParams();
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [time, setTime] = useState(0);
   const [exercises, setExercises] = useState([]);
   const [newExercise, setNewExercise] = useState('');
   const [sets, setSets] = useState('');
+  const { userId } = useAuth();
+  const { theme } = useTheme();
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertConfig, setAlertConfig] = useState({});
+  const [exerciseModalVisible, setExerciseModalVisible] = useState(false);
 
   useEffect(() => {
     let interval;
@@ -38,8 +236,30 @@ function WorkoutContent() {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  const toggleTimer = () => {
-    setIsTimerRunning(!isTimerRunning);
+  useEffect(() => {
+    if (autoStart === 'true') {
+      startWorkout();
+    }
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [autoStart]);
+
+  const handleAppStateChange = (nextAppState) => {
+    if (nextAppState === 'background' || nextAppState === 'inactive') {
+      setIsTimerRunning(false);
+    }
+  };
+
+  const startWorkout = () => {
+    setIsTimerRunning(true);
+  };
+
+  const pauseWorkout = () => {
+    setIsTimerRunning(false);
   };
 
   const resetWorkout = () => {
@@ -170,7 +390,7 @@ function WorkoutContent() {
                   userId: userId,
                   exerciseId: exerciseId,
                   setId: bestSetId,
-                  oneRepMax: bestOneRepMax,
+                  oneRepMax:  bestOneRepMax,
                   date: new Date().toISOString(),
                   isCurrent: true
                 });
@@ -208,49 +428,58 @@ function WorkoutContent() {
     setExercises(updatedExercises);
   };
 
+  const selectExercise = (exerciseName) => {
+    setNewExercise(exerciseName);
+    setExerciseModalVisible(false);
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
+      <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Workout" />
+        <Appbar.Content title="Workout" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <ScrollView style={styles.container}>
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={[styles.timerText, { color: theme.primary }]}>{formatTime(time)}</Text>
+            <Title style={styles.timerText}>
+              {formatTime(time)}
+            </Title>
             <Button 
               mode="contained" 
-              onPress={toggleTimer}
-              style={styles.button} 
-              buttonColor={theme.buttonBackground}
+              onPress={isTimerRunning ? pauseWorkout : startWorkout}
+              style={styles.button}
             >
-              {isTimerRunning ? 'Pause' : 'Start'} Workout
+              {isTimerRunning ? 'Pause Workout' : 'Resume Workout'}
             </Button>
           </Card.Content>
         </Card>
 
         <Card style={styles.card}>
           <Card.Content>
-            <TextInput
-              label="Exercise"
-              value={newExercise}
-              onChangeText={setNewExercise}
+            <Title style={styles.cardTitle}>Add Exercise</Title>
+            <TouchableOpacity
               style={styles.input}
-            />
+              onPress={() => setExerciseModalVisible(true)}
+            >
+              <Text style={styles.inputText}>
+                {newExercise || 'Select Exercise'}
+              </Text>
+            </TouchableOpacity>
             <TextInput
-              label="Sets"
+              style={styles.input}
+              placeholder="Sets"
+              placeholderTextColor={theme.text}
               value={sets}
               onChangeText={setSets}
               keyboardType="numeric"
-              style={styles.input}
             />
             <Button 
               mode="contained" 
               onPress={addExercise}
-              style={styles.button} 
-              buttonColor={theme.buttonBackground}
+              style={styles.button}
             >
-              Add Exercise
+              Add
             </Button>
           </Card.Content>
         </Card>
@@ -259,25 +488,29 @@ function WorkoutContent() {
           data={exercises}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item, index: exerciseIndex }) => (
-            <Card style={styles.card}>
+            <Card style={styles.exerciseCard}>
               <Card.Content>
-                <Text style={[styles.exerciseName, { color: theme.primary }]}>{item.name}</Text>
+                <Title style={styles.exerciseName}>
+                  {formatExerciseNameForDisplay(item.name)}
+                </Title>
                 {item.sets.map((set, setIndex) => (
                   <View key={setIndex} style={styles.setContainer}>
-                    <Text style={[styles.setText, { color: theme.text }]}>Set {setIndex + 1}:</Text>
+                    <Text style={styles.setText}>Set {setIndex + 1}:</Text>
                     <TextInput
-                      label="Reps"
+                      style={styles.setInput}
+                      placeholder="Reps"
+                      placeholderTextColor={theme.text}
                       value={set.reps}
                       onChangeText={(reps) => updateSet(exerciseIndex, setIndex, 'reps', reps)}
                       keyboardType="numeric"
-                      style={styles.setInput}
                     />
                     <TextInput
-                      label="Weight"
+                      style={styles.setInput}
+                      placeholder="Weight"
+                      placeholderTextColor={theme.text}
                       value={set.weight}
                       onChangeText={(weight) => updateSet(exerciseIndex, setIndex, 'weight', weight)}
                       keyboardType="numeric"
-                      style={styles.setInput}
                     />
                   </View>
                 ))}
@@ -289,34 +522,43 @@ function WorkoutContent() {
         <Button 
           mode="contained" 
           onPress={endWorkout}
-          style={[styles.button, styles.endWorkoutButton]} 
-          buttonColor={theme.buttonBackground}
+          style={[styles.button, styles.endButton]}
         >
           End Workout
         </Button>
       </ScrollView>
 
-      <Portal>
-        <Modal visible={alertVisible} onDismiss={() => setAlertVisible(false)}>
-          <Card>
-            <Card.Content>
-              <Text style={styles.modalTitle}>{alertConfig.title}</Text>
-              <Text>{alertConfig.message}</Text>
-              <Button onPress={() => {
-                alertConfig.onConfirm();
-                setAlertVisible(false);
-              }}>OK</Button>
-            </Card.Content>
-          </Card>
-        </Modal>
-      </Portal>
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+        theme={theme}
+      />
+
+      <ExerciseSelectionModal
+        visible={exerciseModalVisible}
+        onClose={() => setExerciseModalVisible(false)}
+        onSelect={selectExercise}
+        theme={theme}
+      />
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  headerTitle: {
+    color: '#f2e2fb',
+    fontWeight: 'bold',
+    fontSize: 24,
   },
   container: {
     flex: 1,
@@ -324,6 +566,12 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
+    borderRadius: 12,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   timerText: {
     fontSize: 48,
@@ -335,40 +583,125 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   input: {
-    marginBottom: 8,
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  inputText: {
+    fontSize: 16,
+  },
+  exerciseCard: {
+    marginBottom: 10,
+    borderRadius: 12,
   },
   exerciseName: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   setContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   setText: {
     width: 50,
   },
   setInput: {
-    flex: 1,
-    marginLeft: 8,
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 5,
+    width: 50,
+    marginLeft: 10,
   },
-  endWorkoutButton: {
-    marginTop: 16,
-    marginBottom: 32,
+  endButton: {
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalContent: {
+    alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  modalButton: {
+    minWidth: 100,
+  },
+  exerciseItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  exerciseItemText: {
+    fontSize: 16,
+  },
+  searchInput: {
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+  exerciseList: {
+    maxHeight: 300,
+  },
+  closeButton: {
+    marginTop: 10,
+  },
+  exerciseDetailsContainer: {
+    padding: 20,
+  },
+  exerciseDetailsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  exerciseInfoContainer: {
+    marginBottom: 20,
+  },
+  exerciseInfoText: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  exerciseDetailsSectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  exerciseInstruction: {
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  selectButton: {
+    marginTop: 20,
+  },
+  backButton: {
+    marginTop: 10,
   },
 });
 
-export default function Workout() {
-  return (
-    <ThemeProvider>
-      <WorkoutContent />
-    </ThemeProvider>
-  );
-}
+export default WorkoutScreen;

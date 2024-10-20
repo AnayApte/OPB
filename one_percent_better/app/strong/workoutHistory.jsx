@@ -1,21 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { View, FlatList, TouchableOpacity, Modal, StyleSheet, ScrollView } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
-import { calculateOneRepMax } from '../../utils/helpers';
+import { calculateOneRepMax, formatExerciseNameForDisplay } from '../../utils/helpers';
 import { useAuth } from '../../utils/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ThemeProvider, useTheme } from '../ThemeContext';
-import { Appbar, Button, Card, Text, Modal, Portal } from 'react-native-paper';
-
-const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
-};
+import { useTheme } from '../ThemeContext';
+import { Appbar, Card, Title, Paragraph, Button, Text } from 'react-native-paper';
 
 const formatTime = (interval) => {
   if (!interval) return 'N/A';
@@ -23,12 +14,12 @@ const formatTime = (interval) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-function WorkoutHistoryContent() {
+const WorkoutHistory = () => {
   const [workouts, setWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const { userId } = useAuth();
-  const { theme = defaultTheme } = useTheme();
+  const { theme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -80,11 +71,11 @@ function WorkoutHistoryContent() {
   };
 
   const renderWorkoutItem = ({ item }) => (
-    <Card style={styles.card} onPress={() => openModal(item)}>
+    <Card style={styles.workoutCard} onPress={() => openModal(item)}>
       <Card.Content>
-        <Text style={styles.dateText}>{new Date(item.date).toLocaleDateString()}</Text>
-        <Text>Duration: {formatTime(item.duration)}</Text>
-        <Text style={styles.sectionTitle}>Exercises:</Text>
+        <Title style={styles.dateText}>{new Date(item.date).toLocaleDateString()}</Title>
+        <Paragraph>Duration: {formatTime(item.duration)}</Paragraph>
+        <Title style={styles.sectionTitle}>Exercises:</Title>
         {item.workoutExercises.map((workoutExercise) => {
           const bestSet = workoutExercise.personalRecord ? 
             workoutExercise.sets.find(set => set.setId === workoutExercise.personalRecord.setId) :
@@ -97,8 +88,8 @@ function WorkoutHistoryContent() {
 
           return (
             <View key={workoutExercise.exerciseId} style={styles.exerciseRow}>
-              <Text>{workoutExercise.sets.length}x {workoutExercise.exercises.name}</Text>
-              <Text>Best Set: {bestSetInfo}</Text>
+              <Paragraph>{workoutExercise.sets.length}x {formatExerciseNameForDisplay(workoutExercise.exercises.name)}</Paragraph>
+              <Paragraph>Best Set: {bestSetInfo}</Paragraph>
             </View>
           );
         })}
@@ -110,17 +101,17 @@ function WorkoutHistoryContent() {
     if (!selectedWorkout) return null;
 
     return (
-      <ScrollView>
-        <Text style={styles.dateText}>{new Date(selectedWorkout.date).toLocaleDateString()}</Text>
-        <Text>Duration: {formatTime(selectedWorkout.duration)}</Text>
+      <ScrollView style={styles.modalContent}>
+        <Title style={styles.dateText}>{new Date(selectedWorkout.date).toLocaleDateString()}</Title>
+        <Paragraph>Duration: {formatTime(selectedWorkout.duration)}</Paragraph>
         {selectedWorkout.workoutExercises.map((workoutExercise) => (
-          <Card key={workoutExercise.exerciseId} style={styles.card}>
+          <Card key={workoutExercise.exerciseId} style={styles.exerciseCard}>
             <Card.Content>
-              <Text style={styles.sectionTitle}>{workoutExercise.exercises.name}</Text>
+              <Title>{formatExerciseNameForDisplay(workoutExercise.exercises.name)}</Title>
               {workoutExercise.sets.map((set, index) => (
                 <View key={set.setId} style={styles.setRow}>
-                  <Text>Set {index + 1}: {set.weight}x{set.reps}</Text>
-                  <Text>1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs</Text>
+                  <Paragraph>Set {index + 1}: {set.weight}x{set.reps}</Paragraph>
+                  <Paragraph>1RM: {calculateOneRepMax(set.weight, set.reps).toFixed(2)} lbs</Paragraph>
                 </View>
               ))}
             </Card.Content>
@@ -135,30 +126,47 @@ function WorkoutHistoryContent() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
+      <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Workout History" />
+        <Appbar.Content title="Workout History" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.workoutId.toString()}
         renderItem={renderWorkoutItem}
+        contentContainerStyle={styles.listContent}
       />
-      <Portal>
-        <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)} contentContainerStyle={styles.modalContent}>
-          {renderModalContent()}
-        </Modal>
-      </Portal>
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        {renderModalContent()}
+      </Modal>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  card: {
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  headerTitle: {
+    color: '#f2e2fb',
+    fontWeight: 'bold',
+    fontSize: 24,
+  },
+  listContent: {
+    padding: 16,
+  },
+  workoutCard: {
     marginBottom: 16,
+    borderRadius: 12,
   },
   dateText: {
     fontSize: 18,
@@ -171,26 +179,25 @@ const styles = StyleSheet.create({
   exerciseRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
   modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    margin: 20,
-    borderRadius: 10,
+    flex: 1,
+    padding: 16,
+  },
+  exerciseCard: {
+    marginTop: 16,
+    borderRadius: 12,
   },
   setRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 4,
   },
   closeButton: {
     marginTop: 16,
+    marginBottom: 32,
   },
 });
 
-export default function WorkoutHistory() {
-  return (
-    <ThemeProvider>
-      <WorkoutHistoryContent />
-    </ThemeProvider>
-  );
-}
+export default WorkoutHistory;
