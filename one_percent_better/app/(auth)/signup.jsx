@@ -1,12 +1,10 @@
-// app/(auth)/signup.jsx
-
-
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, SafeAreaView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
+import { Appbar, TextInput, Button, Card, Text } from 'react-native-paper';
 
 const defaultTheme = {
   background: '#FFb5c6',
@@ -62,37 +60,56 @@ const SignupContent = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header style={{ backgroundColor: theme.secondary }}>
+        <Appbar.Content title="Sign Up" titleStyle={{ color: theme.buttonText }} />
+      </Appbar.Header>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.text }]}>Sign Up</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-          placeholder="Email"
-          placeholderTextColor={theme.text}
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-          placeholder="Username"
-          placeholderTextColor={theme.text}
-          value={username}
-          onChangeText={setUsername}
-        />
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.inputText, borderColor: theme.inputBorder }]}
-          placeholder="Password"
-          placeholderTextColor={theme.text}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity style={[styles.signupButton, { backgroundColor: '#641f1f'  }]} onPress={handleSignup}>
-          <Text style={[styles.buttonText, { color: theme.buttonText }]}>Sign Up</Text>
-        </TouchableOpacity>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.title, { color: theme.text }]}>Create Your Account</Text>
+            <TextInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              mode="outlined"
+              outlineColor={theme.inputBorder}
+              theme={{ colors: { primary: theme.primary, text: theme.inputText } }}
+            />
+            <TextInput
+              label="Username"
+              value={username}
+              onChangeText={setUsername}
+              style={styles.input}
+              mode="outlined"
+              outlineColor={theme.inputBorder}
+              theme={{ colors: { primary: theme.primary, text: theme.inputText } }}
+            />
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              style={styles.input}
+              mode="outlined"
+              outlineColor={theme.inputBorder}
+              theme={{ colors: { primary: theme.primary, text: theme.inputText } }}
+            />
+            <Button 
+              mode="contained" 
+              onPress={handleSignup} 
+              style={styles.signupButton}
+              buttonColor={theme.buttonBackground}
+              textColor={theme.buttonText}
+            >
+              Sign Up
+            </Button>
+          </Card.Content>
+        </Card>
         <View style={styles.bottomLink}>
           <Link href="/(auth)/login" asChild>
             <TouchableOpacity>
-              <Text style={[styles.linkText, { color: theme.link }]}>Have an account? Sign in</Text>
+              <Text style={[styles.linkText, { color: theme.link }]}>Already have an account? Sign in</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -114,39 +131,31 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    padding: 16,
+  },
+  card: {
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 32,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   input: {
-    width: '100%',
-    height: 40,
-    borderWidth: 1,
-    borderRadius: 5,
     marginBottom: 16,
-    paddingHorizontal: 10,
   },
   signupButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginTop: 8,
+    paddingVertical: 8,
   },
   bottomLink: {
-    marginTop: 20,
+    alignItems: 'center',
+    marginTop: 16,
   },
   linkText: {
     fontSize: 16,
   },
 });
 
-export default Signup;
+export default Signup; 

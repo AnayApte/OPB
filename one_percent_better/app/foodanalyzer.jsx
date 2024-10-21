@@ -76,8 +76,8 @@ This also means that the nutritional information must be accurate to the food it
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: defaultTheme.background }]}>
-      <Appbar.Header style = { {backgroundColor: defaultTheme.background } }>
+<View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Appbar.Header style = { {backgroundColor: defaultTheme.background } }>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content  title="Food Analyzer" />
       </Appbar.Header>
@@ -113,7 +113,7 @@ This also means that the nutritional information must be accurate to the food it
           </Card.Content>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

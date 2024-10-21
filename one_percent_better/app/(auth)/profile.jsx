@@ -158,7 +158,7 @@ function ProfileContent() {
               buttons={[
                 { value: 'Male', label: 'Male' },
                 { value: 'Female', label: 'Female' },
-                { value: 'NA', label: 'Prefer Not to Say' },
+                { value: 'N/A', label: 'Prefer Not to Say' },
               ]}
               style={styles.segmentedButtons}
             />
