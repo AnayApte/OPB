@@ -214,7 +214,7 @@ function RecipesContent() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Recipes" />
@@ -248,7 +248,7 @@ function RecipesContent() {
         </View>
         {recipeType === 'recommended' && calorieGoal && (
           <Text style={styles.calorieGoal}>
-            Here are recipes to fit your caloric goal of: {calorieGoal} calories/day
+            Here are recipes to fit your caloric goal of: {calorieGoal} calories per day
           </Text>
         )}
         <Searchbar
@@ -269,7 +269,7 @@ function RecipesContent() {
           ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No recipes found</Text>}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

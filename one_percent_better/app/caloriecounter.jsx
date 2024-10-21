@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link, useRouter } from 'expo-router';
 import { createClient } from '@supabase/supabase-js';
@@ -8,14 +8,16 @@ import { SUPABASEURL, SUPABASEKEY } from '@env';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Appbar, TextInput, Button, Card, Text } from 'react-native-paper';
+import { Flame, UtensilsCrossed } from 'lucide-react-native';
+
 
 const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 const supabaseUrl = SUPABASEURL;
@@ -74,8 +76,7 @@ function CalorieCounterContent() {
       }
   
       const totalDurationInHours = workouts.reduce((total, workout) => {
-        const [hours, minutes, seconds] = 
- workout.duration.split(':').map(Number);
+        const [hours, minutes, seconds] = workout.duration.split(':').map(Number);
         return total + hours + minutes / 60 + seconds / 3600;
       }, 0);
   
@@ -101,11 +102,9 @@ function CalorieCounterContent() {
         return;
       }
 
-      // Convert height to cm and weight to kg
       const heightCm = data.height * 2.54;
       const weightKg = data.weight * 0.453592;
 
-      // Calculate BMR
       let bmr;
       if (data.gender === 'Male') {
         bmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age + 5;
@@ -117,7 +116,6 @@ function CalorieCounterContent() {
         bmr = (maleBmr + femaleBmr) / 2;
       }
 
-      // Calculate TDEE
       let tdee;
       switch (data.activity_level) {
         case 'Sedentary':
@@ -136,7 +134,6 @@ function CalorieCounterContent() {
           tdee = bmr * 1.2;
       }
 
-      // Calculate calorie goal
       let goal;
       if (data.lose_weight > 0) {
         const deficit = (data.lose_weight * 3500) / (data.weeks * 7);
@@ -198,58 +195,84 @@ function CalorieCounterContent() {
     return waterDrunk >= lowerBound;
   };
 
+  const NavButton = ({ label, onPress, icon: Icon }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => setIsPressed(false)}
+        style={styles.navButton}
+      >
+        <View style={[
+          styles.navButtonInner,
+          isPressed && styles.navButtonPressed
+        ]}>
+          <Icon size={24} color={defaultTheme.buttonText} />
+          <Text style={styles.navButtonText}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Calorie Counter" />
+    <View style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
+        <Appbar.Content 
+            title="Calorie Counter" 
+            titleStyle={styles.headerTitle}
+          />
       </Appbar.Header>
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollViewContent}>
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={[styles.title, { color: theme.primary }]}>Your Calorie Goal</Text>
-            <Text style={[styles.goalText, { color: theme.text }]}>{calorieGoal}</Text>
+            <Text style={[styles.title, { color: defaultTheme.background }]}>Your Calorie Goal</Text>
+            <Text style={[styles.goalText, { color: defaultTheme.background }]}>{calorieGoal}</Text>
           </Card.Content>
         </Card>
 
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={[styles.subtitle, { color: theme.primary }]}>Calories Eaten: {caloriesEaten}</Text>
-            {isAddingCalories ? (
-              <View>
-                <TextInput
-                  style={styles.input}
-                  label="Add Calories"
-                  value={inputCalories}
-                  onChangeText={setInputCalories}
-                  keyboardType="numeric"
-                  mode="outlined"
-                />
-                <Button mode="contained" onPress={addCalories} style={styles.button}>
-                  Add
+        <View style={styles.rowContainer}>
+          <Card style={[styles.card, styles.halfCard]}>
+            <Card.Content style={styles.cardContent}>
+              <Text style={[styles.subtitle, { color: theme.primary }]}>Calories Eaten: {caloriesEaten}</Text>
+              {isAddingCalories ? (
+                <View>
+                  <TextInput
+                    style={styles.input}
+                    label="Add Calories"
+                    value={inputCalories}
+                    onChangeText={setInputCalories}
+                    keyboardType="numeric"
+                    mode="outlined"
+                  />
+                  <Button mode="contained" onPress={addCalories} style={styles.button}>
+                    Add
+                  </Button>
+                </View>
+              ) : (
+                <Button mode="contained" onPress={() => setIsAddingCalories(true)} style={styles.button}>
+                  Add Calories
                 </Button>
-              </View>
-            ) : (
-              <Button mode="contained" onPress={() => setIsAddingCalories(true)} style={styles.button}>
-                Add Calories
-              </Button>
-            )}
-          </Card.Content>
-        </Card>
+              )}
+            </Card.Content>
+          </Card>
 
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={[styles.subtitle, { color: theme.primary }]}>Calories Burned: {caloriesBurned}</Text>
-            <Text style={[styles.subtitle, { color: isWithinGoal() ? 'green' : 'red' }]}>
-              Total Calories for the day: {caloriesEaten - caloriesBurned}
-            </Text>
-          </Card.Content>
-        </Card>
+          <Card style={[styles.card, styles.halfCard]}>
+            <Card.Content style={styles.cardContent}>
+              <Text style={[styles.subtitle, { color: theme.primary }]}>Calories Burned: {caloriesBurned}</Text>
+              <Text style={[styles.subtitle, { color: isWithinGoal() ? 'green' : 'red' }]}>
+                Total Calories: {caloriesEaten - caloriesBurned}
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
 
         <Card style={styles.card}>
           <Card.Content>
             <Text style={[styles.subtitle, { color: isWithinWaterGoal() ? 'green' : 'red' }]}>
-              Water Drunk: {waterDrunk} oz
+              Water Drunk: {waterDrunk} out of 90 oz
             </Text>
             {isAddingWater ? (
               <View>
@@ -284,27 +307,47 @@ function CalorieCounterContent() {
             </View>
           </Card.Content>
         </Card>
-
-        <Button mode="contained" onPress={() => router.push('/RecipesPage')} style={styles.button}>
-          Go to Recipes
-        </Button>
-        <Button mode="contained" onPress={() => router.push('/caloriebot')} style={styles.button}>
-          Go to CalorieBot
-        </Button>
+        <View style={styles.navContainer}>
+          <NavButton
+            label="Recipes"
+            onPress={() => router.push('/RecipesPage')}
+            icon={UtensilsCrossed}
+          />
+          <NavButton
+            label="CalorieBot"
+            onPress={() => router.push('/caloriebot')}
+            icon={Flame}
+          />
+        </View>
       </ScrollView>
-    </View>
+      
+    </View  >
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: defaultTheme.background,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: defaultTheme.primary,
   },
   content: {
     padding: 16,
   },
   card: {
     marginBottom: 16,
+    backgroundColor: defaultTheme.buttonBackground,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   title: {
     fontSize: 24,
@@ -313,7 +356,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     marginBottom: 8,
   },
   input: {
@@ -321,9 +364,12 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+    backgroundColor: defaultTheme.background,
+    fontColor: defaultTheme.primary,
   },
   goalText: {
-    fontSize: 18,
+    fontSize: 30,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   waterBottle: {
@@ -345,6 +391,50 @@ const styles = StyleSheet.create({
     width: '80%',
     backgroundColor: 'blue',
     opacity: 0.4,
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfCard: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  cardContent: {
+    minHeight: 120,
+    justifyContent: 'space-between',
+  },
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
+  },
+  navButton: {
+    width: '48%',
+    aspectRatio: 1,
+    marginBottom: 12,
+  },
+  navButtonInner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: defaultTheme.buttonBackground,
+    borderRadius: 8,
+  },
+  navButtonPressed: {
+    backgroundColor: defaultTheme.text,
+    transform: [{ scale: 0.95 }],
+  },
+  navButtonText: {
+    color: defaultTheme.buttonText,
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  scrollViewContent: {
+    paddingBottom: 100,
   },
 });
 

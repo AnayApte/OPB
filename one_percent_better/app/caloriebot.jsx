@@ -10,12 +10,12 @@ import { useAuth } from '../utils/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
 const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 const EDAMAM_APP_ID = '4499d167';
@@ -129,7 +129,7 @@ function RecipesContent() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Recipe Bot" />
@@ -171,7 +171,7 @@ function RecipesContent() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
