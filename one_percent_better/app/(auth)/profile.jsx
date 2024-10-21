@@ -6,14 +6,17 @@ import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Appbar, TextInput, Button, Card, Text, SegmentedButtons } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Pressable } from 'react-native';
 
 const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
+  select:'#9b6fab'
 };
 
 function ProfileContent() {
@@ -26,7 +29,7 @@ function ProfileContent() {
   const [weightChange, setWeightChange] = useState('');
   const [weeks, setWeeks] = useState('');
   const router = useRouter();
-  const { theme = defaultTheme } = useTheme();
+  const { theme = defaultTheme } = useTheme() || {};
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -114,17 +117,48 @@ function ProfileContent() {
     }
   };
 
+  const NavButton = ({ icon, label, onPress, style }) => {
+    const [isPressed, setIsPressed] = useState(false);
+  
+    return (
+      <Pressable
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => {
+          setIsPressed(false);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.navButton,
+          style,
+          isPressed && styles.navButtonPressed
+        ]}
+      >
+        <View style={styles.navButtonInner}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={24} 
+            color={isPressed ? defaultTheme.background : defaultTheme.buttonText} 
+          />
+          <Text style={[
+            styles.navButtonText,
+            isPressed && styles.navButtonTextPressed
+          ]}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Profile" />
+    <View style={styles.container}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
+        <Appbar.Content title="Profile" titleStyle={styles.headerTitle}/>
       </Appbar.Header>
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={[styles.title, { color: defaultTheme.primary }]}>Complete Your Profile</Text>
-            <Text style={[styles.description, { color: theme.text }]}>
+            <Text style={[styles.title, { color: defaultTheme.background }]}>Complete Your Profile</Text>
+            <Text style={[styles.description, { color: defaultTheme.background }]}>
               Provide your information to personalize your experience and get the most out of the app.
             </Text>
             <TextInput
@@ -151,7 +185,7 @@ function ProfileContent() {
               keyboardType="numeric"
               mode="outlined"
             />
-            <Text style={[styles.label, { color: theme.text }]}>Gender:</Text>
+            <Text style={[styles.label, { color: defaultTheme.background }]}>Gender:</Text>
             <SegmentedButtons
               value={gender}
               onValueChange={setGender}
@@ -162,7 +196,7 @@ function ProfileContent() {
               ]}
               style={styles.segmentedButtons}
             />
-            <Text style={[styles.label, { color: theme.text }]}>Activity Level:</Text>
+            <Text style={[styles.label, { color: defaultTheme.background }]}>Activity Level:</Text>
             <SegmentedButtons
               value={activityLevel}
               onValueChange={setActivityLevel}
@@ -174,18 +208,21 @@ function ProfileContent() {
               ]}
               style={styles.segmentedButtons}
             />
-            <Text style={[styles.label, { color: theme.text }]}>Weight Goal:</Text>
-            <Text style={styles.weightGoalText}>I want to</Text>
-            <SegmentedButtons
-              value={weightGoal}
-              onValueChange={setWeightGoal}
-              buttons={[
-                { value: 'gain', label: 'Gain' },
-                { value: 'lose', label: 'Lose' },
-                { value: 'maintain', label: 'Maintain' },
-              ]}
-              style={styles.weightGoalButtons}
-            />
+            <Text style={[styles.label, { color: defaultTheme.background}]}>Weight Goal:</Text>
+            <View style={styles.weightGoalContainer}>
+              <Text style={styles.weightGoalText}>I want to</Text>
+              <SegmentedButtons
+                value={weightGoal}
+                onValueChange={setWeightGoal}
+                buttons={[
+                  { value: 'gain', label: 'Gain' },
+                  { value: 'lose', label: 'Lose' },
+                  { value: 'maintain', label: 'Maintain' },
+                ]}
+                style={styles.weightGoalButtons}
+                
+              />
+            </View>
             {weightGoal !== 'maintain' && (
               <View style={styles.weightChangeContainer}>
                 <TextInput
@@ -212,15 +249,13 @@ function ProfileContent() {
             )}
           </Card.Content>
         </Card>
-        <Button 
-          mode="contained" 
-          onPress={handleSaveProfile}
-          style={styles.saveButton}
-          buttonColor={theme.buttonBackground}
-        >
-          Save Profile
-        </Button>
-      </ScrollView>
+      </View>
+      <NavButton 
+        icon="content-save" 
+        label="Save Profile"
+        onPress={handleSaveProfile}
+        style={styles.saveButton}
+      />
     </View>
   );
 }
@@ -228,13 +263,16 @@ function ProfileContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: defaultTheme.background,
   },
   content: {
-    flex: 1,
     padding: 16,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   card: {
-    marginBottom: 16,
+    marginBottom: 4,
+    backgroundColor: defaultTheme.primary,
   },
   title: {
     fontSize: 24,
@@ -255,17 +293,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  saveButton: {
-    marginTop: 16,
-  },
   segmentedButtons: {
     marginBottom: 16,
   },
+  weightGoalContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   weightGoalText: {
-    marginBottom: 8,
+    marginRight: 8,
+    fontColor: defaultTheme.background,
   },
   weightGoalButtons: {
-    marginBottom: 16,
+    flex: 1,
   },
   weightChangeContainer: {
     flexDirection: 'row',
@@ -286,6 +327,47 @@ const styles = StyleSheet.create({
   },
   weeksText: {
     marginLeft: 4,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+    paddingBottom: 0,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: defaultTheme.primary,
+  },
+  navButton: {
+    backgroundColor: defaultTheme.buttonBackground,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  navButtonPressed: {
+    backgroundColor: defaultTheme.primary,
+    transform: [{ scale: 0.95 }],
+  },
+  navButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navButtonText: {
+    color: defaultTheme.buttonText,
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  navButtonTextPressed: {
+    color: defaultTheme.background,
+  },
+  saveButton: {
+    marginTop: 4,
   },
 });
 
