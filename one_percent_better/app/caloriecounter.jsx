@@ -199,7 +199,7 @@ function CalorieCounterContent() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Calorie Counter" />
@@ -292,7 +292,7 @@ function CalorieCounterContent() {
           Go to CalorieBot
         </Button>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -11,7 +11,7 @@ const StrongHome = () => {
   const { theme } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Strong" titleStyle={styles.headerTitle} />
@@ -34,7 +34,7 @@ const StrongHome = () => {
           <Title style={styles.buttonText}>Start New Workout</Title>
         </Button>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -145,7 +145,7 @@ function InteractiveCalendarContent() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Interactive Calendar" />
@@ -204,7 +204,7 @@ function InteractiveCalendarContent() {
           </View>
         </Modal>
       </Portal>
-    </SafeAreaView>
+    </View>
   );
 }
 

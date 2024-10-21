@@ -125,7 +125,7 @@ const WorkoutHistory = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Workout History" titleStyle={styles.headerTitle} />
@@ -144,7 +144,7 @@ const WorkoutHistory = () => {
       >
         {renderModalContent()}
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

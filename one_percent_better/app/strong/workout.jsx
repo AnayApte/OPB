@@ -18,7 +18,7 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) =>
     animationType="fade"
   >
     <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
-      <SafeAreaView style={styles.modalContainer}>
+      <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
           <Text style={[styles.modalMessage, { color: theme.text }]}>{message}</Text>
@@ -33,7 +33,7 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) =>
             </Button>
           </View>
         </View>
-      </SafeAreaView>
+      </View>
     </View>
   </Modal>
 );
@@ -164,7 +164,7 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
       onRequestClose={onClose}
     >
       <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
           {selectedExercise ? (
             renderExerciseDetails()
           ) : (
@@ -206,7 +206,7 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
               </Button>
             </>
           )}
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );
@@ -442,7 +442,7 @@ const WorkoutScreen = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Appbar.Header style={styles.header}>
         <BackButton destination = "/home" />
         <Appbar.Content title="Workout" titleStyle={styles.headerTitle} />
@@ -554,7 +554,7 @@ const WorkoutScreen = () => {
         onSelect={selectExercise}
         theme={theme}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

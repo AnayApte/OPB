@@ -22,8 +22,8 @@ function Medito() {
     loadStreak();
     return sound
       ? () => {
-          sound.unloadAsync();
-        }
+        sound.unloadAsync();
+      }
       : undefined;
   }, [sound]);
 
@@ -58,7 +58,7 @@ function Medito() {
 
   const startTimer = () => {
     if (inputMinutes.trim() === '' && inputSeconds.trim() === '') return;
-    
+
     const totalSeconds = parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0');
     setMinutes(Math.floor(totalSeconds / 60));
     setSeconds(totalSeconds % 60);
@@ -108,16 +108,15 @@ function Medito() {
   }, [isRunning, minutes, seconds]);
 
   return (
-<View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Appbar.Header>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Medito" />
+        <Appbar.Content title="Meditation Station" />
       </Appbar.Header>
       <ScrollView style={styles.container}>
         <Card style={styles.card}>
           <Card.Content>
             <Text style={[styles.challenge, { color: theme.text }]}>Challenge: Meditate for 30 days.</Text>
-            <Text style={[styles.title, { color: '#3b0051' }]}>Medito</Text>
             <Image
               source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
               style={styles.image}
@@ -125,7 +124,7 @@ function Medito() {
             <Text style={[styles.streak, { color: theme.text }]}>Current Streak: {streak} days</Text>
           </Card.Content>
         </Card>
-        
+
         <Card style={styles.card}>
           <Card.Content>
             {isInputVisible ? (
@@ -189,6 +188,8 @@ const styles = StyleSheet.create({
   challenge: {
     fontSize: 16,
     marginBottom: 8,
+    padding: 3,
+    paddingBottom:15,
   },
   title: {
     color: '#3b0051',
