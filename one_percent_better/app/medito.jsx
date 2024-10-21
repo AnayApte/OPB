@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, Image, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { Appbar, Button, Card, Text, TextInput, ProgressBar } from 'react-native-paper';
+import { View, StyleSheet, SafeAreaView, Image, TouchableWithoutFeedback, Keyboard, Pressable, Alert } from 'react-native';
+import { Appbar, Card, Text, TextInput, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
 const theme = {
-  background: '#f2e2fb',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 function Medito() {
@@ -25,13 +25,13 @@ function Medito() {
   const [isRunning, setIsRunning] = useState(false);
   const [streak, setStreak] = useState(0);
   const [sound, setSound] = useState();
-
+  
   useEffect(() => {
     loadStreak();
     return sound
       ? () => {
-        sound.unloadAsync();
-      }
+          sound.unloadAsync();
+        }
       : undefined;
   }, [sound]);
 
@@ -58,7 +58,7 @@ function Medito() {
     }
     return () => clearInterval(interval);
   }, [isRunning, minutes, seconds]);
-
+  
   const loadStreak = async () => {
     try {
       const value = await AsyncStorage.getItem('@meditation_streak');
@@ -69,7 +69,7 @@ function Medito() {
       console.error('Failed to load the streak.', e);
     }
   };
-
+  
   const updateStreak = async () => {
     try {
       const newStreak = streak + 1;
@@ -79,7 +79,7 @@ function Medito() {
       console.error('Failed to save the streak.', e);
     }
   };
-
+  
   const playSound = async () => {
     const { sound } = await Audio.Sound.createAsync(
       require('../assets/meditation-sound.mp3')
@@ -87,10 +87,13 @@ function Medito() {
     setSound(sound);
     await sound.playAsync();
   };
-
+  
   const startTimer = () => {
-    if (inputMinutes.trim() === '' && inputSeconds.trim() === '') return;
-
+    if (inputMinutes.trim() === '' && inputSeconds.trim() === '') {
+      Alert.alert('Error', 'Please enter a time');
+      return;
+    }
+  
     const totalSeconds = parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0');
     setMinutes(Math.floor(totalSeconds / 60));
     setSeconds(totalSeconds % 60);
@@ -98,14 +101,14 @@ function Medito() {
     setIsRunning(true);
     playSound();
   };
-
+  
   const stopTimer = () => {
     setIsRunning(false);
     if (sound) {
       sound.stopAsync();
     }
   };
-
+  
   const resetTimer = () => {
     stopTimer();
     setIsInputVisible(true);
@@ -115,13 +118,26 @@ function Medito() {
     setSeconds(0);
   };
 
+  const CustomButton = ({ onPress, title, style }) => (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.button,
+        style,
+        pressed && styles.buttonPressed,
+      ]}
+    >
+      <Text style={styles.buttonText}>{title}</Text>
+    </Pressable>
+  );
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.safeArea}>
         <Appbar.Header style={styles.header}>
           <Appbar.BackAction onPress={() => router.back()} color={theme.primary} />
-          <Appbar.Content
-            title="Meditation Station"
+          <Appbar.Content 
+            title="Meditation Station" 
             titleStyle={styles.headerTitle}
           />
         </Appbar.Header>
@@ -150,49 +166,38 @@ function Medito() {
                 onChangeText={setInputMinutes}
                 keyboardType="numeric"
                 mode="outlined"
+                theme={{ colors: { text: theme.background, placeholder: theme.background, primary: theme.background } }}
               />
               <TextInput
-                style={styles.input2}
+                style={styles.input}
                 label="Seconds"
                 value={inputSeconds}
                 onChangeText={setInputSeconds}
                 keyboardType="numeric"
                 mode="outlined"
+                theme={{ colors: { text: theme.background, placeholder: theme.background, primary: theme.background } }}
               />
-              <Button
-                mode="contained"
-                onPress={startTimer}
-                style={[styles.button, styles.startButton]}
-                labelStyle={[styles.buttonText, styles.startButtonText]}
-              >
-                Start Meditation
-              </Button>
+              <CustomButton onPress={startTimer} title="Start Meditation" />
             </View>
           ) : (
             <View style={styles.timerContainer}>
               <Text style={styles.timer}>{`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}</Text>
-              <ProgressBar
-                progress={1 - (minutes * 60 + seconds) / (parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0'))}
-                style={styles.progressBar}
-                color={theme.primary}
+              <ProgressBar 
+                progress={1 - (minutes * 60 + seconds) / (parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0'))} 
+                style={styles.progressBar} 
+                color={theme.primary} 
               />
               <View style={styles.buttonContainer}>
-                <Button
-                  mode="contained"
+                <CustomButton
                   onPress={isRunning ? stopTimer : startTimer}
-                  style={styles.button}
-                  labelStyle={styles.buttonText}
-                >
-                  {isRunning ? 'Pause' : 'Resume'}
-                </Button>
-                <Button
-                  mode="contained"
+                  title={isRunning ? 'Pause' : 'Resume'}
+                  style={styles.timerButton}
+                />
+                <CustomButton
                   onPress={resetTimer}
-                  style={styles.button}
-                  labelStyle={styles.buttonText}
-                >
-                  Reset
-                </Button>
+                  title="Reset"
+                  style={styles.timerButton}
+                />
               </View>
             </View>
           )}
@@ -223,19 +228,20 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
+    backgroundColor: theme.buttonBackground,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
-    color: theme.primary,
+    color: theme.secondary,
   },
   description: {
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 16,
-    color: theme.text,
+    color: theme.secondary,
   },
   image: {
     width: 200,
@@ -247,42 +253,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
     textAlign: 'center',
-    color: theme.text,
+    color: theme.secondary,
   },
   streak: {
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 16,
-    color: theme.text,
+    color: theme.secondary,
   },
   inputContainer: {
     marginBottom: 16,
   },
   input: {
     marginBottom: 8,
-    backgroundColor: theme.secondary,
-  },
-  input2: {
-    marginBottom: 15,
-    backgroundColor: theme.secondary,
-  },
-  button: {
-    marginBottom: 16,
     backgroundColor: theme.buttonBackground,
   },
-  startButton: {
+  button: {
+    marginTop: 16,
+    backgroundColor: theme.buttonBackground,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 30,
-    alignSelf: 'center',
-    width: '100%',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  startButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  buttonPressed: {
+    transform: [{ scale: 0.95 }],
   },
   buttonText: {
-    color: theme.buttonText,
+    color: theme.background,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   timerContainer: {
     alignItems: 'center',
@@ -302,6 +303,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
+  },
+  timerButton: {
+    marginHorizontal: 8,
+    minWidth: 100,
   },
 });
 
