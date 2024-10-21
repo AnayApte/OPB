@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, SafeAreaView } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { Appbar, Button, Card, Text, Modal, Portal } from 'react-native-paper';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../utils/AuthContext';
@@ -158,71 +158,95 @@ function JournalContent() {
   };
 
   const handleCancel = () => {
+    Keyboard.dismiss();
     setModalVisible(false);
     setCurrentEntry({ title: '', body: '' });
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: defaultTheme.background }]}>
-      <Appbar.Header style = { {backgroundColor: defaultTheme.background } }>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content  title="Journal" />
+    <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
+        <Appbar.Content 
+          title="Journal" 
+          titleStyle={styles.headerTitle}
+          color={defaultTheme.primary}
+        />
       </Appbar.Header>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.content}>
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={[styles.title, { color: defaultTheme.primary }]}>Welcome to Your Journal</Text>
-              <Text style={[styles.description, { color: theme.text }]}>
-                Capture your thoughts, feelings, and experiences. Journaling is a powerful tool for self-reflection and personal growth.
-              </Text>
-            </Card.Content>
-          </Card>
+      <View style={styles.content}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={[styles.title, { color: defaultTheme.primary }]}>Welcome to Your Journal</Text>
+            <Text style={[styles.description, { color: defaultTheme.text }]}>
+              Capture your thoughts, feelings, and experiences. Journaling is a powerful tool for self-reflection and personal growth.
+            </Text>
+          </Card.Content>
+        </Card>
 
-          <Button
-            mode="contained"
-            onPress={() => {
-              setCurrentEntry({ title: '', body: '' });
-              setModalVisible(true);
-            }}
-            style={styles.newEntryButton}
-            buttonColor={defaultTheme.buttonBackground}
-          >
-            New Entry
-          </Button>
+        <Button
+          mode="contained"
+          onPress={() => {
+            setCurrentEntry({ title: '', body: '' });
+            setModalVisible(true);
+          }}
+          style={styles.newEntryButton}
+          buttonColor={defaultTheme.buttonBackground}
+          textColor={defaultTheme.buttonText}
+        >
+          New Entry
+        </Button>
 
-          <Text style={[styles.entriesTitle, { color: defaultTheme.primary }]}>Your previous entries:</Text>
-          <FlatList
-            data={entries}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <JournalEntryCard
-                entry={item}
-                onEdit={handleEditEntry}
-                onDelete={handleDeleteEntry}
-              />
-            )}
-            ListEmptyComponent={() => <Text style={[styles.empty, { color: theme.text }]}>No entries yet</Text>}
+        <Text style={[styles.entriesTitle, { color: defaultTheme.primary }]}>Your previous entries:</Text>
+        
+        <FlatList
+          data={entries}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <JournalEntryCard
+              entry={item}
+              onEdit={handleEditEntry}
+              onDelete={handleDeleteEntry}
+            />
+          )}
+          ListEmptyComponent={() => <Text style={[styles.empty, { color: defaultTheme.text }]}>No entries yet</Text>}
+          contentContainerStyle={styles.entriesContent}
+        />
+      </View>
+
+      <Portal>
+        <Modal 
+          visible={isModalVisible} 
+          onDismiss={handleCancel} 
+          contentContainerStyle={styles.modalContainer}
+        >
+          <JournalEntryForm
+            entry={currentEntry || { title: '', body: '' }}
+            onSave={handleSaveEntry}
+            onCancel={handleCancel}
           />
-
-          <Portal>
-            <Modal visible={isModalVisible} onDismiss={handleCancel} contentContainerStyle={styles.modalContainer}>
-              <JournalEntryForm
-                entry={currentEntry || { title: '', body: '' }}
-                onSave={handleSaveEntry}
-                onCancel={handleCancel}
-              />
-            </Modal>
-          </Portal>
-        </View>
-      </TouchableWithoutFeedback>
-    </SafeAreaView>
+        </Modal>
+      </Portal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+    height: 56,
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: -16,
   },
   content: {
     flex: 1,
@@ -249,6 +273,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  entriesContent: {
+    flexGrow: 1,
   },
   empty: {
     textAlign: 'center',

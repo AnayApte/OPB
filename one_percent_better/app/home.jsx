@@ -36,7 +36,7 @@ export default function Home() {
     
     await SecureStore.deleteItemAsync('userId');
     setUserId(null);
-    router.replace('/(auth)/login', { animation: 'slide_from_left' });
+    router.replace('/(auth)/login');
   };
 
   const HeaderIcon = ({ icon, onPress }) => (
