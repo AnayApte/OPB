@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, Image, TouchableWithoutFeedback, Keyboard, Pressable, Alert } from 'react-native';
-import { Appbar, Card, Text, TextInput, ProgressBar } from 'react-native-paper';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { Appbar, Card, Text, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { VolumeX, Volume2 } from 'lucide-react-native';
 
 const theme = {
   background: '#3b0051',
@@ -14,6 +15,62 @@ const theme = {
   buttonBackground: '#f2e2fb',
   buttonText: '#3b0051',
 };
+
+function AudioVisualizer({ style, isMuted }) {
+  const [bars] = useState(new Array(20).fill(0).map(() => new Animated.Value(0)));
+
+  useEffect(() => {
+    const animations = bars.map(bar => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(bar, {
+            toValue: 1,
+            duration: Math.random() * 1000 + 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(bar, {
+            toValue: 0,
+            duration: Math.random() * 1000 + 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    });
+
+    if (!isMuted) {
+      Animated.parallel(animations).start();
+    } else {
+      animations.forEach(anim => anim.stop());
+    }
+
+    return () => {
+      animations.forEach(anim => anim.stop());
+    };
+  }, [isMuted]);
+
+  return (
+    <View style={[styles.audioVisualizerContainer, style]}>
+      {bars.map((bar, index) => (
+        <Animated.View
+          key={index}
+          style={[
+            styles.visualizerBar,
+            {
+              transform: [
+                {
+                  scaleY: isMuted ? 0.1 : bar.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.1, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
 
 function Medito() {
   const router = useRouter();
@@ -25,14 +82,12 @@ function Medito() {
   const [isRunning, setIsRunning] = useState(false);
   const [streak, setStreak] = useState(0);
   const [sound, setSound] = useState();
-  
+  const [isMuted, setIsMuted] = useState(false);
+  const scrollViewRef = useRef();
+
   useEffect(() => {
     loadStreak();
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
+    return sound ? () => { sound.unloadAsync(); } : undefined;
   }, [sound]);
 
   useEffect(() => {
@@ -58,7 +113,7 @@ function Medito() {
     }
     return () => clearInterval(interval);
   }, [isRunning, minutes, seconds]);
-  
+
   const loadStreak = async () => {
     try {
       const value = await AsyncStorage.getItem('@meditation_streak');
@@ -69,7 +124,7 @@ function Medito() {
       console.error('Failed to load the streak.', e);
     }
   };
-  
+
   const updateStreak = async () => {
     try {
       const newStreak = streak + 1;
@@ -79,36 +134,41 @@ function Medito() {
       console.error('Failed to save the streak.', e);
     }
   };
-  
+
   const playSound = async () => {
     const { sound } = await Audio.Sound.createAsync(
-      require('../assets/meditation-sound.mp3')
+      require('../assets/meditation-sound.mp3'),
+      { shouldPlay: true, isLooping: true }
     );
     setSound(sound);
-    await sound.playAsync();
-  };
-  
-  const startTimer = () => {
-    if (inputMinutes.trim() === '' && inputSeconds.trim() === '') {
-      Alert.alert('Error', 'Please enter a time');
-      return;
+    if (isMuted) {
+      await sound.setVolumeAsync(0);
     }
-  
-    const totalSeconds = parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0');
-    setMinutes(Math.floor(totalSeconds / 60));
-    setSeconds(totalSeconds % 60);
+  };
+
+  const startTimer = () => {
+    if (!isRunning && minutes === 0 && seconds === 0) {
+      const mins = parseInt(inputMinutes) || 0;
+      const secs = parseInt(inputSeconds) || 0;
+      if (mins === 0 && secs === 0) {
+        Alert.alert('Error', 'Please enter a valid time');
+        return;
+      }
+      setMinutes(mins);
+      setSeconds(secs);
+    }
     setIsInputVisible(false);
     setIsRunning(true);
     playSound();
   };
-  
+
   const stopTimer = () => {
     setIsRunning(false);
     if (sound) {
-      sound.stopAsync();
+      sound.pauseAsync();
     }
   };
-  
+
   const resetTimer = () => {
     stopTimer();
     setIsInputVisible(true);
@@ -118,97 +178,127 @@ function Medito() {
     setSeconds(0);
   };
 
-  const CustomButton = ({ onPress, title, style }) => (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        style,
-        pressed && styles.buttonPressed,
-      ]}
-    >
-      <Text style={styles.buttonText}>{title}</Text>
-    </Pressable>
-  );
+  const toggleMute = async () => {
+    setIsMuted(!isMuted);
+    if (sound) {
+      await sound.setVolumeAsync(isMuted ? 1 : 0);
+    }
+  };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.safeArea}>
-        <Appbar.Header style={styles.header}>
-          <Appbar.BackAction onPress={() => router.back()} color={theme.primary} />
-          <Appbar.Content 
-            title="Meditation Station" 
-            titleStyle={styles.headerTitle}
-          />
-        </Appbar.Header>
-        <View style={styles.content}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={theme.primary} />
+        <Appbar.Content title="Meditation Station" titleStyle={styles.headerTitle} />
+      </Appbar.Header>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        ref={scrollViewRef}
+        onContentSizeChange={() => scrollViewRef.current.scrollToEnd({ animated: true })}
+      >
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.title}>Welcome to Meditation</Text>
+            <Text style={styles.description}>
+              Take a moment to relax and focus on your breath. Set your meditation timer and begin your journey to mindfulness.
+            </Text>
+            <Image
+              source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
+              style={styles.image}
+            />
+            <Text style={styles.challenge}>Challenge: Meditate for 30 days.</Text>
+            <Text style={styles.streak}>Current Streak: {streak} days</Text>
+          </Card.Content>
+        </Card>
+
+        {isInputVisible ? (
           <Card style={styles.card}>
             <Card.Content>
-              <Text style={styles.title}>Welcome to Meditation</Text>
-              <Text style={styles.description}>
-                Take a moment to relax and focus on your breath. Set your meditation timer and begin your journey to mindfulness.
-              </Text>
-              <Image
-                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
-                style={styles.image}
-              />
-              <Text style={styles.challenge}>Challenge: Meditate for 30 days.</Text>
-              <Text style={styles.streak}>Current Streak: {streak} days</Text>
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.inputLabel}>Minutes</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={inputMinutes}
+                    onChangeText={(text) => {
+                      const number = parseInt(text);
+                      if (!isNaN(number) && number <= 60) {
+                        setInputMinutes(text);
+                      } else if (text === "") {
+                        setInputMinutes(text);
+                      }
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    placeholder="00"
+                    placeholderTextColor={theme.secondary + '80'}
+                  />
+                </View>
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.inputLabel}>Seconds</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={inputSeconds}
+                    onChangeText={(text) => {
+                      const number = parseInt(text);
+                      if (!isNaN(number) && number <= 60) {
+                        setInputSeconds(text);
+                      } else if (text === "") {
+                        setInputSeconds(text);
+                      }
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    placeholder="00"
+                    placeholderTextColor={theme.secondary + '80'}
+                  />
+                </View>
+              </View>
+              <TouchableOpacity style={styles.button} onPress={startTimer}>
+                <Text style={styles.buttonText}>Start Meditation</Text>
+              </TouchableOpacity>
             </Card.Content>
           </Card>
-
-          {isInputVisible ? (
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                label="Minutes"
-                value={inputMinutes}
-                onChangeText={setInputMinutes}
-                keyboardType="numeric"
-                mode="outlined"
-                theme={{ colors: { text: theme.background, placeholder: theme.background, primary: theme.background } }}
-              />
-              <TextInput
-                style={styles.input}
-                label="Seconds"
-                value={inputSeconds}
-                onChangeText={setInputSeconds}
-                keyboardType="numeric"
-                mode="outlined"
-                theme={{ colors: { text: theme.background, placeholder: theme.background, primary: theme.background } }}
-              />
-              <CustomButton onPress={startTimer} title="Start Meditation" />
-            </View>
-          ) : (
-            <View style={styles.timerContainer}>
+        ) : (
+          <Card style={styles.card}>
+            <Card.Content>
               <Text style={styles.timer}>{`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}</Text>
-              <ProgressBar 
-                progress={1 - (minutes * 60 + seconds) / (parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0'))} 
-                style={styles.progressBar} 
-                color={theme.primary} 
+              <View style={styles.audioControlContainer}>
+                <AudioVisualizer style={styles.audioVisualizer} isMuted={isMuted} />
+                <TouchableOpacity onPress={toggleMute} style={styles.muteButton}>
+                  {isMuted ? (
+                    <VolumeX color={theme.secondary} size={24} />
+                  ) : (
+                    <Volume2 color={theme.secondary} size={24} />
+                  )}
+                </TouchableOpacity>
+              </View>
+              <ProgressBar
+                progress={1 - (minutes * 60 + seconds) / ((parseInt(inputMinutes) || 0) * 60 + (parseInt(inputSeconds) || 0))}
+                style={[styles.progressBar, { backgroundColor: 'transparent' }]}
+                color={theme.primary}
               />
               <View style={styles.buttonContainer}>
-                <CustomButton
-                  onPress={isRunning ? stopTimer : startTimer}
-                  title={isRunning ? 'Pause' : 'Resume'}
-                  style={styles.timerButton}
-                />
-                <CustomButton
-                  onPress={resetTimer}
-                  title="Reset"
-                  style={styles.timerButton}
-                />
+                <TouchableOpacity style={styles.button} onPress={isRunning ? stopTimer : startTimer}>
+                  <Text style={styles.buttonText}>{isRunning ? 'Pause' : 'Resume'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={resetTimer}>
+                  <Text style={styles.buttonText}>Reset</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-          )}
-        </View>
-      </View>
-    </TouchableWithoutFeedback>
+            </Card.Content>
+          </Card>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: theme.background,
   },
@@ -222,8 +312,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.primary,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     padding: 16,
   },
   card: {
@@ -262,51 +352,80 @@ const styles = StyleSheet.create({
     color: theme.secondary,
   },
   inputContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     marginBottom: 16,
   },
+  inputWrapper: {
+    alignItems: 'center',
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: theme.secondary,
+    marginBottom: 4,
+  },
   input: {
-    marginBottom: 8,
-    backgroundColor: theme.buttonBackground,
+    backgroundColor: 'rgba(59, 0, 81, 0.1)',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 24,
+    color: theme.secondary,
+    textAlign: 'center',
+    width: 80,
   },
   button: {
-    marginTop: 16,
-    backgroundColor: theme.buttonBackground,
+    backgroundColor: theme.background,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonPressed: {
-    transform: [{ scale: 0.95 }],
-  },
   buttonText: {
-    color: theme.background,
+    color: theme.primary,
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  timerContainer: {
-    alignItems: 'center',
   },
   timer: {
     fontSize: 48,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 16,
-    color: theme.primary,
+    color: theme.secondary,
+  },
+  audioControlContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  audioVisualizerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 50,
+    flex: 1,
+  },
+  audioVisualizer: {
+    flex: 1,
+  },
+  visualizerBar: {
+    width: 4,
+    height: 40,
+    backgroundColor: theme.background,
+    borderRadius: 2,
+  },
+  muteButton: {
+    padding: 8,
   },
   progressBar: {
     height: 10,
-    width: '100%',
     marginBottom: 16,
+    backgroundColor: 'transparent',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '100%',
-  },
-  timerButton: {
-    marginHorizontal: 8,
-    minWidth: 100,
   },
 });
 
