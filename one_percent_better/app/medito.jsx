@@ -108,8 +108,8 @@ function Medito() {
   }, [isRunning, minutes, seconds]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
+<View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Medito" />
       </Appbar.Header>
@@ -171,7 +171,7 @@ function Medito() {
           </Card.Content>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

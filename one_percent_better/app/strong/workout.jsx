@@ -8,6 +8,7 @@ import 'react-native-get-random-values';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
 import { Appbar, Card, Title, Paragraph, Button, Surface, Text, ProgressBar } from 'react-native-paper';
+import BackButton from '../../utils/BackButton';
 
 const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) => (
   <Modal
@@ -443,7 +444,7 @@ const WorkoutScreen = () => {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()} />
+        <BackButton destination = "/home" />
         <Appbar.Content title="Workout" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <ScrollView 
