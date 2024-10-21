@@ -7,7 +7,7 @@ import { ThemeProvider, useTheme } from '../ThemeContext';
 import { TextInput, Button, Surface, Text, Card } from 'react-native-paper';
 
 const defaultTheme = {
-  background: '#FFb5c6',
+  background: '#3b0051',
   text: '#641f1f',
   primary: '#3b0051',
   secondary: '#f2f5ea',
@@ -65,7 +65,7 @@ function LoginContent() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: defaultTheme.background }]}>
       <View style={styles.centerContainer}>
         <ScrollView 
           style={styles.scrollViewContent} 
