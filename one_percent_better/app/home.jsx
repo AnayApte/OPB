@@ -24,24 +24,9 @@ const theme = {
   buttonText: '#3b0051',
 };
 
-const useCustomNavigation = () => {
-  const router = useRouter();
-
-  const navigateWithAnimation = (route) => {
-    router.replace({
-      pathname: route,
-      params: {},
-    }, {
-      animation: 'slide_from_left',
-    });
-  };
-
-  return { navigateWithAnimation };
-};
-
 export default function Home() {
   const { userId, setUserId } = useAuth();
-  const { navigateWithAnimation } = useCustomNavigation();
+  const router = useRouter();
   const [quote, setQuote] = useState("");
 
   useEffect(() => {
@@ -49,9 +34,10 @@ export default function Home() {
   }, []);
 
   const handleSignOut = async () => {
+    
     await SecureStore.deleteItemAsync('userId');
     setUserId(null);
-    navigateWithAnimation('/(auth)/login');
+    router.replace('/(auth)/login', {}, { animation: 'slide_from_left' });
   };
 
   const HeaderIcon = ({ icon, onPress }) => (
@@ -106,7 +92,7 @@ export default function Home() {
         <Appbar.Header style={styles.header}>
           <HeaderIcon
             icon="account"
-            onPress={() => navigateWithAnimation('/profile')}
+            onPress={() => router.push('/profile')}
           />
           <Appbar.Content title="One Percent Better" titleStyle={styles.headerTitle} />
           <HeaderIcon
@@ -131,15 +117,15 @@ export default function Home() {
             <NavButton 
               icon="calendar" 
               label="Calendar" 
-              onPress={() => navigateWithAnimation('/Calendar')} 
+              onPress={() => router.push('/Calendar')} 
               style={styles.calendarButton}
             />
-            <NavButton icon="meditation" label="Meditation Station" onPress={() => navigateWithAnimation('/medito')} />
-            <NavButton icon="dumbbell" label="Strong" onPress={() => navigateWithAnimation('/strong')} />
-            <NavButton icon="food-apple" label="Calorie Counter" onPress={() => navigateWithAnimation('/caloriecounter')} />
-            <NavButton icon="food" label="Food Analyzer" onPress={() => navigateWithAnimation('/foodanalyzer')} />
-            <NavButton icon="format-list-checks" label="Todo List" onPress={() => navigateWithAnimation('/todolist0')} />
-            <NavButton icon="book-open-page-variant" label="Journal" onPress={() => navigateWithAnimation('/journal')} />
+            <NavButton icon="meditation" label="Meditation Station" onPress={() => router.push('/medito')} />
+            <NavButton icon="dumbbell" label="Strong" onPress={() => router.push('/strong')} />
+            <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
+            <NavButton icon="food" label="Food Analyzer" onPress={() => router.push('/foodanalyzer')} />
+            <NavButton icon="format-list-checks" label="Todo List" onPress={() => router.push('/todolist0')} />
+            <NavButton icon="book-open-page-variant" label="Journal" onPress={() => router.push('/journal')} />
           </Surface>
         </View>
       </SafeAreaView>
