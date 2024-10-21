@@ -119,7 +119,7 @@ export default function Home() {
               onPress={() => router.push('/Calendar')} 
               style={styles.calendarButton}
             />
-            <NavButton icon="meditation" label="Medito" onPress={() => router.push('/medito')} />
+            <NavButton icon="meditation" label="Meditation Station" onPress={() => router.push('/medito')} />
             <NavButton icon="dumbbell" label="Strong" onPress={() => router.push('/strong')} />
             <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
             <NavButton icon="food" label="Food Analyzer" onPress={() => router.push('/foodanalyzer')} />

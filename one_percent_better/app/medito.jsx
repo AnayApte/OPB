@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Image, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Appbar, Button, Card, Text, TextInput, ProgressBar } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { Appbar, TextInput, Button, Surface, Text, Card, IconButton, ProgressBar } from 'react-native-paper';
+
+const theme = {
+  background: '#f2e2fb',
+  text: '#641f1f',
+  primary: '#3b0051',
+  secondary: '#f2f5ea',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2f5ea',
+};
 
 function Medito() {
-  const { theme } = useTheme();
   const router = useRouter();
   const [inputMinutes, setInputMinutes] = useState('');
   const [inputSeconds, setInputSeconds] = useState('');
@@ -26,6 +34,30 @@ function Medito() {
       }
       : undefined;
   }, [sound]);
+
+  useEffect(() => {
+    let interval;
+    if (isRunning) {
+      interval = setInterval(() => {
+        if (seconds > 0) {
+          setSeconds(seconds - 1);
+        } else if (minutes > 0) {
+          setMinutes(minutes - 1);
+          setSeconds(59);
+        } else {
+          clearInterval(interval);
+          setIsRunning(false);
+          updateStreak();
+          if (sound) {
+            sound.stopAsync();
+          }
+        }
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, minutes, seconds]);
 
   const loadStreak = async () => {
     try {
@@ -83,134 +115,174 @@ function Medito() {
     setSeconds(0);
   };
 
-  useEffect(() => {
-    let interval;
-    if (isRunning) {
-      interval = setInterval(() => {
-        if (seconds > 0) {
-          setSeconds(seconds - 1);
-        } else if (minutes > 0) {
-          setMinutes(minutes - 1);
-          setSeconds(59);
-        } else {
-          clearInterval(interval);
-          setIsRunning(false);
-          updateStreak();
-          if (sound) {
-            sound.stopAsync();
-          }
-        }
-      }, 1000);
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isRunning, minutes, seconds]);
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Meditation Station" />
-      </Appbar.Header>
-      <ScrollView style={styles.container}>
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={[styles.challenge, { color: theme.text }]}>Challenge: Meditate for 30 days.</Text>
-            <Image
-              source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
-              style={styles.image}
-            />
-            <Text style={[styles.streak, { color: theme.text }]}>Current Streak: {streak} days</Text>
-          </Card.Content>
-        </Card>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={styles.safeArea}>
+        <Appbar.Header style={styles.header}>
+          <Appbar.BackAction onPress={() => router.back()} color={theme.primary} />
+          <Appbar.Content
+            title="Meditation Station"
+            titleStyle={styles.headerTitle}
+          />
+        </Appbar.Header>
+        <View style={styles.content}>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.title}>Welcome to Meditation</Text>
+              <Text style={styles.description}>
+                Take a moment to relax and focus on your breath. Set your meditation timer and begin your journey to mindfulness.
+              </Text>
+              <Image
+                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/human-sitting-and-squatting-on-the-floor/167/man-002-512.png' }}
+                style={styles.image}
+              />
+              <Text style={styles.challenge}>Challenge: Meditate for 30 days.</Text>
+              <Text style={styles.streak}>Current Streak: {streak} days</Text>
+            </Card.Content>
+          </Card>
 
-        <Card style={styles.card}>
-          <Card.Content>
-            {isInputVisible ? (
-              <View style={styles.inputContainer}>
-                <TextInput
-                  label="Minutes"
-                  value={inputMinutes}
-                  onChangeText={setInputMinutes}
-                  keyboardType="numeric"
-                  style={styles.input}
-                />
-                <TextInput
-                  label="Seconds"
-                  value={inputSeconds}
-                  onChangeText={setInputSeconds}
-                  keyboardType="numeric"
-                  style={styles.input}
-                />
-                <Button mode="contained" buttonColor="#3b0051" onPress={startTimer} style={styles.button}>
-                  Start Meditation
+          {isInputVisible ? (
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                label="Minutes"
+                value={inputMinutes}
+                onChangeText={setInputMinutes}
+                keyboardType="numeric"
+                mode="outlined"
+              />
+              <TextInput
+                style={styles.input2}
+                label="Seconds"
+                value={inputSeconds}
+                onChangeText={setInputSeconds}
+                keyboardType="numeric"
+                mode="outlined"
+              />
+              <Button
+                mode="contained"
+                onPress={startTimer}
+                style={[styles.button, styles.startButton]}
+                labelStyle={[styles.buttonText, styles.startButtonText]}
+              >
+                Start Meditation
+              </Button>
+            </View>
+          ) : (
+            <View style={styles.timerContainer}>
+              <Text style={styles.timer}>{`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}</Text>
+              <ProgressBar
+                progress={1 - (minutes * 60 + seconds) / (parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0'))}
+                style={styles.progressBar}
+                color={theme.primary}
+              />
+              <View style={styles.buttonContainer}>
+                <Button
+                  mode="contained"
+                  onPress={isRunning ? stopTimer : startTimer}
+                  style={styles.button}
+                  labelStyle={styles.buttonText}
+                >
+                  {isRunning ? 'Pause' : 'Resume'}
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={resetTimer}
+                  style={styles.button}
+                  labelStyle={styles.buttonText}
+                >
+                  Reset
                 </Button>
               </View>
-            ) : (
-              <View style={styles.timerContainer}>
-                <Text style={[styles.timer, { color: '#3b0051' }]}>
-                  {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-                </Text>
-                <ProgressBar
-                  progress={1 - (minutes * 60 + seconds) / (parseInt(inputMinutes || '0') * 60 + parseInt(inputSeconds || '0'))}
-                  color="#3b0051"
-                  style={styles.progressBar}
-                />
-                <View style={styles.buttonContainer}>
-                  <Button mode="contained" buttonColor="#3b0051" onPress={isRunning ? stopTimer : startTimer} style={styles.button}>
-                    {isRunning ? 'Pause' : 'Resume'}
-                  </Button>
-                  <Button mode="outlined" buttonColor="#3b0051" onPress={resetTimer} style={styles.button}>
-                    Reset
-                  </Button>
-                </View>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-      </ScrollView>
-    </View>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: theme.background,
   },
-  container: {
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.primary,
+  },
+  content: {
     flex: 1,
     padding: 16,
   },
   card: {
     marginBottom: 16,
   },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+    color: theme.primary,
+  },
+  description: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+    color: theme.text,
+  },
+  image: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
   challenge: {
     fontSize: 16,
     marginBottom: 8,
-    padding: 3,
-    paddingBottom:15,
-  },
-  title: {
-    color: '#3b0051',
-    fontSize: 24,
-    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 16,
+    color: theme.text,
   },
   streak: {
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 16,
+    color: theme.text,
   },
   inputContainer: {
     marginBottom: 16,
   },
   input: {
     marginBottom: 8,
+    backgroundColor: theme.secondary,
+  },
+  input2: {
+    marginBottom: 15,
+    backgroundColor: theme.secondary,
   },
   button: {
-    marginTop: 8,
+    marginBottom: 16,
+    backgroundColor: theme.buttonBackground,
+  },
+  startButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 30,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  startButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonText: {
+    color: theme.buttonText,
   },
   timerContainer: {
     alignItems: 'center',
@@ -219,7 +291,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     marginBottom: 16,
-    color: '#3b0051'
+    color: theme.primary,
   },
   progressBar: {
     height: 10,
@@ -230,12 +302,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-  },
-  image: {
-    width: 200,
-    height: 200,
-    alignSelf: 'center',
-    marginBottom: 16,
   },
 });
 
