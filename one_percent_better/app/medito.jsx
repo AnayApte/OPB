@@ -84,18 +84,20 @@ function Medito() {
   };
 
   const startTimer = () => {
-    const mins = parseInt(inputMinutes) || 0;
-    const secs = parseInt(inputSeconds) || 0;
-    if (mins === 0 && secs === 0) {
-      Alert.alert('Error', 'Please enter a valid time');
-      return;
+    if (!isRunning && minutes === 0 && seconds === 0) {
+      const mins = parseInt(inputMinutes) || 0;
+      const secs = parseInt(inputSeconds) || 0;
+      if (mins === 0 && secs === 0) {
+        Alert.alert('Error', 'Please enter a valid time');
+        return;
+      }
+      if (mins >= 60 || secs >= 60) {
+        Alert.alert('Error', 'Invalid time format');
+        return;
+      }
+      setMinutes(mins);
+      setSeconds(secs);
     }
-    if (mins >= 60 || secs >= 60) {
-      Alert.alert('Error', 'Invalid time format');
-      return;
-    }
-    setMinutes(mins);
-    setSeconds(secs);
     setIsInputVisible(false);
     setIsRunning(true);
     playSound();
