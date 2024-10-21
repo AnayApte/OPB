@@ -115,7 +115,7 @@ function ProfileContent() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Profile" />
@@ -221,7 +221,7 @@ function ProfileContent() {
           Save Profile
         </Button>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
