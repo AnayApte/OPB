@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from './ThemeContext';
+import { VolumeX, Volume2 } from 'lucide-react-native';
 
 const theme = {
   background: '#3b0051',
@@ -15,7 +16,7 @@ const theme = {
   buttonText: '#3b0051',
 };
 
-function AudioVisualizer({ style }) {
+function AudioVisualizer({ style, isMuted }) {
   const [bars] = useState(new Array(20).fill(0).map(() => new Animated.Value(0)));
 
   useEffect(() => {
@@ -36,12 +37,16 @@ function AudioVisualizer({ style }) {
       );
     });
 
-    Animated.parallel(animations).start();
+    if (!isMuted) {
+      Animated.parallel(animations).start();
+    } else {
+      animations.forEach(anim => anim.stop());
+    }
 
     return () => {
       animations.forEach(anim => anim.stop());
     };
-  }, []);
+  }, [isMuted]);
 
   return (
     <View style={[styles.audioVisualizerContainer, style]}>
@@ -53,7 +58,7 @@ function AudioVisualizer({ style }) {
             {
               transform: [
                 {
-                  scaleY: bar.interpolate({
+                  scaleY: isMuted ? 0.1 : bar.interpolate({
                     inputRange: [0, 1],
                     outputRange: [0.1, 1],
                   }),
@@ -77,6 +82,7 @@ function Medito() {
   const [isRunning, setIsRunning] = useState(false);
   const [streak, setStreak] = useState(0);
   const [sound, setSound] = useState();
+  const [isMuted, setIsMuted] = useState(false);
   const scrollViewRef = useRef();
 
   useEffect(() => {
@@ -135,6 +141,9 @@ function Medito() {
       { shouldPlay: true, isLooping: true }
     );
     setSound(sound);
+    if (isMuted) {
+      await sound.setVolumeAsync(0);
+    }
   };
 
   const startTimer = () => {
@@ -167,6 +176,13 @@ function Medito() {
     setInputSeconds('');
     setMinutes(0);
     setSeconds(0);
+  };
+
+  const toggleMute = async () => {
+    setIsMuted(!isMuted);
+    if (sound) {
+      await sound.setVolumeAsync(isMuted ? 1 : 0);
+    }
   };
 
   return (
@@ -250,7 +266,16 @@ function Medito() {
           <Card style={styles.card}>
             <Card.Content>
               <Text style={styles.timer}>{`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}</Text>
-              <AudioVisualizer style={styles.audioVisualizer} />
+              <View style={styles.audioControlContainer}>
+                <AudioVisualizer style={styles.audioVisualizer} isMuted={isMuted} />
+                <TouchableOpacity onPress={toggleMute} style={styles.muteButton}>
+                  {isMuted ? (
+                    <VolumeX color={theme.secondary} size={24} />
+                  ) : (
+                    <Volume2 color={theme.secondary} size={24} />
+                  )}
+                </TouchableOpacity>
+              </View>
               <ProgressBar
                 progress={1 - (minutes * 60 + seconds) / ((parseInt(inputMinutes) || 0) * 60 + (parseInt(inputSeconds) || 0))}
                 style={[styles.progressBar, { backgroundColor: 'transparent' }]}
@@ -368,21 +393,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: theme.secondary,
   },
+  audioControlContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   audioVisualizerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     height: 50,
-    marginBottom: 16,
+    flex: 1,
   },
   audioVisualizer: {
-    marginBottom: 16,
+    flex: 1,
   },
   visualizerBar: {
     width: 4,
     height: 40,
     backgroundColor: theme.background,
     borderRadius: 2,
+  },
+  muteButton: {
+    padding: 8,
   },
   progressBar: {
     height: 10,
