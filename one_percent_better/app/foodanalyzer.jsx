@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { Appbar, Button, Card, Text, ActivityIndicator, Surface } from 'react-native-paper';
+import { Appbar, Card, Text, ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // WARNING: Storing API keys in the client is not secure for production use
 const API_KEY = 'AIzaSyAY4p4uud0f5iSXH8SEBFm-UfhusLo5HwU';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 const defaultTheme = {
-  background: '#f2e2fb',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 function FoodAnalyzerContent() {
@@ -75,58 +76,100 @@ This also means that the nutritional information must be accurate to the food it
     setLoading(false);
   };
 
+  const NavButton = ({ icon, label, onPress, style, iconSize = 24 }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => {
+          setIsPressed(false);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.navButton,
+          style,
+          isPressed && styles.navButtonPressed
+        ]}
+      >
+        <View style={styles.navButtonInner}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={iconSize} 
+            color={isPressed ? defaultTheme.background : defaultTheme.buttonText} 
+          />
+          <Text style={[
+            styles.navButtonText,
+            isPressed && styles.navButtonTextPressed
+          ]}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
-<View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Appbar.Header style = { {backgroundColor: defaultTheme.background } }>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content  title="Food Analyzer" />
+    <View style={styles.safeArea}>
+      <Appbar.Header style={{ backgroundColor: defaultTheme.background }}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
+        <Appbar.Content
+          title="Food Analyzer"
+          titleStyle={styles.headerTitle}
+        />
       </Appbar.Header>
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={[styles.title, { color: defaultTheme.buttonBackground }]}>Welcome to Food Analyzer</Text>
-            <Text style={[styles.description, { color: theme.text }]}>
+            <Text style={[styles.title, { color: defaultTheme.background }]}>Welcome to Food Analyzer</Text>
+            <Text style={[styles.description, { color: defaultTheme.background}]}>
               Unlock the nutritional secrets of your meals with our advanced AI-powered Food Analyzer. Simply upload a photo of your food, and we'll provide you with detailed nutritional information, including calories, protein, and fat content.
             </Text>
           </Card.Content>
         </Card>
-        
-        <Card style={styles.card}>
-          <Card.Content>
-            <Button 
-              icon="camera" 
-              mode="contained" 
-              onPress={pickImage} 
-              style={styles.button}
-              buttonColor={defaultTheme.buttonBackground}
-            >
-              Pick an image from camera roll
-            </Button>
-            {loading && <ActivityIndicator animating={true} style={styles.loader} />}
-            {image && (
-              <View>
+
+        <NavButton
+          icon="camera"
+          label="Pick an image from camera roll"
+          onPress={pickImage}
+          style={styles.pickImageButton}
+        />
+
+        <ScrollView style={styles.scrollContent}>
+          {loading && <ActivityIndicator animating={true} style={styles.loader} color={defaultTheme.primary} />}
+          {image && (
+            <Card style={styles.card}>
+              <Card.Content>
                 <Image source={{ uri: image }} style={styles.image} />
                 <Text style={[styles.analysisTitle, { color: theme.primary }]}>Analysis Results:</Text>
                 <Text style={[styles.analysisText, { color: theme.text }]}>{analysis}</Text>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-      </ScrollView>
+              </Card.Content>
+            </Card>
+          )}
+        </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: defaultTheme.background,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: defaultTheme.primary,
   },
   content: {
     flex: 1,
     padding: 16,
   },
+  scrollContent: {
+    flex: 1,
+  },
   card: {
     marginBottom: 16,
+    backgroundColor: defaultTheme.primary,
   },
   title: {
     fontSize: 24,
@@ -139,8 +182,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  button: {
+  pickImageButton: {
     marginBottom: 16,
+    width: '100%',
   },
   loader: {
     marginVertical: 16,
@@ -159,6 +203,38 @@ const styles = StyleSheet.create({
   },
   analysisText: {
     fontSize: 16,
+  },
+  navButton: {
+    width: '100%',
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: defaultTheme.buttonBackground,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  navButtonPressed: {
+    backgroundColor: defaultTheme.text,
+    transform: [{ scale: 0.95 }], 
+  },
+  navButtonInner: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navButtonText: {
+    color: defaultTheme.buttonText,
+    fontSize: 16,
+    marginLeft: 8,
+    fontWeight: 'bold', 
+  },
+  navButtonTextPressed: {
+    color: defaultTheme.background,
   },
 });
 
