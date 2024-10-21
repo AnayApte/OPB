@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { Appbar, Card, Text, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
@@ -14,6 +14,58 @@ const theme = {
   buttonBackground: '#f2e2fb',
   buttonText: '#3b0051',
 };
+
+function AudioVisualizer({ style }) {
+  const [bars] = useState(new Array(20).fill(0).map(() => new Animated.Value(0)));
+
+  useEffect(() => {
+    const animations = bars.map(bar => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(bar, {
+            toValue: 1,
+            duration: Math.random() * 1000 + 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(bar, {
+            toValue: 0,
+            duration: Math.random() * 1000 + 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    });
+
+    Animated.parallel(animations).start();
+
+    return () => {
+      animations.forEach(anim => anim.stop());
+    };
+  }, []);
+
+  return (
+    <View style={[styles.audioVisualizerContainer, style]}>
+      {bars.map((bar, index) => (
+        <Animated.View
+          key={index}
+          style={[
+            styles.visualizerBar,
+            {
+              transform: [
+                {
+                  scaleY: bar.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.1, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
 
 function Medito() {
   const router = useRouter();
@@ -78,9 +130,11 @@ function Medito() {
   };
 
   const playSound = async () => {
-    const { sound } = await Audio.Sound.createAsync(require('../assets/meditation-sound.mp3'));
+    const { sound } = await Audio.Sound.createAsync(
+      require('../assets/meditation-sound.mp3'),
+      { shouldPlay: true, isLooping: true }
+    );
     setSound(sound);
-    await sound.playAsync();
   };
 
   const startTimer = () => {
@@ -89,10 +143,6 @@ function Medito() {
       const secs = parseInt(inputSeconds) || 0;
       if (mins === 0 && secs === 0) {
         Alert.alert('Error', 'Please enter a valid time');
-        return;
-      }
-      if (mins >= 60 || secs >= 60) {
-        Alert.alert('Error', 'Invalid time format');
         return;
       }
       setMinutes(mins);
@@ -106,7 +156,7 @@ function Medito() {
   const stopTimer = () => {
     setIsRunning(false);
     if (sound) {
-      sound.stopAsync();
+      sound.pauseAsync();
     }
   };
 
@@ -157,7 +207,14 @@ function Medito() {
                   <TextInput
                     style={styles.input}
                     value={inputMinutes}
-                    onChangeText={setInputMinutes}
+                    onChangeText={(text) => {
+                      const number = parseInt(text);
+                      if (!isNaN(number) && number <= 60) {
+                        setInputMinutes(text);
+                      } else if (text === "") {
+                        setInputMinutes(text);
+                      }
+                    }}
                     keyboardType="number-pad"
                     maxLength={2}
                     placeholder="00"
@@ -169,7 +226,14 @@ function Medito() {
                   <TextInput
                     style={styles.input}
                     value={inputSeconds}
-                    onChangeText={setInputSeconds}
+                    onChangeText={(text) => {
+                      const number = parseInt(text);
+                      if (!isNaN(number) && number <= 60) {
+                        setInputSeconds(text);
+                      } else if (text === "") {
+                        setInputSeconds(text);
+                      }
+                    }}
                     keyboardType="number-pad"
                     maxLength={2}
                     placeholder="00"
@@ -186,9 +250,10 @@ function Medito() {
           <Card style={styles.card}>
             <Card.Content>
               <Text style={styles.timer}>{`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`}</Text>
+              <AudioVisualizer style={styles.audioVisualizer} />
               <ProgressBar
                 progress={1 - (minutes * 60 + seconds) / ((parseInt(inputMinutes) || 0) * 60 + (parseInt(inputSeconds) || 0))}
-                style={styles.progressBar}
+                style={[styles.progressBar, { backgroundColor: 'transparent' }]}
                 color={theme.primary}
               />
               <View style={styles.buttonContainer}>
@@ -303,9 +368,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: theme.secondary,
   },
+  audioVisualizerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 50,
+    marginBottom: 16,
+  },
+  audioVisualizer: {
+    marginBottom: 16,
+  },
+  visualizerBar: {
+    width: 4,
+    height: 40,
+    backgroundColor: theme.background,
+    borderRadius: 2,
+  },
   progressBar: {
     height: 10,
     marginBottom: 16,
+    backgroundColor: 'transparent',
   },
   buttonContainer: {
     flexDirection: 'row',
