@@ -12,6 +12,7 @@ export const ThemeProvider = ({ children }) => {
     text: '#000000',
     primary: '#641f1f',
     secondary: '#f2f5ea',
+    tertiary: '#a69998'
   });
 
   return (

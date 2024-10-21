@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, SafeAreaView, Platform, StatusBar } from 'react-native';
-import { Appbar, Button, Card, Text, Modal, Portal } from 'react-native-paper';
+import { View, FlatList, StyleSheet, TouchableWithoutFeedback, Keyboard, SafeAreaView, Platform, StatusBar, Pressable } from 'react-native';
+import { Appbar, Card, Text, Modal, Portal } from 'react-native-paper';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../utils/AuthContext';
 import { SUPABASEURL, SUPABASEKEY } from '@env';
@@ -8,18 +8,19 @@ import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from '../ThemeContext';
 import JournalEntryForm from './components/JournalEntryForm';
 import JournalEntryCard from './components/JournalEntryCard';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const supabaseUrl = SUPABASEURL;
 const supabaseKey = SUPABASEKEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const defaultTheme = {
-  background: '#f2e2fb',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 function JournalContent() {
@@ -163,6 +164,37 @@ function JournalContent() {
     setCurrentEntry({ title: '', body: '' });
   };
 
+  const NavButton = ({ icon, label, onPress, style, iconSize = 24 }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => {
+          setIsPressed(false);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.navButton,
+          style,
+          isPressed && styles.navButtonPressed
+        ]}
+      >
+        <View style={styles.navButtonInner}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={iconSize} 
+            color={isPressed ? defaultTheme.background : defaultTheme.buttonText} 
+          />
+          <Text style={[
+            styles.navButtonText,
+            isPressed && styles.navButtonTextPressed
+          ]}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
@@ -174,27 +206,24 @@ function JournalContent() {
         />
       </Appbar.Header>
       <View style={styles.content}>
-        <Card style={styles.card}>
+        <Card style={[styles.card, {backgroundColor: defaultTheme.primary}]}>
           <Card.Content>
-            <Text style={[styles.title, { color: defaultTheme.primary }]}>Welcome to Your Journal</Text>
-            <Text style={[styles.description, { color: defaultTheme.text }]}>
+            <Text style={[styles.title, { color: defaultTheme.background }]}>Welcome to Your Journal</Text>
+            <Text style={[styles.description, { color: defaultTheme.background }]}>
               Capture your thoughts, feelings, and experiences. Journaling is a powerful tool for self-reflection and personal growth.
             </Text>
           </Card.Content>
         </Card>
 
-        <Button
-          mode="contained"
+        <NavButton
+          icon="plus"
+          label="New Entry"
           onPress={() => {
             setCurrentEntry({ title: '', body: '' });
             setModalVisible(true);
           }}
           style={styles.newEntryButton}
-          buttonColor={defaultTheme.buttonBackground}
-          textColor={defaultTheme.buttonText}
-        >
-          New Entry
-        </Button>
+        />
 
         <Text style={[styles.entriesTitle, { color: defaultTheme.primary }]}>Your previous entries:</Text>
         
@@ -268,6 +297,7 @@ const styles = StyleSheet.create({
   },
   newEntryButton: {
     marginBottom: 16,
+    width: '100%',
   },
   entriesTitle: {
     fontSize: 20,
@@ -286,6 +316,38 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 20,
     borderRadius: 8,
+  },
+  navButton: {
+    width: '100%',
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: defaultTheme.buttonBackground,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  navButtonPressed: {
+    backgroundColor: defaultTheme.text,
+    transform: [{ scale: 0.95 }], 
+  },
+  navButtonInner: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navButtonText: {
+    color: defaultTheme.buttonText,
+    fontSize: 16,
+    marginLeft: 8,
+    fontWeight: 'bold', 
+  },
+  navButtonTextPressed: {
+    color: defaultTheme.background,
   },
 });
 

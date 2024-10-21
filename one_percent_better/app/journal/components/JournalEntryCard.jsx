@@ -4,14 +4,15 @@ import React from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Card, Text, Button, IconButton } from 'react-native-paper';
 import { useTheme } from '../../ThemeContext';  // Adjust the import path as needed
+import { white } from 'react-native-paper/src/styles/themes/v2/colors';
 
 const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
@@ -30,9 +31,9 @@ const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
   };
 
   return (
-    <Card style={[styles.card, { backgroundColor: theme.background }]}>
+    <Card style={[styles.card, { backgroundColor: defaultTheme.text }]}>
       <Card.Content>
-        <Text style={[styles.title, { color: defaultTheme.buttonBackground }]}>{entry.title}</Text>
+        <Text style={[styles.title, { color: defaultTheme.background }]}>{entry.title}</Text>
         <Text style={[styles.date, { color: theme.text }]}>Created: {entry.date}</Text>
         {entry.edited && (
           <Text style={[styles.editedAt, { color: theme.text }]}>Last edited: {entry.edited}</Text>
@@ -43,14 +44,15 @@ const JournalEntryCard = ({ entry, onEdit, onDelete }) => {
           mode="contained"
           onPress={() => onEdit(entry)}
           style={styles.button}
-          buttonColor={theme.buttonBackground}
+          buttonColor={defaultTheme.background}
           textColor={theme.buttonText}
         >
           View/Edit
         </Button>
         <IconButton
           icon="delete"
-          iconColor={theme.primary}
+          backgroundColor={theme.primary}
+          iconColor={defaultTheme.primary}
           size={20}
           onPress={handleDelete}
         />
