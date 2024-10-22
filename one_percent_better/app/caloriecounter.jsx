@@ -9,6 +9,10 @@ import { ThemeProvider, useTheme } from './ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Appbar, TextInput, Button, Card, Text } from 'react-native-paper';
 import { Flame, UtensilsCrossed } from 'lucide-react-native';
+import { Animated } from 'react-native'; // Import Animated from React Native
+
+// Inside your component
+
 
 
 const defaultTheme = {
@@ -37,7 +41,7 @@ function CalorieCounterContent() {
   const [waterDrunk, setWaterDrunk] = useState(0);
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
-
+  const waterFillHeight = Math.min((waterDrunk / 100) * 100, 100); // Fill percentage
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -270,43 +274,43 @@ function CalorieCounterContent() {
         </View>
 
         <Card style={styles.card}>
-          <Card.Content>
-            <Text style={[styles.subtitle, { color: isWithinWaterGoal() ? 'green' : 'red' }]}>
-              Water Drunk: {waterDrunk} out of 90 oz
-            </Text>
-            {isAddingWater ? (
-              <View>
-                <TextInput
-                  style={styles.input}
-                  label="Add Water (oz)"
-                  value={inputWater}
-                  onChangeText={setInputWater}
-                  keyboardType="numeric"
-                  mode="outlined"
-                />
-                <Button mode="contained" onPress={addWater} style={styles.button}>
-                  Add
-                </Button>
-              </View>
-            ) : (
-              <Button mode="contained" onPress={() => setIsAddingWater(true)} style={styles.button}>
-                Add Water
-              </Button>
-            )}
-            <View style={styles.waterBottle}>
-              <Image
-                source={require('./water-bottle.png')}
-                style={styles.waterBottleImage}
-              />
-              <View
-                style={[
-                  styles.waterFill,
-                  { height: `${Math.min((waterDrunk / 100) * 53, 100)}%` },
-                ]}
-              />
-            </View>
-          </Card.Content>
-        </Card>
+  <Card.Content>
+    <Text style={[styles.subtitle, { color: isWithinWaterGoal() ? 'green' : 'red' }]}>
+      Water Drunk: {waterDrunk} out of 90 oz
+    </Text>
+    {isAddingWater ? (
+      <View>
+        <TextInput
+          style={styles.input}
+          label="Add Water (oz)"
+          value={inputWater}
+          onChangeText={setInputWater}
+          keyboardType="numeric"
+          mode="outlined"
+        />
+        <Button mode="contained" onPress={addWater} style={styles.button}>
+          Add
+        </Button>
+      </View>
+    ) : (
+      <Button mode="contained" onPress={() => setIsAddingWater(true)} style={styles.button}>
+        Add Water
+      </Button>
+    )}
+    <View style={styles.waterBottleContainer}>
+      <View style={styles.waterBottle}>
+        {/* The water fill section */}
+        <View
+          style={[
+            styles.waterFill,
+            { height: `${Math.min((waterDrunk / 90) * 100, 100)}%` },
+          ]}
+        />
+      </View>
+    </View>
+  </Card.Content>
+</Card>
+
         <View style={styles.navContainer}>
           <NavButton
             label="Recipes"
@@ -372,26 +376,45 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  waterBottle: {
-    position: 'relative',
-    width: 100,
-    height: 300,
+  waterBottleContainer: {
+    justifyContent: 'center', // Center horizontally
+    alignItems: 'center', // Center container
     marginTop: 20,
-    alignSelf: 'center',
-    overflow: 'hidden',
   },
+  
+  waterBottle: {
+    width: 150, // Adjust width for proper size
+    height: 300, // Height for a tall water bottle
+    position: 'relative',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    borderWidth: 5, // Bold border
+    borderColor: 'black', // Color for the border (use any color that fits your theme)
+    borderBottomLeftRadius: 20, // Rounded bottom-left corner
+    borderBottomRightRadius: 20, // Rounded bottom-right corner
+    borderTopLeftRadius: 0, // No rounding on the top-left corner
+    borderTopRightRadius: 0, // No rounding on the top-right corner
+    overflow: 'hidden', // Ensure the fill doesn't overflow the container
+    backgroundColor: '#F3E5F5', // Optional: Add background color to make the container stand out
+  },
+  
   waterBottleImage: {
     position: 'absolute',
-    width: '90%',
+    width: '100%',
     height: '100%',
+    zIndex: 1,
   },
+  
   waterFill: {
     position: 'absolute',
-    bottom: 80,
-    width: '80%',
-    backgroundColor: 'blue',
-    opacity: 0.4,
+    bottom: 0, // Start filling from the bottom
+    width: '100%', // Slight padding from the bottle edges
+    backgroundColor: 'rgba(0, 122, 255, 0.5)', // Light blue water fill
+    borderRadius: 5, // Smooth corners for the water fill
+    zIndex: 0,
   },
+  
+  
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
