@@ -121,11 +121,11 @@ export default function Home() {
               style={styles.calendarButton}
             />
             <NavButton icon="meditation" label="Meditation Station" onPress={() => router.push('/medito')} />
-            <NavButton icon="dumbbell" label="Strong" onPress={() => router.push('/strong')} />
-            <NavButton icon="food-apple" label="Calorie Counter" onPress={() => router.push('/caloriecounter')} />
-            <NavButton icon="food" label="Food Analyzer" onPress={() => router.push('/foodanalyzer')} />
-            <NavButton icon="format-list-checks" label="Todo List" onPress={() => router.push('/todolist0')} />
-            <NavButton icon="book-open-page-variant" label="Journal" onPress={() => router.push('/journal')} />
+            <NavButton icon="dumbbell" label="Strong Stride" onPress={() => router.push('/strong')} />
+            <NavButton icon="food-apple" label="Calorie Gallery" onPress={() => router.push('/caloriecounter')} />
+            <NavButton icon="food" label="Bite Insight" onPress={() => router.push('/foodanalyzer')} />
+            <NavButton icon="format-list-checks" label="Check-Mate" onPress={() => router.push('/todolist0')} />
+            <NavButton icon="book-open-page-variant" label="Journey Jotter" onPress={() => router.push('/journal')} />
           </Surface>
         </View>
       </SafeAreaView>
