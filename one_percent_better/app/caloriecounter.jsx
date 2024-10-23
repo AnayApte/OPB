@@ -50,7 +50,7 @@ function CalorieCounterContent() {
     try {
       const currentDate = new Date().toISOString().split('T')[0];
       const lastResetDate = await AsyncStorage.getItem('lastResetDate');
-  
+
       if (lastResetDate !== currentDate) {
         await AsyncStorage.setItem('lastResetDate', currentDate);
         await AsyncStorage.setItem('caloriesEaten', '0');
@@ -63,30 +63,30 @@ function CalorieCounterContent() {
         setCaloriesEaten(parseInt(storedCaloriesEaten) || 0);
         setWaterDrunk(parseInt(storedWaterDrunk) || 0);
       }
-  
+
       const startOfToday = `${currentDate}T00:00:00.000Z`;
       const endOfToday = `${currentDate}T23:59:59.999Z`;
-  
+
       const { data: workouts, error } = await supabase
         .from('workouts')
         .select('duration')
         .eq('userId', userId)
         .gte('date', startOfToday)
         .lte('date', endOfToday);
-  
+
       if (error) {
         console.error('Error fetching workouts:', error);
         return;
       }
-  
+
       const totalDurationInHours = workouts.reduce((total, workout) => {
         const [hours, minutes, seconds] = workout.duration.split(':').map(Number);
         return total + hours + minutes / 60 + seconds / 3600;
       }, 0);
-  
+
       const caloriesBurned = Math.round(totalDurationInHours * 400);
       setCaloriesBurned(caloriesBurned);
-  
+
       await calculateCalorieGoal();
     } catch (error) {
       console.error('Failed to load initial data:', error);
@@ -223,11 +223,11 @@ function CalorieCounterContent() {
   return (
     <View style={styles.safeArea} edges={['top', 'left', 'right']}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
-        <Appbar.Content 
-            title="Calorie Counter" 
-            titleStyle={styles.headerTitle}
-          />
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
+        <Appbar.Content
+          title="Calorie Gallery"
+          titleStyle={styles.headerTitle}
+        />
       </Appbar.Header>
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollViewContent}>
         <Card style={styles.card}>
@@ -274,42 +274,42 @@ function CalorieCounterContent() {
         </View>
 
         <Card style={styles.card}>
-  <Card.Content>
-    <Text style={[styles.subtitle, { color: isWithinWaterGoal() ? 'green' : 'red' }]}>
-      Water Drunk: {waterDrunk} out of 90 oz
-    </Text>
-    {isAddingWater ? (
-      <View>
-        <TextInput
-          style={styles.input}
-          label="Add Water (oz)"
-          value={inputWater}
-          onChangeText={setInputWater}
-          keyboardType="numeric"
-          mode="outlined"
-        />
-        <Button mode="contained" onPress={addWater} style={styles.button}>
-          Add
-        </Button>
-      </View>
-    ) : (
-      <Button mode="contained" onPress={() => setIsAddingWater(true)} style={styles.button}>
-        Add Water
-      </Button>
-    )}
-    <View style={styles.waterBottleContainer}>
-      <View style={styles.waterBottle}>
-        {/* The water fill section */}
-        <View
-          style={[
-            styles.waterFill,
-            { height: `${Math.min((waterDrunk / 90) * 100, 100)}%` },
-          ]}
-        />
-      </View>
-    </View>
-  </Card.Content>
-</Card>
+          <Card.Content>
+            <Text style={[styles.subtitle, { color: isWithinWaterGoal() ? 'green' : 'red' }]}>
+              Water Drunk: {waterDrunk} out of 90 oz
+            </Text>
+            {isAddingWater ? (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  label="Add Water (oz)"
+                  value={inputWater}
+                  onChangeText={setInputWater}
+                  keyboardType="numeric"
+                  mode="outlined"
+                />
+                <Button mode="contained" onPress={addWater} style={styles.button}>
+                  Add
+                </Button>
+              </View>
+            ) : (
+              <Button mode="contained" onPress={() => setIsAddingWater(true)} style={styles.button}>
+                Add Water
+              </Button>
+            )}
+            <View style={styles.waterBottleContainer}>
+              <View style={styles.waterBottle}>
+                {/* The water fill section */}
+                <View
+                  style={[
+                    styles.waterFill,
+                    { height: `${Math.min((waterDrunk / 90) * 100, 100)}%` },
+                  ]}
+                />
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
 
         <View style={styles.navContainer}>
           <NavButton
@@ -324,7 +324,7 @@ function CalorieCounterContent() {
           />
         </View>
       </ScrollView>
-      
+
     </View  >
   );
 }
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Center container
     marginTop: 20,
   },
-  
+
   waterBottle: {
     width: 150, // Adjust width for proper size
     height: 300, // Height for a tall water bottle
@@ -397,14 +397,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden', // Ensure the fill doesn't overflow the container
     backgroundColor: '#F3E5F5', // Optional: Add background color to make the container stand out
   },
-  
+
   waterBottleImage: {
     position: 'absolute',
     width: '100%',
     height: '100%',
     zIndex: 1,
   },
-  
+
   waterFill: {
     position: 'absolute',
     bottom: 0, // Start filling from the bottom
@@ -413,8 +413,8 @@ const styles = StyleSheet.create({
     borderRadius: 5, // Smooth corners for the water fill
     zIndex: 0,
   },
-  
-  
+
+
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   navContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    paddingVertical: 0,
     backgroundColor: 'transparent',
   },
   navButton: {

@@ -201,7 +201,7 @@ function Medito() {
       >
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={styles.title}>Welcome to Meditation</Text>
+            <Text style={styles.title}>Welcome to the Meditation Station</Text>
             <Text style={styles.description}>
               Take a moment to relax and focus on your breath. Set your meditation timer and begin your journey to mindfulness.
             </Text>
@@ -321,27 +321,27 @@ const styles = StyleSheet.create({
     backgroundColor: theme.buttonBackground,
   },
   title: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 14,
     textAlign: 'center',
     color: theme.secondary,
   },
   description: {
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 22,
     color: theme.secondary,
   },
   image: {
     width: 200,
     height: 200,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   challenge: {
     fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: 'center',
     color: theme.secondary,
   },

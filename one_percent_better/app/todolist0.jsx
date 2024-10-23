@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { View, ScrollView, StyleSheet, SafeAreaView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { TextInput, Button, Card, Paragraph, IconButton, Menu, Title, Appbar } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '../utils/supabaseClient';
@@ -8,6 +8,16 @@ import { useAuth } from '../utils/AuthContext';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import BackButton from '../utils/BackButton';
+
+const defaultTheme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
+};
+
 
 function TodoList() {
   const { theme } = useTheme();
@@ -22,6 +32,7 @@ function TodoList() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
 
+  
   useEffect(() => {
     if (userId) {
       loadTodos();
@@ -159,12 +170,15 @@ function TodoList() {
   }, [todos]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <BackButton destination="/home"/>
-        <Title style={styles.title}>Todolist</Title>
-      </View>
+    <View style={styles.safeArea}>
+      
+
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
+        <Appbar.Content title="Meditation Station" titleStyle={styles.headerTitle} />
+      </Appbar.Header>
       <View style={styles.container}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <Card style={styles.card}>
           <Card.Content>
             <TextInput
@@ -172,7 +186,7 @@ function TodoList() {
               value={newTodo}
               onChangeText={setNewTodo}
               style={styles.input}
-              theme={{ colors: { primary: theme.primary } }}
+              theme={{ colors: { primary: defaultTheme.primary } }}
             />
             <View style={styles.row}>
               <Menu
@@ -225,6 +239,7 @@ function TodoList() {
             </Button>
           </Card.Content>
         </Card>
+        </TouchableWithoutFeedback>
         <ScrollView style={styles.todoList}>
           {sortedTodos.map((todo) => (
             <Card key={todo.id} style={[styles.todoItem, todo.completed && styles.completedTodoItem]}>
@@ -262,13 +277,24 @@ function TodoList() {
           ))}
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: defaultTheme.background,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: defaultTheme.primary,
   },
   container: {
     flex: 1,

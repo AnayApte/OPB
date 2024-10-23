@@ -159,7 +159,7 @@ function ProfileContent() {
           <Card.Content>
             <Text style={[styles.title, { color: defaultTheme.background }]}>Complete Your Profile</Text>
             <Text style={[styles.description, { color: defaultTheme.background }]}>
-              Provide your information to personalize your experience and get the most out of the app.
+              Provide your information to personalize your experience and get the most out of your experience.
             </Text>
             <TextInput
               style={styles.input}
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 16,
     textAlign: 'center',
   },
