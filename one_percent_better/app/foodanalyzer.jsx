@@ -43,8 +43,21 @@ function FoodAnalyzerContent() {
     }
   };
 
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera permissions to make this work!');
+      return false;
+    }
+    return true;
+  };
+
   const takePhotoWithCamera = async () => {
-    let result = await ImagePicker.launchCameraAsync({
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
