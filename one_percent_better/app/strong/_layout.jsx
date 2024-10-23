@@ -5,10 +5,12 @@ import { ThemeProvider, useTheme } from '../ThemeContext';
 import { BottomNavigation } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const theme = {
+const defaultTheme = {
   background: '#3b0051',
   text: '#f2e2fb',
-  button: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
   buttonText: '#3b0051',
 };
 
@@ -49,7 +51,7 @@ const StrongLayoutContent = () => {
             const { options } = descriptors[route.key];
             return options.tabBarLabel || options.title || route.name;
           }}
-          style={[styles.bottomNavigation, { backgroundColor: theme.background }]}
+          style={[styles.bottomNavigation, { backgroundColor: defaultTheme.primary }]}
           activeColor={theme.text}
           inactiveColor={theme.text + '80'}
         />
@@ -76,18 +78,13 @@ const StrongLayoutContent = () => {
           tabBarLabel: 'Exercises',
         }}
       />
-      <Tabs.Screen
-        name="workout"
-        options={{
-          tabBarButton: () => null,
-        }}
-      />
+      
     </Tabs>
   );
 };
 
 const StrongLayout = () => (
-  <ThemeProvider value={theme}>
+  <ThemeProvider value={defaultTheme}>
     <StrongLayoutContent />
   </ThemeProvider>
 );

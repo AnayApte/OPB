@@ -8,6 +8,15 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../ThemeContext';
 import { Appbar, Card, Title, Paragraph, Button, Text, Surface } from 'react-native-paper';
 
+const defaultTheme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
+};
+
 const ExerciseHistory = () => {
   const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -63,7 +72,7 @@ const ExerciseHistory = () => {
     return (
       <Card style={styles.exerciseCard} onPress={() => openModal(item)}>
         <Card.Content>
-          <Title>{formatExerciseNameForDisplay(item.name)}</Title>
+          <Title style={styles.titling}>{formatExerciseNameForDisplay(item.name)}</Title>
           <Paragraph>Best Set: {bestSet.reps} reps @ {bestSet.weight} lbs</Paragraph>
           <Paragraph>Current 1RM: {currentRecord.oneRepMax} lbs</Paragraph>
         </Card.Content>
@@ -128,9 +137,9 @@ const ExerciseHistory = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
         <Appbar.Content title="Exercise History" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <FlatList
@@ -164,7 +173,7 @@ const ExerciseHistory = () => {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -187,6 +196,7 @@ const styles = StyleSheet.create({
   exerciseCard: {
     marginBottom: 16,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
   modalContent: {
     flex: 1,
@@ -201,9 +211,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  titling: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: defaultTheme.background,
+  },
   workoutHistoryCard: {
     marginBottom: 16,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
 });
 

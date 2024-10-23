@@ -10,6 +10,15 @@ import { useTheme } from '../ThemeContext';
 import { Appbar, Card, Title, Paragraph, Button, Surface, Text, ProgressBar } from 'react-native-paper';
 import BackButton from '../../utils/BackButton';
 
+const defaultTheme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
+};
+
 const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) => (
   <Modal
     transparent={true}
@@ -17,11 +26,11 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, theme }) =>
     onRequestClose={onCancel}
     animationType="fade"
   >
-    <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
+    <View style={[styles.modalOverlay, { backgroundColor: defaultTheme.background }]}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>{title}</Text>
-          <Text style={[styles.modalMessage, { color: theme.text }]}>{message}</Text>
+          <Text style={[styles.modalTitle, { color: defaultTheme.text }]}>{title}</Text>
+          <Text style={[styles.modalMessage, { color: defaultTheme.text }]}>{message}</Text>
           <View style={styles.modalButtonContainer}>
             {onCancel && (
               <Button mode="contained" onPress={onCancel} style={styles.modalButton}>
@@ -110,10 +119,10 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
 
   const renderExerciseItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.exerciseItem, { borderBottomColor: theme.text }]}
+      style={[styles.exerciseItem, { borderBottomColor: defaultTheme.text }]}
       onPress={() => handleExercisePress(item)}
     >
-      <Text style={[styles.exerciseItemText, { color: theme.text }]}>
+      <Text style={[styles.exerciseItemText, { color: defaultTheme.text }]}>
         {formatExerciseNameForDisplay(item.name)}
       </Text>
     </TouchableOpacity>
@@ -127,23 +136,23 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
 
   const renderExerciseDetails = () => (
     <ScrollView contentContainerStyle={styles.exerciseDetailsContainer}>
-      <Title style={[styles.exerciseDetailsTitle, { color: theme.text }]}>
+      <Title style={[styles.exerciseDetailsTitle, { color: defaultTheme.text }]}>
         {formatExerciseNameForDisplay(selectedExercise.name)}
       </Title>
       <View style={styles.exerciseInfoContainer}>
-        <Paragraph style={[styles.exerciseInfoText, { color: theme.text }]}>
+        <Paragraph style={[styles.exerciseInfoText, { color: defaultTheme.text }]}>
           Body Part: {formatExerciseNameForDisplay(selectedExercise.bodyPart)}
         </Paragraph>
-        <Paragraph style={[styles.exerciseInfoText, { color: theme.text }]}>
+        <Paragraph style={[styles.exerciseInfoText, { color: defaultTheme.text }]}>
           Equipment: {formatExerciseNameForDisplay(selectedExercise.equipment)}
         </Paragraph>
-        <Paragraph style={[styles.exerciseInfoText, { color: theme.text }]}>
+        <Paragraph style={[styles.exerciseInfoText, { color: defaultTheme.text }]}>
           Target: {formatExerciseNameForDisplay(selectedExercise.target)}
         </Paragraph>
       </View>
-      <Title style={[styles.exerciseDetailsSectionTitle, { color: theme.text }]}>Instructions:</Title>
+      <Title style={[styles.exerciseDetailsSectionTitle, { color: defaultTheme.text }]}>Instructions:</Title>
       {selectedExercise.instructions.map((instruction, index) => (
-        <Paragraph key={index} style={[styles.exerciseInstruction, { color: theme.text }]}>
+        <Paragraph key={index} style={[styles.exerciseInstruction, { color: defaultTheme.text }]}>
           {index + 1}. {instruction}
         </Paragraph>
       ))}
@@ -163,17 +172,17 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
-        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+      <View style={[styles.modalOverlay, { backgroundColor: defaultTheme.background }]}>
+        <View style={[styles.modalContainer, { backgroundColor: defaultTheme.background }]}>
           {selectedExercise ? (
             renderExerciseDetails()
           ) : (
             <>
-              <Title style={[styles.modalTitle, { color: theme.text }]}>Select Exercise</Title>
+              <Title style={[styles.modalTitle, { color: defaultTheme.text }]}>Select Exercise</Title>
               <TextInput
-                style={[styles.searchInput, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: theme.text }]}
+                style={[styles.searchInput, { backgroundColor: defaultTheme.inputBackground, color: defaultTheme.text, borderColor: defaultTheme.text }]}
                 placeholder="Search exercises..."
-                placeholderTextColor={theme.text}
+                placeholderTextColor={defaultTheme.text}
                 value={searchQuery}
                 onChangeText={(text) => {
                   setSearchQuery(text);
@@ -183,9 +192,9 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
                 }}
               />
               {loading && exercises.length === 0 ? (
-                <ActivityIndicator size="large" color={theme.primary} />
+                <ActivityIndicator size="large" color={defaultTheme.primary} />
               ) : error ? (
-                <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
+                <Text style={[styles.errorText, { color: defaultTheme.text }]}>{error}</Text>
               ) : (
                 <FlatList
                   data={filteredExercises}
@@ -196,7 +205,7 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
                   onEndReachedThreshold={0.1}
                   ListFooterComponent={() => (
                     loading && exercises.length > 0 ? (
-                      <ActivityIndicator size="small" color={theme.primary} />
+                      <ActivityIndicator size="small" color={defaultTheme.primary} />
                     ) : null
                   )}
                 />
@@ -442,9 +451,9 @@ const WorkoutScreen = () => {
   };
 
   return (
-    <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
+    <View style={[styles.safeArea, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-        <BackButton destination = "/home" />
+      <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
         <Appbar.Content title="Workout" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <ScrollView 
@@ -480,7 +489,7 @@ const WorkoutScreen = () => {
             <TextInput
               style={styles.input}
               placeholder="Sets"
-              placeholderTextColor={theme.text}
+              placeholderTextColor={defaultTheme.background}
               value={sets}
               onChangeText={setSets}
               keyboardType="numeric"
@@ -494,7 +503,8 @@ const WorkoutScreen = () => {
             </Button>
           </Card.Content>
         </Card>
-
+        
+        
         <FlatList
           data={exercises}
           keyExtractor={(item, index) => index.toString()}
@@ -510,7 +520,7 @@ const WorkoutScreen = () => {
                     <TextInput
                       style={styles.setInput}
                       placeholder="Reps"
-                      placeholderTextColor={theme.text}
+                      placeholderTextColor={defaultTheme.background}
                       value={set.reps}
                       onChangeText={(reps) => updateSet(exerciseIndex, setIndex, 'reps', reps)}
                       keyboardType="numeric"
@@ -518,7 +528,7 @@ const WorkoutScreen = () => {
                     <TextInput
                       style={styles.setInput}
                       placeholder="Weight"
-                      placeholderTextColor={theme.text}
+                      placeholderTextColor={defaultTheme.background}
                       value={set.weight}
                       onChangeText={(weight) => updateSet(exerciseIndex, setIndex, 'weight', weight)}
                       keyboardType="numeric"
@@ -533,7 +543,7 @@ const WorkoutScreen = () => {
         <Button 
           mode="contained" 
           onPress={endWorkout}
-          style={[styles.button, styles.endButton]}
+          style={[styles.endbutton, styles.endButton]}
         >
           End Workout
         </Button>
@@ -578,11 +588,13 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: defaultTheme.background,
   },
   timerText: {
     fontSize: 48,
@@ -590,8 +602,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     paddingTop: 20,
+    color: defaultTheme.background,
   },
   button: {
+    marginTop: 8,
+    backgroundColor: defaultTheme.background,
+  },
+  endbutton: {
     marginTop: 8,
   },
   input: {
@@ -599,18 +616,23 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 10,
+    borderColor: defaultTheme.background,
+    color: defaultTheme.background,
   },
   inputText: {
     fontSize: 16,
+    color: defaultTheme.background,
   },
   exerciseCard: {
     marginBottom: 10,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
   exerciseName: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: defaultTheme.background,
   },
   setContainer: {
     flexDirection: 'row',

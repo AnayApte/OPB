@@ -14,6 +14,15 @@ const formatTime = (interval) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
+const defaultTheme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
+};
+
 const WorkoutHistory = () => {
   const [workouts, setWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
@@ -73,7 +82,7 @@ const WorkoutHistory = () => {
   const renderWorkoutItem = ({ item }) => (
     <Card style={styles.workoutCard} onPress={() => openModal(item)}>
       <Card.Content>
-        <Title style={styles.dateText}>{new Date(item.date).toLocaleDateString()}</Title>
+        <Title style={styles.dateText1}>{new Date(item.date).toLocaleDateString()}</Title>
         <Paragraph>Duration: {formatTime(item.duration)}</Paragraph>
         <Title style={styles.sectionTitle}>Exercises:</Title>
         {item.workoutExercises.map((workoutExercise) => {
@@ -103,11 +112,11 @@ const WorkoutHistory = () => {
     return (
       <ScrollView style={styles.modalContent}>
         <Title style={styles.dateText}>{new Date(selectedWorkout.date).toLocaleDateString()}</Title>
-        <Paragraph>Duration: {formatTime(selectedWorkout.duration)}</Paragraph>
+        <Paragraph style = {styles.durationText}>Duration: {formatTime(selectedWorkout.duration)}</Paragraph>
         {selectedWorkout.workoutExercises.map((workoutExercise) => (
           <Card key={workoutExercise.exerciseId} style={styles.exerciseCard}>
             <Card.Content>
-              <Title>{formatExerciseNameForDisplay(workoutExercise.exercises.name)}</Title>
+              <Title style={styles.dateText1}>{formatExerciseNameForDisplay(workoutExercise.exercises.name)}</Title>
               {workoutExercise.sets.map((set, index) => (
                 <View key={set.setId} style={styles.setRow}>
                   <Paragraph>Set {index + 1}: {set.weight}x{set.reps}</Paragraph>
@@ -125,9 +134,9 @@ const WorkoutHistory = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
         <Appbar.Content title="Workout History" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <FlatList
@@ -167,14 +176,25 @@ const styles = StyleSheet.create({
   workoutCard: {
     marginBottom: 16,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
   dateText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: defaultTheme.text,
+  },
+  dateText1: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: defaultTheme.background,
+  },
+  durationText: {
+    color: defaultTheme.text,
   },
   sectionTitle: {
     fontWeight: 'bold',
     marginTop: 8,
+    color: defaultTheme.background,
   },
   exerciseRow: {
     flexDirection: 'row',
@@ -184,10 +204,12 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     padding: 16,
+    backgroundColor: defaultTheme.background,
   },
   exerciseCard: {
     marginTop: 16,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
   setRow: {
     flexDirection: 'row',
