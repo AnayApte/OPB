@@ -8,14 +8,15 @@ import { useAuth } from '../utils/AuthContext';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import BackButton from '../utils/BackButton';
+import { useRouter } from 'expo-router';
 
 const defaultTheme = {
   background: '#3b0051',
   text: '#f2e2fb',
   primary: '#f2e2fb',
   secondary: '#3b0051',
-  buttonBackground: '#f2e2fb',
-  buttonText: '#3b0051',
+  buttonBackground: '#3b0051',
+  buttonText: '#f2e2fb',
 };
 
 
@@ -31,7 +32,7 @@ function TodoList() {
   const [currentTodo, setCurrentTodo] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
-
+  const router = useRouter();
   
   useEffect(() => {
     if (userId) {
@@ -173,7 +174,7 @@ function TodoList() {
     <View style={styles.safeArea}>
       
 
-      <Appbar.Header style={styles.header}>
+      <Appbar.Header style={{backgroundColor: 'transparent'}}>
         <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
         <Appbar.Content title="Meditation Station" titleStyle={styles.headerTitle} />
       </Appbar.Header>
