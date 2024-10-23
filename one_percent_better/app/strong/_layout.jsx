@@ -44,7 +44,7 @@ const StrongLayoutContent = () => {
               route.name === 'workoutHistory' ? 'history' :
               route.name === 'index' ? 'home' :
               route.name === 'exerciseHistory' ? 'dumbbell' :
-              'circle';
+              'square';
             return <MaterialCommunityIcons name={iconName} size={24} color={color} />;
           }}
           getLabelText={({ route }) => {
@@ -78,7 +78,6 @@ const StrongLayoutContent = () => {
           tabBarLabel: 'Exercises',
         }}
       />
-      
     </Tabs>
   );
 };

@@ -17,7 +17,7 @@ const defaultTheme = {
   buttonText: '#3b0051',
 };
 
-const ExerciseHistory = () => {
+export default function Component() {
   const [exercises, setExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -175,7 +175,7 @@ const ExerciseHistory = () => {
       </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -222,5 +222,3 @@ const styles = StyleSheet.create({
     backgroundColor: defaultTheme.primary,
   },
 });
-
-export default ExerciseHistory;
