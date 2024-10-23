@@ -187,7 +187,12 @@ function TodoList() {
               value={newTodo}
               onChangeText={setNewTodo}
               style={styles.input}
-              theme={{ colors: { primary: defaultTheme.primary } }}
+              theme={{ colors: {
+                primary: defaultTheme.secondary,
+                background: defaultTheme.secondary,
+                text: defaultTheme.text,
+                placeholder: defaultTheme.text,
+              }, }}
             />
             <View style={styles.row}>
               <Menu
@@ -304,6 +309,7 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     marginTop: 16,
+    backgroundColor: defaultTheme.primary,
   },
   input: {
     marginBottom: 8,
@@ -332,6 +338,7 @@ const styles = StyleSheet.create({
   todoItem: {
     marginBottom: 4,
     padding: 4,
+    backgroundColor: defaultTheme.primary,
   },
   completedTodoItem: {
     opacity: 0.6,
@@ -380,6 +387,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
+    backgroundColor: '#3c0452',
   },
   completeButton: {
     margin: 0,
