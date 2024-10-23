@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     width: SCREEN_WIDTH * 0.9,
-    height: SCREEN_HEIGHT * 0.7,
+    height: SCREEN_HEIGHT * 0.55,
     justifyContent: 'center',
     alignItems: 'center',
   },
