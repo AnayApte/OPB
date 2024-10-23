@@ -14,12 +14,12 @@ const StrongHome = () => {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Strong" titleStyle={styles.headerTitle} />
+        <Appbar.Content title="Power Hour" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <View style={styles.content}>
         <Card style={styles.card}>
           <Card.Content>
-            <Title style={styles.cardTitle}>Welcome to Strong</Title>
+            <Title style={styles.cardTitle}>Welcome to Power Hour</Title>
             <Paragraph style={styles.cardText}>Track your workouts and achieve your fitness goals.</Paragraph>
           </Card.Content>
         </Card>
@@ -47,7 +47,6 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   headerTitle: {
-    color: '#f2e2fb',
     fontWeight: 'bold',
     fontSize: 24,
   },
