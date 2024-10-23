@@ -15,11 +15,16 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "We need access to your photo library to select food images."
-        
+        "NSPhotoLibraryUsageDescription": "We need access to your photo library to select food images.",
+        "NSCameraUsageDescription": "We need access to your camera to take food images."
+
       }
     },
+    
     "android": {
+      "permissions": [
+        "CAMERA"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -33,3 +38,4 @@
     ]
   }
 }
+
