@@ -6,12 +6,21 @@ import { useTheme } from '../ThemeContext';
 import { Appbar, Button, Card, Title, Paragraph } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+const defaultTheme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
+};
+
 const StrongHome = () => {
   const router = useRouter();
   const { theme } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title="Power Hour" titleStyle={styles.headerTitle} />
@@ -60,15 +69,18 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
     borderRadius: 12,
+    backgroundColor: defaultTheme.primary,
   },
   cardTitle: {
     fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: defaultTheme.background
   },
   cardText: {
     fontSize: 16,
     textAlign: 'center',
+    color: defaultTheme.background
   },
   button: {
     width: '100%',
