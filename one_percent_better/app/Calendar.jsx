@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Appbar, Card, Paragraph, Modal, Portal, Text, IconButton } from 'react-native-paper';
 import { Calendar } from 'react-native-calendars';
 import { createClient } from '@supabase/supabase-js';
@@ -13,13 +12,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const supabase = createClient(SUPABASEURL, SUPABASEKEY);
 
+// Updated theme based on the homepage theme
 const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',     // Purple background
+  text: '#f2e2fb',           // Light text
+  primary: '#f2e2fb',        // Light color for primary elements
+  secondary: '#3b0051',      // Darker color for secondary elements
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -60,11 +60,11 @@ function InteractiveCalendarContent() {
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high':
-        return 'red';
+        return '#e74c3c'; // Red for high priority
       case 'medium':
-        return 'orange';
+        return '#f39c12'; // Orange for medium priority
       case 'low':
-        return 'green';
+        return '#2ecc71'; // Green for low priority
       default:
         return theme.secondary;
     }
@@ -108,35 +108,32 @@ function InteractiveCalendarContent() {
 
   const renderItemDetails = (item) => {
     if ('details' in item) {
-      // Todo item
       return (
         <View style={[styles.itemContainer, { borderColor: getPriorityColor(item.task_priority) }]}>
           <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={20} color={getPriorityColor(item.task_priority)} />
           <View style={styles.itemTextContainer}>
-            <Paragraph style={styles.itemTitle}>{item.details}</Paragraph>
+            <Paragraph style={[styles.itemTitle, { color: theme.text }]}>{item.details}</Paragraph>
             <Paragraph style={styles.itemSubtitle}>Priority: {item.task_priority}</Paragraph>
             <Paragraph style={styles.itemSubtitle}>Due: {format(parseISO(item.due_date), 'PP')}</Paragraph>
           </View>
         </View>
       );
     } else if ('duration' in item) {
-      // Workout item
       return (
         <View style={[styles.itemContainer, { borderColor: theme.primary }]}>
           <MaterialCommunityIcons name="dumbbell" size={20} color={theme.primary} />
           <View style={styles.itemTextContainer}>
-            <Paragraph style={styles.itemTitle}>Workout</Paragraph>
+            <Paragraph style={[styles.itemTitle, { color: theme.text }]}>Workout</Paragraph>
             <Paragraph style={styles.itemSubtitle}>Duration: {item.duration}</Paragraph>
           </View>
         </View>
       );
     } else if ('title' in item) {
-      // Journal item
       return (
         <View style={[styles.itemContainer, { borderColor: theme.primary }]}>
           <MaterialCommunityIcons name="book-open-variant" size={20} color={theme.primary} />
           <View style={styles.itemTextContainer}>
-            <Paragraph style={styles.itemTitle}>{item.title}</Paragraph>
+            <Paragraph style={[styles.itemTitle, { color: theme.text }]}>{item.title}</Paragraph>
             <Paragraph style={styles.itemSubtitle} numberOfLines={2}>{item.body}</Paragraph>
           </View>
         </View>
@@ -145,10 +142,11 @@ function InteractiveCalendarContent() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Interactive Calendar" />
+    <View style={[styles.container, { backgroundColor: '#3b0051' }]}>
+      {/* Transparent header and updating text and icon color */}
+      <Appbar.Header style={styles.transparentHeader}>
+        <Appbar.BackAction onPress={() => router.back()} color={'#f2e2fb'} />
+        <Appbar.Content title="Interactive Calendar" titleStyle={{ color: '#f2e2fb' }} />
       </Appbar.Header>
       <ScrollView style={styles.content}>
         <Card style={styles.calendarCard}>
@@ -186,7 +184,7 @@ function InteractiveCalendarContent() {
         >
           <View style={[styles.modalContent, { width: SCREEN_WIDTH * 0.9 }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedDate ? format(parseISO(selectedDate), 'PP') : 'Items'}</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>{selectedDate ? format(parseISO(selectedDate), 'PP') : 'Items'}</Text>
               <IconButton
                 icon="close"
                 size={24}
@@ -195,11 +193,14 @@ function InteractiveCalendarContent() {
               />
             </View>
             <ScrollView style={styles.modalScroll}>
-              {selectedDayItems.map((item, index) => (
-                <View key={`${item.id}-${index}`} style={styles.itemWrapper}>
-                  {renderItemDetails(item)}
-                </View>
-              ))}
+              {selectedDayItems.map((item, index) => {
+                const itemKey = `item-${item.id || index}-${index}`;
+                return (
+                  <View key={itemKey} style={styles.itemWrapper}>
+                    {renderItemDetails(item)}
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         </Modal>
@@ -212,11 +213,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  transparentHeader: {
+    backgroundColor: 'transparent', // Make header background transparent
+    elevation: 0, // Remove shadow
+  },
   content: {
     padding: 16,
   },
   calendarCard: {
     marginBottom: 16,
+    backgroundColor: '#3b0051',
+    borderRadius: 40, // Rounded edges for the card
+    overflow: 'hidden', // Ensure content inside respects rounded corners
+    elevation: 0, // Remove shadow to emphasize the border radius
   },
   calendar: {
     height: SCREEN_WIDTH,
