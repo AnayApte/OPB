@@ -55,7 +55,7 @@ function RecipesContent() {
   const { userId } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [recipeType, setRecipeType] = useState('all');
+  const [recipeType, setRecipeType] = useState('recommended');
   const [error, setError] = useState(null);
   const [calorieGoal, setCalorieGoal] = useState(null);
   const [page, setPage] = useState(0);
@@ -220,20 +220,7 @@ function RecipesContent() {
         <Appbar.Content title="Recipes" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <View style={styles.content}>
-      <View style={styles.toggleContainer}>
-          <Button
-            mode={recipeType === 'all' ? 'contained' : 'outlined'}
-            onPress={() => {
-              setRecipeType('all');
-              setRecipes([]);
-              setPage(0);
-              setHasMore(true);
-            }}
-            style={styles.toggleButton}
-            labelStyle={recipeType === 'all' ? styles.activeButtonLabel : styles.inactiveButtonLabel}
-          >
-            All Recipes
-          </Button>
+        <View style={styles.toggleContainer}>
           <Button
             mode={recipeType === 'recommended' ? 'contained' : 'outlined'}
             onPress={() => {
@@ -247,12 +234,20 @@ function RecipesContent() {
           >
             Recommended Recipes
           </Button>
+          <Button
+            mode={recipeType === 'all' ? 'contained' : 'outlined'}
+            onPress={() => {
+              setRecipeType('all');
+              setRecipes([]);
+              setPage(0);
+              setHasMore(true);
+            }}
+            style={styles.toggleButton}
+            labelStyle={recipeType === 'all' ? styles.activeButtonLabel : styles.inactiveButtonLabel}
+          >
+            All Recipes
+          </Button>
         </View>
-        {recipeType === 'recommended' && calorieGoal && (
-          <Text style={styles.calorieGoal}>
-            Here are recipes to fit your caloric goal of: {calorieGoal} calories per day
-          </Text>
-        )}
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <Searchbar
             placeholder="Search recipes"
@@ -261,6 +256,11 @@ function RecipesContent() {
             style={styles.searchBar}
           />
         </TouchableWithoutFeedback>
+        {recipeType === 'recommended' && calorieGoal && (
+          <Text style={styles.calorieGoal}>
+            Here are recipes to fit your caloric goal of: {calorieGoal} calories per day
+          </Text>
+        )}
         {error && <Text style={styles.error}>{error}</Text>}
         <FlatList
           data={recipes}
@@ -270,7 +270,7 @@ function RecipesContent() {
           onEndReached={fetchData}
           onEndReachedThreshold={0.1}
           ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={defaultTheme.primary} />}
-          ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No recipes found</Text>}
+          ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>Search for recipes</Text>}
         />
       </View>
     </View>
@@ -303,13 +303,13 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     marginHorizontal: 5,
-    borderColor: defaultTheme.primary, // Ensure border is visible in outlined state
+    borderColor: defaultTheme.primary,
   },
   activeButtonLabel: {
-    color: defaultTheme.secondary, // Dark text on light background
+    color: defaultTheme.secondary,
   },
   inactiveButtonLabel: {
-    color: defaultTheme.primary, // Light text on dark background
+    color: defaultTheme.primary,
   },
   listContainer: {
     paddingBottom: 20,
@@ -359,6 +359,11 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     marginBottom: 16,
+  },
+  error: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 10,
   },
 });
 

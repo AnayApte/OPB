@@ -5,8 +5,6 @@ import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { Appbar, Button, Card, Text, ActivityIndicator } from 'react-native-paper';
 import axios from 'axios';
-import { supabase } from '../utils/supabaseClient';
-import { useAuth } from '../utils/AuthContext';
 
 const defaultTheme = {
   background: '#3b0051',
@@ -19,8 +17,26 @@ const defaultTheme = {
 
 const EDAMAM_APP_ID = '4499d167';
 const EDAMAM_APP_KEY = '24cbb2c75a14cc21b95de2f02a7ee4aa';
+const NUTRITION_APP_ID = 'YOUR_NUTRITION_APP_ID';
+const NUTRITION_APP_KEY = 'YOUR_NUTRITION_APP_KEY';
 
 const RECIPES_PER_PAGE = 10;
+
+const fetchNutrition = async (query) => {
+  try {
+    const response = await axios.get('https://api.edamam.com/api/nutrition-data', {
+      params: {
+        app_id: NUTRITION_APP_ID,
+        app_key: NUTRITION_APP_KEY,
+        ingr: query,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching nutrition data:', error);
+    throw error;
+  }
+};
 
 const fetchRecipes = async (query, from = 0, to = RECIPES_PER_PAGE) => {
   const params = {
@@ -31,13 +47,6 @@ const fetchRecipes = async (query, from = 0, to = RECIPES_PER_PAGE) => {
     from,
     to,
   };
-
-  // Extract calorie information if present
-  const calorieMatch = query.match(/(\d+)\s*calories?/i);
-  if (calorieMatch) {
-    const calories = parseInt(calorieMatch[1]);
-    params.calories = `${Math.max(0, calories - 100)}-${calories + 100}`;
-  }
 
   try {
     const response = await axios.get('https://api.edamam.com/api/recipes/v2', { params });
@@ -52,34 +61,44 @@ function CalorieBotContent() {
   const { theme = defaultTheme } = useTheme();
   const router = useRouter();
   const [input, setInput] = useState('');
-  const [recipes, setRecipes] = useState([]);
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [queryType, setQueryType] = useState('');
 
   const handleSend = useCallback(async () => {
     if (input.trim() === '') return;
     setLoading(true);
     try {
-      const newRecipes = await fetchRecipes(input);
-      setRecipes(newRecipes);
+      if (input.toLowerCase().includes('calories in') || input.toLowerCase().includes('nutrition')) {
+        // Fetch nutrition information
+        const nutritionData = await fetchNutrition(input.replace(/calories in|nutrition/i, '').trim());
+        setResults([nutritionData]);
+        setQueryType('nutrition');
+      } else {
+        // Fetch recipes
+        const recipes = await fetchRecipes(input);
+        setResults(recipes);
+        setQueryType('recipes');
+      }
       setPage(1);
-      setHasMore(newRecipes.length === RECIPES_PER_PAGE);
+      setHasMore(results.length === RECIPES_PER_PAGE);
     } catch (error) {
-      console.error('Error fetching recipes:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
       setInput('');
     }
   }, [input]);
 
-  const fetchData = useCallback(async () => {
-    if (!hasMore || loading) return;
+  const fetchMoreRecipes = useCallback(async () => {
+    if (!hasMore || loading || queryType !== 'recipes') return;
     setLoading(true);
     try {
       const newRecipes = await fetchRecipes(input, page * RECIPES_PER_PAGE, (page + 1) * RECIPES_PER_PAGE);
-      setRecipes(prevRecipes => [...prevRecipes, ...newRecipes]);
+      setResults(prevRecipes => [...prevRecipes, ...newRecipes]);
       setPage(prevPage => prevPage + 1);
       setHasMore(newRecipes.length === RECIPES_PER_PAGE);
     } catch (error) {
@@ -87,7 +106,7 @@ function CalorieBotContent() {
     } finally {
       setLoading(false);
     }
-  }, [hasMore, loading, input, page]);
+  }, [hasMore, loading, input, page, queryType]);
 
   const handleOpenRecipe = useCallback((url) => {
     Linking.openURL(url);
@@ -109,7 +128,19 @@ function CalorieBotContent() {
     };
   }, []);
 
-  const renderItem = ({ item }) => (
+  const renderNutritionItem = ({ item }) => (
+    <Card style={styles.card}>
+      <Card.Content>
+        <Text style={styles.title}>Nutrition Information</Text>
+        <Text style={styles.text}>Calories: {Math.round(item.calories)}</Text>
+        <Text style={styles.text}>Protein: {Math.round(item.totalNutrients.PROCNT.quantity)}g</Text>
+        <Text style={styles.text}>Fat: {Math.round(item.totalNutrients.FAT.quantity)}g</Text>
+        <Text style={styles.text}>Carbs: {Math.round(item.totalNutrients.CHOCDF.quantity)}g</Text>
+      </Card.Content>
+    </Card>
+  );
+
+  const renderRecipeItem = ({ item }) => (
     <Card style={styles.card} accessible={true} accessibilityLabel={`Recipe for ${item.label}`}>
       <Card.Cover source={{ uri: item.image }} accessibilityIgnoresInvertColors={true} style={styles.cardCover}/>
       <Card.Content>
@@ -117,14 +148,11 @@ function CalorieBotContent() {
         <Text style={styles.subtitle}>Ingredients:</Text>
         {item.ingredients.map((ingredient, index) => (
           <Text key={index} style={styles.text}>
-            • {ingredient.text} ({Math.round(ingredient.weight)}g)
+            • {ingredient.text}
           </Text>
         ))}
         <Text style={styles.text}>
           Calories: {Math.round(item.calories / item.yield)} per serving
-        </Text>
-        <Text style={styles.text}>
-          Protein: {Math.round(item.totalNutrients.PROCNT.quantity / item.yield)}g per serving
         </Text>
         <Button mode="contained" onPress={() => handleOpenRecipe(item.url)} style={styles.button}>
           View Full Recipe
@@ -145,26 +173,26 @@ function CalorieBotContent() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <FlatList
-          data={recipes}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.uri}
+          data={results}
+          renderItem={queryType === 'nutrition' ? renderNutritionItem : renderRecipeItem}
+          keyExtractor={(item, index) => item.uri || index.toString()}
           contentContainerStyle={styles.listContainer}
-          onEndReached={fetchData}
+          onEndReached={fetchMoreRecipes}
           onEndReachedThreshold={0.1}
           ListHeaderComponent={() => (
             <Text style={[styles.instructions, { color: defaultTheme.primary }]}>
-              Ask for recipes based on multiple criteria, like ingredients and calorie goals.
+              Ask for nutrition info (e.g., "calories in an onion") or search for recipes (e.g., "chicken pasta recipes").
             </Text>
           )}
           ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={defaultTheme.primary} />}
-          ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No recipes found</Text>}
+          ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No results found</Text>}
         />
         <View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
           <TextInput
             style={[styles.input, { color: defaultTheme.text, borderColor: defaultTheme.primary }]}
             value={input}
             onChangeText={setInput}
-            placeholder="E.g., '600 calories and tomatoes'"
+            placeholder="E.g., 'calories in an onion' or 'chicken recipes'"
             placeholderTextColor={defaultTheme.text}
           />
           <TouchableOpacity
