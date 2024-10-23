@@ -200,7 +200,7 @@ function JournalContent() {
       <Appbar.Header style={styles.header}>
         <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
         <Appbar.Content 
-          title="Journal" 
+          title="Journey Jotter" 
           titleStyle={styles.headerTitle}
           color={defaultTheme.primary}
         />
@@ -208,9 +208,9 @@ function JournalContent() {
       <View style={styles.content}>
         <Card style={[styles.card, {backgroundColor: defaultTheme.primary}]}>
           <Card.Content>
-            <Text style={[styles.title, { color: defaultTheme.background }]}>Welcome to Your Journal</Text>
+            <Text style={[styles.title, { color: defaultTheme.background }]}>Welcome to your Journey Jotter</Text>
             <Text style={[styles.description, { color: defaultTheme.background }]}>
-              Capture your thoughts, feelings, and experiences. Journaling is a powerful tool for self-reflection and personal growth.
+              Capture your thoughts, feelings, and experiences. Journaling is a powerful tool for self-reflection and personal growth!
             </Text>
           </Card.Content>
         </Card>

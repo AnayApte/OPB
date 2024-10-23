@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, FlatList, Linking, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, FlatList, Linking, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
@@ -7,7 +7,6 @@ import { Appbar, Button, Card, Text, ActivityIndicator } from 'react-native-pape
 import axios from 'axios';
 import { supabase } from '../utils/supabaseClient';
 import { useAuth } from '../utils/AuthContext';
-import * as SecureStore from 'expo-secure-store';
 
 const defaultTheme = {
   background: '#3b0051',
@@ -49,64 +48,70 @@ const fetchRecipes = async (query, from = 0, to = RECIPES_PER_PAGE) => {
   }
 };
 
-function RecipesContent() {
+function CalorieBotContent() {
   const { theme = defaultTheme } = useTheme();
   const router = useRouter();
-  const { userId } = useAuth();
+  const [input, setInput] = useState('');
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([]);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  const handleSend = useCallback(async () => {
+    if (input.trim() === '') return;
+    setLoading(true);
+    try {
+      const newRecipes = await fetchRecipes(input);
+      setRecipes(newRecipes);
+      setPage(1);
+      setHasMore(newRecipes.length === RECIPES_PER_PAGE);
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+    } finally {
+      setLoading(false);
+      setInput('');
+    }
+  }, [input]);
 
   const fetchData = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (!hasMore || loading) return;
     setLoading(true);
-    setError(null);
     try {
-      const from = page * RECIPES_PER_PAGE;
-      const to = (page + 1) * RECIPES_PER_PAGE;
-      const newRecipes = await fetchRecipes(input, from, to);
-      if (newRecipes.length === 0) {
-        setHasMore(false);
-      } else {
-        setRecipes(prevRecipes => {
-          const uniqueNewRecipes = newRecipes.filter(
-            newRecipe => !prevRecipes.some(prevRecipe => prevRecipe.uri === newRecipe.uri)
-          );
-          return [...prevRecipes, ...uniqueNewRecipes];
-        });
-        setPage(prevPage => prevPage + 1);
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to fetch recipes. Please try again later.');
-      console.error('Error fetching recipes:', err);
+      const newRecipes = await fetchRecipes(input, page * RECIPES_PER_PAGE, (page + 1) * RECIPES_PER_PAGE);
+      setRecipes(prevRecipes => [...prevRecipes, ...newRecipes]);
+      setPage(prevPage => prevPage + 1);
+      setHasMore(newRecipes.length === RECIPES_PER_PAGE);
+    } catch (error) {
+      console.error('Error fetching more recipes:', error);
     } finally {
       setLoading(false);
     }
-  }, [input, page, loading, hasMore]);
+  }, [hasMore, loading, input, page]);
 
-  const handleSend = async () => {
-    if (input.trim() === '') return;
+  const handleOpenRecipe = useCallback((url) => {
+    Linking.openURL(url);
+  }, []);
 
-    const newMessage = { text: input, sender: 'user' };
-    setMessages([...messages, newMessage]);
-    setRecipes([]);
-    setPage(0);
-    setHasMore(true);
-    await fetchData();
-    setInput('');
-  };
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      'keyboardWillShow',
+      (e) => setKeyboardOffset(e.endCoordinates.height)
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      'keyboardWillHide',
+      () => setKeyboardOffset(0)
+    );
 
-  const handleOpenRecipe = (url) => {
-    Linking.openURL(url).catch((err) => console.error('An error occurred', err));
-  };
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
 
   const renderItem = ({ item }) => (
     <Card style={styles.card} accessible={true} accessibilityLabel={`Recipe for ${item.label}`}>
-      <Card.Cover source={{ uri: item.image }} accessibilityIgnoresInvertColors={true} />
+      <Card.Cover source={{ uri: item.image }} accessibilityIgnoresInvertColors={true} style={styles.cardCover}/>
       <Card.Content>
         <Text style={styles.title}>{item.label}</Text>
         <Text style={styles.subtitle}>Ingredients:</Text>
@@ -129,15 +134,15 @@ function RecipesContent() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Recipe Bot" />
+    <SafeAreaView style={[styles.container, { backgroundColor: defaultTheme.background }]} edges={['bottom']}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
+        <Appbar.Content title="CalorieBot" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <FlatList
           data={recipes}
@@ -147,31 +152,31 @@ function RecipesContent() {
           onEndReached={fetchData}
           onEndReachedThreshold={0.1}
           ListHeaderComponent={() => (
-            <Text style={[styles.instructions, { color: theme.text }]}>
+            <Text style={[styles.instructions, { color: defaultTheme.primary }]}>
               Ask for recipes based on multiple criteria, like ingredients and calorie goals.
             </Text>
           )}
-          ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={theme.primary} />}
+          ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={defaultTheme.primary} />}
           ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No recipes found</Text>}
         />
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
           <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.primary }]}
+            style={[styles.input, { color: defaultTheme.text, borderColor: defaultTheme.primary }]}
             value={input}
             onChangeText={setInput}
             placeholder="E.g., '600 calories and tomatoes'"
-            placeholderTextColor={theme.text}
+            placeholderTextColor={defaultTheme.text}
           />
           <TouchableOpacity
             onPress={handleSend}
             disabled={loading}
-            style={[styles.button, { backgroundColor: theme.primary }]}
+            style={[styles.button, { backgroundColor: defaultTheme.primary }]}
           >
-            <Text style={[styles.buttonText, { color: theme.secondary }]}>Send</Text>
+            <Text style={[styles.buttonText, { color: defaultTheme.background }]}>Send</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -179,70 +184,97 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    backgroundColor: 'transparent',
+  },
+  headerTitle: {
+    color: defaultTheme.primary,
+    fontWeight: 'bold',
+  },
   content: {
     flex: 1,
-    padding: 16,
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 80, 
   },
   card: {
     marginBottom: 16,
+    backgroundColor: defaultTheme.primary,
+  },
+  cardCover: {
+    height: 200,
+    padding: 16,
+    backgroundColor: defaultTheme.primary,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 8,
-  },
-  subtitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 8,
+    color: defaultTheme.background,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
     marginTop: 8,
-    marginBottom: 4,
+    color: defaultTheme.background,
   },
   text: {
+    fontSize: 14,
     marginBottom: 4,
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 10,
+    color: defaultTheme.background,
   },
   button: {
     marginTop: 8,
-    padding: 10,
-    borderRadius: 10,
-  },
-  buttonText: {
-    fontWeight: 'bold',
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 10,
-    marginRight: 10,
+    backgroundColor: defaultTheme.buttonBackground,
   },
   instructions: {
     fontSize: 16,
+    marginBottom: 16,
     textAlign: 'center',
-    marginBottom: 20,
+    color: defaultTheme.text,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 32,
+    color: defaultTheme.text,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    backgroundColor: defaultTheme.background,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    color: defaultTheme.text,
+    borderColor: defaultTheme.primary,
+  },
+  button: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    backgroundColor: defaultTheme.background,
+  },
+  buttonText: {
+    fontWeight: 'bold',
+    color: defaultTheme.buttonText,
   },
 });
 
-export default function RecipesPage() {
+export default function CalorieBot() {
   return (
     <ThemeProvider>
-      <RecipesContent />
+      <CalorieBotContent />
     </ThemeProvider>
   );
 }

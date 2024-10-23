@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, FlatList, Linking } from 'react-native';
+import { View, StyleSheet, FlatList, Linking, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
@@ -10,12 +10,12 @@ import { useAuth } from '../utils/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
 const defaultTheme = {
-  background: '#FFb5c6',
-  text: '#641f1f',
-  primary: '#3b0051',
-  secondary: '#f2f5ea',
-  buttonBackground: '#3b0051',
-  buttonText: '#f2f5ea',
+  background: '#3b0051',
+  text: '#f2e2fb',
+  primary: '#f2e2fb',
+  secondary: '#3b0051',
+  buttonBackground: '#f2e2fb',
+  buttonText: '#3b0051',
 };
 
 const EDAMAM_APP_ID = '4499d167';
@@ -65,7 +65,7 @@ function RecipesContent() {
   const fetchCalorieGoal = async () => {
     try {
       const storedUserId = await SecureStore.getItemAsync('userId');
-      
+
       if (!storedUserId) {
         console.error('No user ID found. Unable to fetch profile data.');
         return;
@@ -184,7 +184,7 @@ function RecipesContent() {
 
   const renderItem = ({ item }) => (
     <Card style={styles.card} accessible={true} accessibilityLabel={`Recipe for ${item.label}`}>
-      <Card.Cover source={{ uri: item.image }} accessibilityIgnoresInvertColors={true} />
+      <Card.Cover source={{ uri: item.image }} accessibilityIgnoresInvertColors={true} style={styles.cardCover} />
       <Card.Content>
         <Text style={styles.title}>{item.label}</Text>
         <Text style={styles.subtitle}>Ingredients:</Text>
@@ -214,13 +214,13 @@ function RecipesContent() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Recipes" />
+    <View style={styles.container}>
+      <Appbar.Header style={styles.header}>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary} />
+        <Appbar.Content title="Recipes" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <View style={styles.content}>
-        <View style={styles.toggleContainer}>
+      <View style={styles.toggleContainer}>
           <Button
             mode={recipeType === 'all' ? 'contained' : 'outlined'}
             onPress={() => {
@@ -230,6 +230,7 @@ function RecipesContent() {
               setHasMore(true);
             }}
             style={styles.toggleButton}
+            labelStyle={recipeType === 'all' ? styles.activeButtonLabel : styles.inactiveButtonLabel}
           >
             All Recipes
           </Button>
@@ -242,6 +243,7 @@ function RecipesContent() {
               setHasMore(true);
             }}
             style={styles.toggleButton}
+            labelStyle={recipeType === 'recommended' ? styles.activeButtonLabel : styles.inactiveButtonLabel}
           >
             Recommended Recipes
           </Button>
@@ -251,12 +253,14 @@ function RecipesContent() {
             Here are recipes to fit your caloric goal of: {calorieGoal} calories per day
           </Text>
         )}
-        <Searchbar
-          placeholder="Search recipes"
-          onChangeText={handleSearch}
-          value={searchQuery}
-          style={styles.searchBar}
-        />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <Searchbar
+            placeholder="Search recipes"
+            onChangeText={handleSearch}
+            value={searchQuery}
+            style={styles.searchBar}
+          />
+        </TouchableWithoutFeedback>
         {error && <Text style={styles.error}>{error}</Text>}
         <FlatList
           data={recipes}
@@ -265,7 +269,7 @@ function RecipesContent() {
           contentContainerStyle={styles.listContainer}
           onEndReached={fetchData}
           onEndReachedThreshold={0.1}
-          ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={theme.primary} />}
+          ListFooterComponent={() => loading && <ActivityIndicator animating={true} color={defaultTheme.primary} />}
           ListEmptyComponent={() => !loading && <Text style={styles.emptyText}>No recipes found</Text>}
         />
       </View>
@@ -276,6 +280,17 @@ function RecipesContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: defaultTheme.background,
+  },
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: defaultTheme.primary,
   },
   content: {
     flex: 1,
@@ -288,44 +303,59 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     marginHorizontal: 5,
+    borderColor: defaultTheme.primary, // Ensure border is visible in outlined state
+  },
+  activeButtonLabel: {
+    color: defaultTheme.secondary, // Dark text on light background
+  },
+  inactiveButtonLabel: {
+    color: defaultTheme.primary, // Light text on dark background
   },
   listContainer: {
     paddingBottom: 20,
   },
   card: {
     marginBottom: 16,
+    backgroundColor: defaultTheme.primary,
+  },
+  cardCover: {
+    height: 200,
+    padding: 16,
+    backgroundColor: defaultTheme.primary,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 8,
-  },
-  subtitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 8,
+    color: defaultTheme.background,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
     marginTop: 8,
-    marginBottom: 4,
+    color: defaultTheme.background,
   },
   text: {
+    fontSize: 14,
     marginBottom: 4,
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 10,
+    color: defaultTheme.background,
   },
   button: {
     marginTop: 8,
+    backgroundColor: defaultTheme.background,
+    color: defaultTheme.primary,
   },
   calorieGoal: {
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
+    color: defaultTheme.primary,
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 20,
+    color: defaultTheme.primary,
   },
   searchBar: {
     marginBottom: 16,
