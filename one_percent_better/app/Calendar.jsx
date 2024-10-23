@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { Appbar, Card, Paragraph, Modal, Portal, Text, IconButton } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Dimensions, Pressable } from 'react-native';
+import { Appbar, Card, Paragraph, Modal, Portal, Text, IconButton, Title, Surface } from 'react-native-paper';
 import { Calendar } from 'react-native-calendars';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../utils/AuthContext';
@@ -9,23 +9,20 @@ import { ThemeProvider, useTheme } from './ThemeContext';
 import { useRouter } from 'expo-router';
 import { format, parseISO } from 'date-fns';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 
 const supabase = createClient(SUPABASEURL, SUPABASEKEY);
 
-// Updated theme based on the homepage theme
-const defaultTheme = {
-  background: '#3b0051',     // Purple background
-  text: '#f2e2fb',           // Light text
-  primary: '#f2e2fb',        // Light color for primary elements
-  secondary: '#3b0051',      // Darker color for secondary elements
-  buttonBackground: '#f2e2fb',
+const theme = {
+  background: '#3b0051',
+  text: '#f2e2fb',
+  button: '#f2e2fb',
   buttonText: '#3b0051',
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 function InteractiveCalendarContent() {
-  const { theme = defaultTheme } = useTheme();
   const { userId } = useAuth();
   const router = useRouter();
   const [todos, setTodos] = useState([]);
@@ -60,35 +57,39 @@ function InteractiveCalendarContent() {
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high':
-        return '#e74c3c'; // Red for high priority
+        return '#e74c3c';
       case 'medium':
-        return '#f39c12'; // Orange for medium priority
+        return '#f39c12';
       case 'low':
-        return '#2ecc71'; // Green for low priority
+        return '#2ecc71';
       default:
-        return theme.secondary;
+        return theme.background;
     }
   };
 
   const getMarkedDates = () => {
     const markedDates = {};
 
+    const addDot = (date, key, color) => {
+      if (!markedDates[date]) markedDates[date] = { dots: [] };
+      if (markedDates[date].dots.length < 5) {
+        markedDates[date].dots.push({ key, color });
+      }
+    };
+
     todos.forEach(todo => {
       const date = todo.due_date.split('T')[0];
-      if (!markedDates[date]) markedDates[date] = { dots: [] };
-      markedDates[date].dots.push({ key: `todo-${todo.id}`, color: getPriorityColor(todo.task_priority) });
+      addDot(date, `todo-${todo.id}`, getPriorityColor(todo.task_priority));
     });
 
     workouts.forEach(workout => {
       const date = workout.date.split('T')[0];
-      if (!markedDates[date]) markedDates[date] = { dots: [] };
-      markedDates[date].dots.push({ key: `workout-${workout.id}`, color: theme.primary });
+      addDot(date, `workout-${workout.id}`, theme.background);
     });
 
     journals.forEach(journal => {
       const date = journal.date.split('T')[0];
-      if (!markedDates[date]) markedDates[date] = { dots: [] };
-      markedDates[date].dots.push({ key: `journal-${journal.id}`, color: theme.primary });
+      addDot(date, `journal-${journal.id}`, theme.background);
     });
 
     return markedDates;
@@ -120,8 +121,8 @@ function InteractiveCalendarContent() {
       );
     } else if ('duration' in item) {
       return (
-        <View style={[styles.itemContainer, { borderColor: theme.primary }]}>
-          <MaterialCommunityIcons name="dumbbell" size={20} color={theme.primary} />
+        <View style={[styles.itemContainer, { borderColor: theme.button }]}>
+          <MaterialCommunityIcons name="dumbbell" size={20} color={theme.button} />
           <View style={styles.itemTextContainer}>
             <Paragraph style={[styles.itemTitle, { color: theme.text }]}>Workout</Paragraph>
             <Paragraph style={styles.itemSubtitle}>Duration: {item.duration}</Paragraph>
@@ -130,8 +131,8 @@ function InteractiveCalendarContent() {
       );
     } else if ('title' in item) {
       return (
-        <View style={[styles.itemContainer, { borderColor: theme.primary }]}>
-          <MaterialCommunityIcons name="book-open-variant" size={20} color={theme.primary} />
+        <View style={[styles.itemContainer, { borderColor: theme.button }]}>
+          <MaterialCommunityIcons name="book-open-variant" size={20} color={theme.button} />
           <View style={styles.itemTextContainer}>
             <Paragraph style={[styles.itemTitle, { color: theme.text }]}>{item.title}</Paragraph>
             <Paragraph style={styles.itemSubtitle} numberOfLines={2}>{item.body}</Paragraph>
@@ -141,12 +142,29 @@ function InteractiveCalendarContent() {
     }
   };
 
+  const HeaderIcon = ({ icon, onPress }) => (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.headerIconContainer,
+        { opacity: pressed ? 0.7 : 1 }
+      ]}
+    >
+      <View style={styles.headerIconBackground}>
+        <MaterialCommunityIcons name={icon} size={32} color={theme.text} />
+      </View>
+    </Pressable>
+  );
+
   return (
-    <View style={[styles.container, { backgroundColor: '#3b0051' }]}>
-      {/* Transparent header and updating text and icon color */}
-      <Appbar.Header style={styles.transparentHeader}>
-        <Appbar.BackAction onPress={() => router.back()} color={'#f2e2fb'} />
-        <Appbar.Content title="Interactive Calendar" titleStyle={{ color: '#f2e2fb' }} />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar style="light" />
+      <Appbar.Header style={styles.header}>
+        <HeaderIcon
+          icon="arrow-left"
+          onPress={() => router.back()}
+        />
+        <Appbar.Content title="Interactive Calendar" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <ScrollView style={styles.content}>
         <Card style={styles.calendarCard}>
@@ -157,19 +175,25 @@ function InteractiveCalendarContent() {
               onDayPress={handleDayPress}
               markingType={'multi-dot'}
               theme={{
-                backgroundColor: theme.background,
-                calendarBackground: theme.background,
-                textSectionTitleColor: theme.text,
-                selectedDayBackgroundColor: theme.primary,
-                selectedDayTextColor: theme.secondary,
-                todayTextColor: theme.primary,
-                dayTextColor: theme.text,
-                textDisabledColor: theme.secondary,
-                dotColor: theme.primary,
-                selectedDotColor: theme.secondary,
-                arrowColor: theme.primary,
-                monthTextColor: theme.primary,
-                indicatorColor: theme.primary,
+                backgroundColor: theme.button,
+                calendarBackground: theme.button,
+                textSectionTitleColor: theme.background,
+                selectedDayBackgroundColor: theme.background,
+                selectedDayTextColor: theme.button,
+                todayTextColor: theme.background,
+                dayTextColor: theme.background,
+                textDisabledColor: 'rgba(59, 0, 81, 0.4)',
+                dotColor: theme.background,
+                selectedDotColor: theme.button,
+                arrowColor: theme.background,
+                monthTextColor: theme.background,
+                indicatorColor: theme.background,
+                textDayFontWeight: 'bold',
+                textMonthFontWeight: 'bold',
+                textDayHeaderFontWeight: 'bold',
+                textDayFontSize: 16,
+                textMonthFontSize: 18,
+                textDayHeaderFontSize: 14,
               }}
             />
           </Card.Content>
@@ -182,11 +206,14 @@ function InteractiveCalendarContent() {
           contentContainerStyle={styles.modalContainer}
           style={{ margin: 0 }}
         >
-          <View style={[styles.modalContent, { width: SCREEN_WIDTH * 0.9 }]}>
+          <Surface style={[styles.modalContent, { width: SCREEN_WIDTH * 0.9, backgroundColor: theme.button }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>{selectedDate ? format(parseISO(selectedDate), 'PP') : 'Items'}</Text>
+              <Title style={[styles.modalTitle, { color: theme.background }]}>
+                {selectedDate ? format(parseISO(selectedDate), 'PP') : 'Items'}
+              </Title>
               <IconButton
                 icon="close"
+                color={theme.background}
                 size={24}
                 onPress={() => setDayModalVisible(false)}
                 style={styles.closeButton}
@@ -202,7 +229,7 @@ function InteractiveCalendarContent() {
                 );
               })}
             </ScrollView>
-          </View>
+          </Surface>
         </Modal>
       </Portal>
     </View>
@@ -213,19 +240,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  transparentHeader: {
-    backgroundColor: 'transparent', // Make header background transparent
-    elevation: 0, // Remove shadow
+  header: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  headerTitle: {
+    color: theme.text,
+    fontWeight: 'bold',
+    fontSize: 24,
+  },
+  headerIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 60,
+  },
+  headerIconBackground: {
+    backgroundColor: 'rgba(242, 226, 251, 0.2)',
+    borderRadius: 20,
+    padding: 8,
   },
   content: {
     padding: 16,
   },
   calendarCard: {
     marginBottom: 16,
-    backgroundColor: '#3b0051',
-    borderRadius: 40, // Rounded edges for the card
-    overflow: 'hidden', // Ensure content inside respects rounded corners
-    elevation: 0, // Remove shadow to emphasize the border radius
+    backgroundColor: theme.button,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 4,
   },
   calendar: {
     height: SCREEN_WIDTH,
@@ -238,8 +280,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: 12,
     padding: 20,
     width: '100%',
     maxHeight: '90%',
@@ -251,7 +292,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
   },
   closeButton: {
@@ -268,8 +309,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 8,
     padding: 10,
+    backgroundColor: theme.background,
   },
   itemTextContainer: {
     marginLeft: 10,
@@ -281,13 +323,13 @@ const styles = StyleSheet.create({
   },
   itemSubtitle: {
     fontSize: 14,
-    color: 'gray',
+    color: theme.text,
   },
 });
 
 export default function InteractiveCalendar() {
   return (
-    <ThemeProvider>
+    <ThemeProvider value={theme}>
       <InteractiveCalendarContent />
     </ThemeProvider>
   );
