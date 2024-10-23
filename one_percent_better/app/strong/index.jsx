@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
-import { Appbar, Button, Card, Title, Paragraph } from 'react-native-paper';
+import { Appbar, Card, Title, Paragraph } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const defaultTheme = {
@@ -19,10 +19,41 @@ const StrongHome = () => {
   const router = useRouter();
   const { theme } = useTheme();
 
+  const NavButton = ({ icon, label, onPress, style, iconSize = 24 }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => {
+          setIsPressed(false);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.navButton,
+          style,
+          isPressed && styles.navButtonPressed
+        ]}
+      >
+        <View style={styles.navButtonInner}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={iconSize} 
+            color={isPressed ? defaultTheme.background : defaultTheme.buttonText} 
+          />
+          <Text style={[
+            styles.navButtonText,
+            isPressed && styles.navButtonTextPressed
+          ]}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()}  color={defaultTheme.text}/>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.text}/>
         <Appbar.Content title="Power Hour" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <View style={styles.content}>
@@ -32,16 +63,13 @@ const StrongHome = () => {
             <Paragraph style={styles.cardText}>Track your workouts and achieve your fitness goals.</Paragraph>
           </Card.Content>
         </Card>
-        <Button
-          mode="contained"
+        <NavButton
+          icon="dumbbell"
+          label="Start New Workout"
           onPress={() => router.push('/strong/workout?autoStart=true')}
-          style={styles.button}
-          contentStyle={styles.buttonContent}
-          labelStyle={styles.buttonLabel}
-        >
-          <MaterialCommunityIcons name="dumbbell" size={24} color={theme.buttonText} />
-          <Title style={styles.buttonText}>Start New Workout</Title>
-        </Button>
+          style={styles.startWorkoutButton}
+          iconSize={32}
+        />
       </View>
     </View>
   );
@@ -83,24 +111,40 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: defaultTheme.background
   },
-  button: {
+  navButton: {
     width: '100%',
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: defaultTheme.buttonBackground,
     height: 80,
     justifyContent: 'center',
-    borderRadius: 8,
-  },
-  buttonContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  navButtonPressed: {
+    backgroundColor: defaultTheme.text,
+    transform: [{ scale: 0.95 }],
+  },
+  navButtonInner: {
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  buttonLabel: {
-    fontSize: 18,
-  },
-  buttonText: {
-    marginLeft: 10,
-    fontSize: 18,
+  navButtonText: {
+    color: defaultTheme.buttonText,
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
     fontWeight: 'bold',
+  },
+  navButtonTextPressed: {
+    color: defaultTheme.background,
+  },
+  startWorkoutButton: {
+    width: '100%',
   },
 });
 
