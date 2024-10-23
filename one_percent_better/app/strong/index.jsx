@@ -22,7 +22,7 @@ const StrongHome = () => {
   return (
     <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.BackAction onPress={() => router.back()}  color={defaultTheme.text}/>
         <Appbar.Content title="Power Hour" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <View style={styles.content}>
@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontWeight: 'bold',
     fontSize: 24,
+    color: defaultTheme.text
   },
   content: {
     flex: 1,
