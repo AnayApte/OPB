@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView, AppState } from 'react-native';
+import { View, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView, AppState, Text, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import { calculateOneRepMax, formatExerciseName, formatExerciseNameForDisplay } from '../../utils/helpers';
@@ -7,8 +7,8 @@ import { useAuth } from '../../utils/AuthContext';
 import 'react-native-get-random-values';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
-import { Appbar, Card, Title, Paragraph, Button, Surface, Text, ProgressBar } from 'react-native-paper';
-import BackButton from '../../utils/BackButton';
+import { Appbar, Card, Title, Paragraph, Button, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const defaultTheme = {
   background: '#3b0051',
@@ -389,7 +389,7 @@ const WorkoutScreen = () => {
               .eq('isCurrent', true)
               .single();
       
-            if (prError && prError.code !== 'PGRST116') throw prError;
+            if (prError && prError.code !==    'PGRST116') throw prError;
       
             if (!existingPR || bestOneRepMax > existingPR.oneRepMax) {
               const { error: updatePreviousError } = await supabase
@@ -402,7 +402,6 @@ const WorkoutScreen = () => {
       
               const { error: insertError } = await supabase
                 .from('personalRecords')
-                
                 .insert({
                   userId: userId,
                   exerciseId: exerciseId,
@@ -450,15 +449,46 @@ const WorkoutScreen = () => {
     setExerciseModalVisible(false);
   };
 
+  const NavButton = ({ icon, label, onPress, style, iconSize = 24 }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => {
+          setIsPressed(false);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.navButton,
+          style,
+          isPressed && styles.navButtonPressed
+        ]}
+      >
+        <View style={styles.navButtonInner}>
+          <MaterialCommunityIcons 
+            name={icon} 
+            size={iconSize} 
+            color={isPressed ? defaultTheme.background : defaultTheme.buttonText} 
+          />
+          <Text style={[
+            styles.navButtonText,
+            isPressed && styles.navButtonTextPressed
+          ]}>{label}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
     <View style={[styles.safeArea, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-      <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
+        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
         <Appbar.Content title="Workout" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <ScrollView 
         style={styles.container}
-        contentContainerStyle={{ paddingTop: 20 }}
+        contentContainerStyle={{ paddingTop: 20, paddingBottom: 40 }}
       >
         <Card style={[styles.card, styles.timerCard]}>
           <Card.Content>
@@ -504,7 +534,6 @@ const WorkoutScreen = () => {
           </Card.Content>
         </Card>
         
-        
         <FlatList
           data={exercises}
           keyExtractor={(item, index) => index.toString()}
@@ -540,13 +569,14 @@ const WorkoutScreen = () => {
           )}
         />
 
-        <Button 
-          mode="contained" 
-          onPress={endWorkout}
-          style={[styles.endbutton, styles.endButton]}
-        >
-          End Workout
-        </Button>
+        <View style={styles.endWorkoutButtonContainer}>
+          <NavButton 
+            icon="stop-circle"
+            label="End Workout"
+            onPress={endWorkout}
+            iconSize={32}
+          />
+        </View>
       </ScrollView>
 
       <CustomAlert
@@ -608,9 +638,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     backgroundColor: defaultTheme.background,
   },
-  endbutton: {
-    marginTop: 8,
-  },
   input: {
     borderWidth: 1,
     borderRadius: 5,
@@ -641,6 +668,7 @@ const styles = StyleSheet.create({
   },
   setText: {
     width: 50,
+    color: defaultTheme.background,
   },
   setInput: {
     borderWidth: 1,
@@ -648,10 +676,7 @@ const styles = StyleSheet.create({
     padding: 5,
     width: 50,
     marginLeft: 10,
-  },
-  endButton: {
-    marginTop: 20,
-    marginBottom: 40,
+    color: defaultTheme.background,
   },
   modalOverlay: {
     flex: 1,
@@ -724,7 +749,8 @@ const styles = StyleSheet.create({
   exerciseDetailsSectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 5,
   },
   exerciseInstruction: {
     fontSize: 16,
@@ -736,9 +762,44 @@ const styles = StyleSheet.create({
   backButton: {
     marginTop: 10,
   },
-  timerCard: {
+  navButton: {
+    width: '100%',
     marginTop: 20,
-    paddingTop: 20,
+    marginBottom: 20,
+    borderRadius: 8,
+    backgroundColor: defaultTheme.buttonBackground,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  navButtonPressed: {
+    backgroundColor: defaultTheme.text,
+    transform: [{ scale: 0.95 }],
+  },
+  navButtonInner: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navButtonText: {
+    color: defaultTheme.buttonText,
+    fontSize: 16,
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  navButtonTextPressed: {
+    color: defaultTheme.background,
+  },
+  endWorkoutButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 20,
   },
 });
 
