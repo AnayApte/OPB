@@ -8,8 +8,8 @@ export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState({
-    background: '#FFFFFF',
-    text: '#000000',
+    background: '#3b0051',
+    text: '#f4e4fc',
     primary: '#641f1f',
     secondary: '#f2f5ea',
     tertiary: '#a69998'
