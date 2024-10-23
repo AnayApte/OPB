@@ -21,6 +21,7 @@ const theme = {
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 function InteractiveCalendarContent() {
   const { userId } = useAuth();
@@ -204,9 +205,8 @@ function InteractiveCalendarContent() {
           visible={dayModalVisible} 
           onDismiss={() => setDayModalVisible(false)} 
           contentContainerStyle={styles.modalContainer}
-          style={{ margin: 0 }}
         >
-          <Surface style={[styles.modalContent, { width: SCREEN_WIDTH * 0.9, backgroundColor: theme.button }]}>
+          <Surface style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Title style={[styles.modalTitle, { color: theme.background }]}>
                 {selectedDate ? format(parseISO(selectedDate), 'PP') : 'Items'}
@@ -276,19 +276,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
+    backgroundColor: theme.button,
     borderRadius: 12,
     padding: 20,
-    width: '100%',
-    maxHeight: '90%',
+    width: SCREEN_WIDTH * 0.9,
+    height: SCREEN_HEIGHT * 0.7,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
     marginBottom: 15,
   },
   modalTitle: {
@@ -300,7 +303,8 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   modalScroll: {
-    maxHeight: '100%',
+    width: '100%',
+    flex: 1,
   },
   itemWrapper: {
     marginBottom: 10,
