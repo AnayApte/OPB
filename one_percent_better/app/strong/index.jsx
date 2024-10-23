@@ -22,8 +22,8 @@ const StrongHome = () => {
   return (
     <View style={[styles.container, { backgroundColor: defaultTheme.background }]}>
       <Appbar.Header style={styles.header}>
-        <Appbar.BackAction onPress={() => router.back()} color={defaultTheme.primary}/>
-        <Appbar.Content title="Strong Stride" titleStyle={styles.headerTitle} />
+        <Appbar.BackAction onPress={() => router.back()} />
+        <Appbar.Content title="Power Hour" titleStyle={styles.headerTitle} />
       </Appbar.Header>
       <View style={styles.content}>
         <Card style={styles.card}>
@@ -56,7 +56,6 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   headerTitle: {
-    color: '#f2e2fb',
     fontWeight: 'bold',
     fontSize: 24,
   },
