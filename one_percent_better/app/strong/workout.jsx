@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../ThemeContext';
 import { Appbar, Card, Title, Paragraph, Button, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { RAPIDAPIKEY } from '@env';
 
 const defaultTheme = {
   background: '#3b0051',
@@ -82,7 +83,7 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
     const options = {
       method: 'GET',
       headers: {
-        'X-RapidAPI-Key': '7884f1a8f6mshf52b668731d14f2p1b246ajsn455799bad1ea',
+        'X-RapidAPI-Key': RAPIDAPIKEY,
         'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com'
       }
     };
