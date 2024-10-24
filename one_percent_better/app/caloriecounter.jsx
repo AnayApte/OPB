@@ -9,9 +9,8 @@ import { ThemeProvider, useTheme } from './ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Appbar, TextInput, Button, Card, Text } from 'react-native-paper';
 import { Flame, UtensilsCrossed } from 'lucide-react-native';
-import { Animated } from 'react-native'; // Import Animated from React Native
+import { Animated } from 'react-native';
 
-// Inside your component
 
 
 
@@ -41,7 +40,7 @@ function CalorieCounterContent() {
   const [waterDrunk, setWaterDrunk] = useState(0);
   const [inputWater, setInputWater] = useState('');
   const [isAddingWater, setIsAddingWater] = useState(false);
-  const waterFillHeight = Math.min((waterDrunk / 100) * 100, 100); // Fill percentage
+  const waterFillHeight = Math.min((waterDrunk / 100) * 100, 100); 
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -377,25 +376,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   waterBottleContainer: {
-    justifyContent: 'center', // Center horizontally
-    alignItems: 'center', // Center container
+    justifyContent: 'center', 
+    alignItems: 'center',
     marginTop: 20,
   },
 
   waterBottle: {
-    width: 150, // Adjust width for proper size
-    height: 300, // Height for a tall water bottle
+    width: 150, 
+    height: 300, 
     position: 'relative',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    borderWidth: 5, // Bold border
-    borderColor: 'black', // Color for the border (use any color that fits your theme)
-    borderBottomLeftRadius: 20, // Rounded bottom-left corner
-    borderBottomRightRadius: 20, // Rounded bottom-right corner
-    borderTopLeftRadius: 0, // No rounding on the top-left corner
-    borderTopRightRadius: 0, // No rounding on the top-right corner
-    overflow: 'hidden', // Ensure the fill doesn't overflow the container
-    backgroundColor: '#F3E5F5', // Optional: Add background color to make the container stand out
+    borderWidth: 5, 
+    borderColor: 'black', 
+    borderBottomLeftRadius: 20, 
+    borderBottomRightRadius: 20,
+    borderTopLeftRadius: 0, 
+    borderTopRightRadius: 0, 
+    overflow: 'hidden',
+    backgroundColor: '#F3E5F5', 
   },
 
   waterBottleImage: {
@@ -407,11 +406,10 @@ const styles = StyleSheet.create({
 
   waterFill: {
     position: 'absolute',
-    bottom: 0, // Start filling from the bottom
-    width: '100%', // Slight padding from the bottle edges
-    backgroundColor: 'rgba(0, 122, 255, 0.5)', // Light blue water fill
-    borderRadius: 5, // Smooth corners for the water fill
-    zIndex: 0,
+    bottom: 0, 
+    width: '100%', 
+    backgroundColor: 'rgba(0, 122, 255, 0.5)', 
+    borderRadius: 5, 
   },
 
 
