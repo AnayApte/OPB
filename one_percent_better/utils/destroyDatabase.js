@@ -1,6 +1,3 @@
-// one_percent_better/utils/destroyDatabase.js
-
-// Update this as you add more tables
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
@@ -10,7 +7,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function deleteAllUsers() {
   try {
-    // Fetch all users
     const { data, error: fetchError } = await supabase.auth.admin.listUsers();
 
     if (fetchError) {
@@ -23,7 +19,6 @@ async function deleteAllUsers() {
       return;
     }
 
-    // Iterate over each user and delete them
     for (const user of data.users) {
       const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
 
@@ -70,9 +65,8 @@ async function deleteAllData() {
 }
 
 async function destroyDatabase() {
-  await deleteAllUsers();  // Delete all users from Supabase Auth
-  await deleteAllData();    // Truncate all tables
+  await deleteAllUsers(); 
+  await deleteAllData();    
 }
 
-// Execute the function
 destroyDatabase();

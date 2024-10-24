@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity, TextInput, FlatList, StyleSheet, Modal, ActivityIndicator, ScrollView, AppState, Text, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
@@ -75,10 +75,10 @@ const ExerciseSelectionModal = ({ visible, onClose, onSelect, theme }) => {
       setFilteredExercises(filtered);
     }
   }, [searchQuery, exercises]);
-
+  
   const fetchExercises = async () => {
     if (!hasMore) return;
-
+  
     const options = {
       method: 'GET',
       headers: {

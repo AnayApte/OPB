@@ -87,11 +87,9 @@ function RecipesContent() {
         return;
       }
 
-      // Convert height to cm and weight to kg
       const heightCm = data.height * 2.54;
       const weightKg = data.weight * 0.453592;
 
-      // Calculate BMR
       let bmr;
       if (data.gender === 'Male') {
         bmr = 10 * weightKg + 6.25 * heightCm - 5 * data.age + 5;
@@ -103,7 +101,6 @@ function RecipesContent() {
         bmr = (maleBmr + femaleBmr) / 2;
       }
 
-      // Calculate TDEE
       let tdee;
       switch (data.activity_level) {
         case 'Sedentary':
@@ -122,7 +119,6 @@ function RecipesContent() {
           tdee = bmr * 1.2;
       }
 
-      // Calculate calorie goal
       let goal;
       if (data.lose_weight > 0) {
         const deficit = (data.lose_weight * 3500) / (data.weeks * 7);

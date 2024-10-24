@@ -1,5 +1,3 @@
-// app/_layout.jsx
-
 import React from 'react';
 import { Stack } from 'expo-router';
 import { AuthProvider } from '../utils/AuthContext';

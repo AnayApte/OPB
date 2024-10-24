@@ -1,9 +1,6 @@
-// app/journal/index1.jsx
-
 import React, { useState } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
 import JournalEntryForm from './JournalEntryForm.jsx';
- // Adjust path if needed
 
 const JournalApp = () => {
   const [entries, setEntries] = useState([]);

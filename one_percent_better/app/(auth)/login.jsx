@@ -4,7 +4,8 @@ import { useRouter, Link } from 'expo-router';
 import { supabase } from '../../utils/supabaseClient';
 import * as SecureStore from 'expo-secure-store';
 import { ThemeProvider, useTheme } from '../ThemeContext';
-import { TextInput, Button, Surface, Text, Card } from 'react-native-paper';
+import { TextInput, Button, Surface, Text, Card, Snackbar } from 'react-native-paper';
+import NetInfo from '@react-native-community/netinfo';
 
 const defaultTheme = {
   background: '#3b0051',
@@ -22,10 +23,22 @@ const defaultTheme = {
 function LoginContent() {
   const [userOrEmail, setUserOrEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { theme = defaultTheme } = useTheme() || {};
 
   const handleLogin = async () => {
+    setIsLoading(true);
+    setError('');
+
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      setError('No internet connection. Please check your network and try again.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       let loginEmail = userOrEmail;
 
@@ -36,10 +49,24 @@ function LoginContent() {
           .eq('username', userOrEmail)
           .single();
 
-        if (userError || !userRecord) {
-          console.error('Error fetching email for username:', userError?.message || 'User not found');
+        if (userError) {
+          if (userError.code === 'PGRST116') {
+            setError('User not found. Please check your username.');
+          } else if (userError.message && userError.message.includes('Network request failed')) {
+            setError('Network error. Please check your connection and try again.');
+          } else {
+            setError('Error fetching user data. Please try again.');
+          }
+          setIsLoading(false);
           return;
         }
+        
+        if (!userRecord) {
+          setError('User not found. Please check your username.');
+          setIsLoading(false);
+          return;
+        }
+        
         loginEmail = userRecord.email;
       }
 
@@ -49,7 +76,12 @@ function LoginContent() {
       });
 
       if (error) {
-        console.error('Error during login:', error.message);
+        if (error.message && error.message.includes('Network request failed')) {
+          setError('Network error during sign-in. Please check your connection and try again.');
+        } else {
+          setError(error.message);
+        }
+        setIsLoading(false);
         return;
       }
 
@@ -60,7 +92,14 @@ function LoginContent() {
 
       console.log('Login successful');
     } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       console.error('Unexpected error during login:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,8 +138,10 @@ function LoginContent() {
                 style={styles.button} 
                 buttonColor="#3b0051"
                 textColor={theme.buttonText}
+                loading={isLoading}
+                disabled={isLoading}
               >
-                Login
+                {isLoading ? 'Logging in...' : 'Login'}
               </Button>
             </Card.Content>
           </Card>
@@ -117,19 +158,20 @@ function LoginContent() {
                   Don't have an account? Sign up
                 </Button>
               </Link>
-              <Link href="/(auth)/forgotPassword" asChild>
-                <Button 
-                  mode="text" 
-                  style={styles.button} 
-                  textColor="#3b0051"
-                >
-                  Forgot password?
-                </Button>
-              </Link>
             </Card.Content>
           </Card>
         </ScrollView>
       </View>
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError('')}
+        action={{
+          label: 'Close',
+          onPress: () => setError(''),
+        }}
+      >
+        {error}
+      </Snackbar>
     </SafeAreaView>
   );
 }

@@ -73,12 +73,10 @@ function CalorieBotContent() {
     setLoading(true);
     try {
       if (input.toLowerCase().includes('calories in') || input.toLowerCase().includes('nutrition')) {
-        // Fetch nutrition information
         const nutritionData = await fetchNutrition(input.replace(/calories in|nutrition/i, '').trim());
         setResults([nutritionData]);
         setQueryType('nutrition');
       } else {
-        // Fetch recipes
         const recipes = await fetchRecipes(input);
         setResults(recipes);
         setQueryType('recipes');

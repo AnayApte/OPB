@@ -1,5 +1,3 @@
-// one_percent_better/utils/reseedDatabase.js
-
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = 'https://hhaknhsygdajhabbanzu.supabase.co'
@@ -9,7 +7,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function reseedDatabase() {
   try {
-    // Step 1: Sign up the user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: 'test@gmail.com',
       password: 'abc123',
@@ -20,18 +17,17 @@ async function reseedDatabase() {
       return;
     }
 
-    const userId = authData.user.id;  // This is the Supabase Auth user ID
+    const userId = authData.user.id;  
 
-    // Step 2: Insert the user data into your `users` table with additional fields
     const { data: userRecord, error: userError } = await supabase
       .from('users')
       .insert([{
         userId: userId, 
         email: 'test@gmail.com', 
         username: 'supabasetest',
-        age: 18,  // Default age
-        weight: 200,  // Default weight
-        gender: true,  // Default gender (assuming true is male, adjust as needed)
+        age: 18,  
+        weight: 200, 
+        gender: true, 
       }]);
 
     if (userError) {
@@ -45,5 +41,4 @@ async function reseedDatabase() {
   }
 }
 
-// Execute the function
 reseedDatabase();
