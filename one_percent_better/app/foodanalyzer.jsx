@@ -8,10 +8,10 @@ import { Appbar, Card, Text, ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { GEMINI_API_KEY }from '@env';
 
-// WARNING: Storing API keys in the client is not secure for production use
-const API_KEY = 'AIzaSyAY4p4uud0f5iSXH8SEBFm-UfhusLo5HwU';
-const genAI = new GoogleGenerativeAI(API_KEY);
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const defaultTheme = {
   background: '#3b0051',
@@ -150,14 +150,14 @@ This also means that the nutritional information must be accurate to the food it
         </Card>
 
         <NavButton
-          icon="image"  // Icon for gallery
+          icon="image" 
           label="Pick Image from Camera Roll"
           onPress={pickImageFromGallery}
           style={styles.pickImageButton}
         />
 
         <NavButton
-          icon="camera"  // Icon for camera
+          icon="camera"  
           label="Take a Picture"
           onPress={takePhotoWithCamera}
           style={styles.takePictureButton}

@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { Appbar, Button, Card, Text, ActivityIndicator } from 'react-native-paper';
 import axios from 'axios';
+import { EDAMAM_APP_ID, EDAMAM_APP_KEY } from '@env';
+
 
 const defaultTheme = {
   background: '#3b0051',
@@ -15,8 +17,7 @@ const defaultTheme = {
   buttonText: '#3b0051',
 };
 
-const EDAMAM_APP_ID = '4499d167';
-const EDAMAM_APP_KEY = '24cbb2c75a14cc21b95de2f02a7ee4aa';
+
 const NUTRITION_APP_ID = 'YOUR_NUTRITION_APP_ID';
 const NUTRITION_APP_KEY = 'YOUR_NUTRITION_APP_KEY';
 
@@ -73,12 +74,10 @@ function CalorieBotContent() {
     setLoading(true);
     try {
       if (input.toLowerCase().includes('calories in') || input.toLowerCase().includes('nutrition')) {
-        // Fetch nutrition information
         const nutritionData = await fetchNutrition(input.replace(/calories in|nutrition/i, '').trim());
         setResults([nutritionData]);
         setQueryType('nutrition');
       } else {
-        // Fetch recipes
         const recipes = await fetchRecipes(input);
         setResults(recipes);
         setQueryType('recipes');

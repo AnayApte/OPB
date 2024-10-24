@@ -1,8 +1,7 @@
-// one_percent_better/utils/AuthContext.js
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from './supabaseClient';  // Import Supabase client
+import { supabase } from './supabaseClient'; 
 
 const AuthContext = createContext();
 
@@ -11,10 +10,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const loadUserId = async () => {
-      // Step 1: Try to retrieve userId from SecureStore
       let storedUserId = await SecureStore.getItemAsync('userId');
       
-      // Step 2: If not found in SecureStore, check the Supabase session
       if (!storedUserId) {
         const session = supabase.auth.session();
         if (session && session.user) {
@@ -23,7 +20,6 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Step 3: Set the userId in the state
       if (storedUserId) {
         setUserId(storedUserId);
       }
@@ -31,19 +27,17 @@ export const AuthProvider = ({ children }) => {
 
     loadUserId();
 
-    // Step 4: Listen for changes in the auth state
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session && session.user) {
         const newUserId = session.user.id;
         setUserId(newUserId);
-        SecureStore.setItemAsync('userId', newUserId);  // Store it securely
+        SecureStore.setItemAsync('userId', newUserId);  
       } else {
         setUserId(null);
-        SecureStore.deleteItemAsync('userId');  // Remove from storage
+        SecureStore.deleteItemAsync('userId');  
       }
     });
 
-    // Cleanup the listener on unmount
     return () => {
       if (authListener && typeof authListener.unsubscribe === 'function') {
         authListener.unsubscribe();
