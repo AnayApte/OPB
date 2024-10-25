@@ -8,6 +8,7 @@ import axios from 'axios';
 import { supabase } from '../utils/supabaseClient';
 import { useAuth } from '../utils/AuthContext';
 import * as SecureStore from 'expo-secure-store';
+import { EDAMAM_APP_ID, EDAMAM_APP_KEY } from '@env';
 
 const defaultTheme = {
   background: '#3b0051',
@@ -18,15 +19,15 @@ const defaultTheme = {
   buttonText: '#3b0051',
 };
 
-const EDAMAM_APP_ID = '4499d167';
-const EDAMAM_APP_KEY = '24cbb2c75a14cc21b95de2f02a7ee4aa';
+const edamamAppId = EDAMAM_APP_ID;
+const edamamAppKey = EDAMAM_APP_KEY;
 
 const RECIPES_PER_PAGE = 10;
 
 const fetchRecipes = async (type = null, calorieGoal = null, from = 0, to = RECIPES_PER_PAGE, query = '') => {
   const params = {
-    app_id: EDAMAM_APP_ID,
-    app_key: EDAMAM_APP_KEY,
+    app_id: edamamAppId,
+    app_key: edamamAppKey,
     type: 'public',
     from,
     to,

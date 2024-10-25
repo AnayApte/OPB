@@ -1,9 +1,8 @@
-import {SUPABASEURL, SUPABASEKEY} from '@env'
-
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = SUPABASEURL;
-const supabaseServiceKey = SUPABASEKEY;
+const supabaseUrl = process.env.SUPABASEURL;
+const supabaseServiceKey = process.env.SUPABASESERVICEKEY;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -67,8 +66,8 @@ async function deleteAllData() {
 }
 
 async function destroyDatabase() {
-  await deleteAllUsers(); 
-  await deleteAllData();    
+  await deleteAllUsers();
+  await deleteAllData();
 }
 
 destroyDatabase();

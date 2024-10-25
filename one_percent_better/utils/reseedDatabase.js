@@ -1,5 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 
+const supabaseUrl = process.env.SUPABASEURL;
+const supabaseAnonKey = process.env.SUPABASEKEY;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -15,7 +18,7 @@ async function reseedDatabase() {
       return;
     }
 
-    const userId = authData.user.id;  
+    const userId = authData.user.id;
 
     const { data: userRecord, error: userError } = await supabase
       .from('users')
@@ -23,9 +26,14 @@ async function reseedDatabase() {
         userId: userId, 
         email: 'test@gmail.com', 
         username: 'supabasetest',
-        age: 18,  
-        weight: 200,  
-        gender: true,  
+        age: 18,
+        weight: 200,
+        gender: 'Male',
+        activity_level: 'Sedentary',
+        height: 70,
+        lose_weight: 0,
+        gain_weight: 0,
+        weeks: 12,
       }]);
 
     if (userError) {
